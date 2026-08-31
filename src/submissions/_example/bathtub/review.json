@@ -1,0 +1,27 @@
+{
+  "stage2": {
+    "url": "http://localhost:3000/gallery/_example/bathtub/",
+    "ready": true,
+    "rendered": true,
+    "metrics": {
+      "water height": "8.81 m",
+      "land area flooded": "64.2 km²",
+      "buildings intersecting": "1,951",
+      "residential units affected": "28,483",
+      "population in flooded area": "63,205",
+      "flooded only without connectivity": "1.2 km²"
+    },
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "failedRequests": [
+      {
+        "url": "https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap",
+        "reason": "net::ERR_TUNNEL_CONNECTION_FAILED"
+      }
+    ],
+    "exceptions": [],
+    "ok": true
+  }
+}

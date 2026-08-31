@@ -1,0 +1,152 @@
+# CLAUDE.md
+
+Guidance for Claude Code working in this repository.
+
+## What this is
+
+The course site for **Simulations, Models, Twins**, Columbia GSAPP, Fall 2026.
+Served at **simmodeltwin.net**, self-hosted on Adam's box.
+
+Predecessor course: Methods in Spatial Research (Spring 2026), repo
+`methods-in-spatial-research-sp2026`, site methodsinspatialresearch.xyz. The
+visual design and the content conventions are carried over from it deliberately -
+match them rather than improving on them.
+
+## Rules
+
+- **Never `git commit` or `git push`.** Adam commits. Leave the working tree
+  with your changes in it and say what you changed.
+- **Never invent data.** No fabricated URLs, field names, figures, or datasets.
+  If a source is unverified, say so in the file. There is a note in
+  `utilities/constraints.md` in the Obsidian vault about which URLs in the
+  course longlists were never checked - assume unverified unless told otherwise.
+- Read `utilities/writing-style-guide.md` in the vault before drafting any
+  course prose. The voice is specific and it is easy to get wrong.
+- Kill any dev server you start.
+
+## Commands
+
+```
+npm install
+npm run sync      # mirror content images, submissions and data/processed into static/
+                  #   (also runs automatically via predev / prebuild)
+npm run dev       # dev server
+npm run build     # production build (adapter-node)
+npm start         # run the built server
+npm run covers    # Playwright cover images + build-doctor stage 2
+                  #   npm run covers -- --base http://localhost:5173
+                  #   CHROMIUM_PATH=... to use an existing browser
+npm run audit:freeze
+npm run tokens -- "Lastname, Firstname"
+```
+
+Freeze: `SMT_MODE=archive npm run build` swaps in
+adapter-static and prerenders. `npm run audit:freeze` fails if a route has drifted
+somewhere that can't prerender - run it before believing the freeze still works.
+
+## Stack
+
+SvelteKit (Svelte 5, runes) on adapter-node. Content is markdown rendered with
+markdown-it, **not** mdsvex - so `{` and `<` in a code sample are never mistaken
+for Svelte syntax, and `markdown-it-attrs` keeps the Methods `#img-full`
+convention working. A tutorial embeds a live sandbox with a mount div, not a
+component tag:
+
+```html
+<div data-sandbox="bathtub" data-mode="view" data-params='{"slr_m":1.5}'></div>
+```
+
+## Layout
+
+```
+src/content/        markdown, images beside it
+  syllabus/ tutorials/ assignments/ resources/
+src/submissions/    <student>/<sandbox>/manifest.json + assets/ + review.json
+src/lib/
+  content.js        markdown pipeline + collections
+  sandboxes/        one folder per sandbox: meta.js, schema.json, Component.svelte
+  components/       SandboxFrame, ParamPanel, ModelCard, SubmitDialog, Assistant
+  server/           auth, budget, validate, repo, config  (server-only)
+src/routes/
+  api/              server-only; never prerendered, excluded from the archive build
+data/               original/ (sources, shared), processed/<sandbox>/ (derived,
+                    what ships), scripts/ (one pipeline per sandbox, Python)
+scripts/            cover, issue-tokens, prerender-audit, sync-assets
+static/data/        packed grids the sandboxes read in archive mode
+static/covers/      sandbox cover images (committed; regenerate with npm run covers)
+static/<mirrored>/  written by sync-assets on predev/prebuild. Gitignored.
+var/                tokens, budget, sessions, logs. Gitignored. Never commit.
+```
+
+Anything the app *imports* lives under `src/`. Anything the browser *fetches as a
+file* is served from `static/`. `scripts/sync-assets.js` mirrors the overlap
+(content images, submission covers and assets) on `predev` and `prebuild`;
+`src/` is the source of truth and the copies in `static/` are gitignored.
+
+## Platform and build traps
+
+Three of these have already cost a debugging session. They all fail the same
+confusing way - a clean 200 from the server, a dead page in the browser, and
+nothing in the terminal - because the failure is at hydration, not in SSR.
+**Checking an HTTP status is not verification. Check the browser console.**
+
+- **No `$env/static/public`.** A missing `PUBLIC_` variable makes that module
+  throw on every page. The freeze switch is `SMT_MODE`, read once in
+  `vite.config.js` and exposed as the `__SMT_MODE__` define. A fresh clone must
+  run with no `.env` at all.
+- **`src/lib/content.js` runs in the browser** - it is imported by universal
+  `load` functions. Nothing Node-only may be imported there. That is why
+  frontmatter is parsed with `js-yaml` and a regex rather than `gray-matter`,
+  which reaches for `Buffer`.
+- **`predev` and `prebuild` are load-bearing.** They run
+  `scripts/sync-assets.js`, which mirrors `src/content/*/images`,
+  `src/submissions` and `data/processed/*` into `static/`. Without them the
+  browser silently serves whatever `static/` happened to contain last - which
+  looks like a data bug, not a config one. Never edit `package.json` scripts
+  without checking both are still there.
+- **`import.meta.glob` only works under `src/`,** and its options argument must
+  be an inline object literal. A JSON file globbed from outside `src/` is served
+  to the browser with a JSON MIME type and rejected by the module loader; that
+  is why `src/content/` and `src/submissions/` are where they are.
+
+## The sandbox contract
+
+Read `src/lib/sandboxes/bathtub/` first - it is the reference implementation.
+
+- One component, two modes. Props: `params`, `assets`, `mode` (`edit` | `view`),
+  `dataBase`, and the callbacks `onmetrics(obj)` and `onready(bool)`.
+- **A sandbox never sets `window.__metrics` or `data-cover-ready` itself.** It
+  reports; `SandboxFrame` publishes. That gives the cover pipeline one thing to
+  wait on across all seven.
+- The JSON Schema in `schema.json` does two jobs: it draws the control panel and
+  the server validates submitted params against it. Add a control there, not in
+  the panel component.
+- **Every sandbox must render from static data.** Anything that can't does not
+  ship. Only the studio twin has a live source. This is the rule that makes the
+  December freeze mechanical.
+
+## Terminology - keep these straight
+
+The course vocabulary collides with the discipline's, so these are load-bearing:
+
+- **geometry** / **3D model** = a mesh, made in Rhino or Blender. **model**,
+  unqualified, always means predictive logic. Never call a mesh a model.
+- **twin = record** ("this is how it is"), **model = rule** ("this is how it
+  works"), **simulation = run** ("this is what happens, if").
+- **Sandbox** = the finished playable thing at `/sandboxes/<slug>`.
+  **Tutorial** = the how-to for building one. Never collapse them.
+- The syllabus says **participants**; tutorials and assignments say **you**.
+- "World models" and "spatial intelligence" take scare quotes.
+- "Pithy two-sentence summary" and "gallery text" are the recurring deliverable
+  phrasings, carried over from Methods.
+
+## Tutorial anchors are an API
+
+The build doctor points students at `#producing-the-data`, `#the-parameters` and
+friends, and `FAILURE_MAP` in `src/lib/server/validate.js` hardcodes them.
+Renaming a tutorial heading breaks it silently. Every tutorial covers those four
+things and nothing more: producing the data, setting up the web environment, the
+parameters, the assumptions.
+
+Every tutorial also states explicitly what the sandbox can do that the tutorial
+version won't - use the `.gap` callout. Don't hide it.

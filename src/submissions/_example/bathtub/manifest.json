@@ -1,0 +1,30 @@
+{
+  "sandbox": "bathtub",
+  "student": "_example",
+  "title": "The Ninetieth Percentile",
+  "gallery_text": "The same city, twice, differing by one number nobody outside the room chose. Published maps pick a percentile on your behalf and rarely say which.",
+  "description": "<p>Two states, differing by exactly one changed value. The value is named in the interface.</p>",
+  "params": {
+    "slr_m": 1.4,
+    "surge_m": 1.5,
+    "tide": "mhhw",
+    "percentile": 90,
+    "year": 2100,
+    "link_year": true,
+    "connectivity": true,
+    "basemap": "elevation"
+  },
+  "cover": {
+    "slr_m": 1.4,
+    "surge_m": 1.5,
+    "tide": "mhhw",
+    "percentile": 90,
+    "year": 2100,
+    "link_year": true,
+    "connectivity": true,
+    "basemap": "elevation"
+  },
+  "assets": [],
+  "app_version": "0.1.0",
+  "submitted": "2026-08-30T00:00:00.000Z"
+}

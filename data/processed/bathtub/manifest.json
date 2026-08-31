@@ -1,0 +1,111 @@
+{
+  "sandbox": "bathtub",
+  "scope": "full",
+  "downsample": 2,
+  "sources": {
+    "dem": "USGS 3DEP 1/3 arc-second (~10m), clipped to NYC. EPSG:4269, metres NAVD88.",
+    "sea_level": "NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. 10th/25th/75th/90th percentiles - no median is published.",
+    "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, relative to NAVD88."
+  },
+  "tractid": {
+    "file": "tractid.png",
+    "bytes": 270760,
+    "cells_in_a_tract": 2553118,
+    "encoding": "index = R * 256 + G; 0 means no tract",
+    "note": "feature i of tracts.json is stored as i + 1"
+  },
+  "tracts": {
+    "file": "tracts.json",
+    "count": 2325,
+    "matched": 2325,
+    "bytes": 924779,
+    "source": "DECENNIALDP2020.DP1-Data.csv, column DP1_0001C",
+    "note": "population is reported at tract resolution and never allocated to individual buildings"
+  },
+  "steps_last_run": [
+    "dem"
+  ],
+  "grid": {
+    "width": 2979,
+    "height": 2916,
+    "crs": "EPSG:3857",
+    "order": "row-major, y down"
+  },
+  "bounds3857": [
+    -8271047.532038495,
+    4934487.6813377645,
+    -8202028.833202118,
+    5002035.432909127
+  ],
+  "encoding": {
+    "channels": "RG",
+    "unit": "decimetres",
+    "offset": 1000,
+    "formula": "metres = ((R * 256 + G) - 1000) / 10"
+  },
+  "layers": {
+    "elev": {
+      "file": "elev.png",
+      "bytes": 4242737,
+      "description": "ground elevation, metres NAVD88"
+    },
+    "spill": {
+      "file": "spill.png",
+      "bytes": 3953258,
+      "description": "lowest waterline at which the cell connects to open water"
+    }
+  },
+  "buildings": {
+    "file": "buildings.bin",
+    "count": 470578,
+    "bytes": 9411560,
+    "layout": "float32[n][5] = lon, lat, ground_m, height_m, units",
+    "units_note": "UnitsRes is a lot-level figure, divided evenly among the buildings on that lot. Summing over flooded buildings therefore approximates the lot total rather than multiplying it.",
+    "keep_below_m": 12.0,
+    "dropped_above_threshold": 611881,
+    "note": "ground_m is the footprint's own recorded ground_elevation, converted from feet - not sampled from the DEM"
+  },
+  "years": [
+    2030,
+    2050,
+    2080,
+    2100,
+    2150
+  ],
+  "projections": {
+    "10": [
+      0.152,
+      0.305,
+      0.533,
+      0.635,
+      0.965
+    ],
+    "25": [
+      0.178,
+      0.356,
+      0.635,
+      0.762,
+      1.194
+    ],
+    "75": [
+      0.279,
+      0.483,
+      0.991,
+      1.27,
+      2.261
+    ],
+    "90": [
+      0.33,
+      0.584,
+      1.143,
+      1.651,
+      4.496
+    ]
+  },
+  "tideOffsetsM": {
+    "mllw": -0.844,
+    "msl": -0.061,
+    "mhhw": 0.695
+  },
+  "waterSurfaceM": 0.3
+}

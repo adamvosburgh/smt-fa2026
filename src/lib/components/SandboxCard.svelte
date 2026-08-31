@@ -1,0 +1,116 @@
+<script>
+  // The sandbox card. Every sandbox carries one: what this is, why we are
+  // looking at it, where the data came from, what it assumes, what it cannot
+  // see. The prose lives in src/lib/sandboxes/<slug>/card.md so it can be
+  // written as prose; this only opens and closes it.
+  //
+  // The limits are the last section of the card rather than a separate always-
+  // visible line, on the reasoning that you have to understand how a thing
+  // works before "what it misses" means anything. That does put them behind a
+  // click - if that turns out to be too far away, pin the last section out here.
+  import { card } from '$lib/sandboxes/cards.js';
+
+  let { meta, open = false } = $props();
+  let expanded = $state(false);
+  let dialog = $state(null);
+  const html = $derived(card(meta.slug));
+
+  $effect(() => { expanded = open; });
+  // Escape has to land somewhere, so the dialog takes focus when it opens.
+  $effect(() => { if (expanded && dialog) dialog.focus(); });
+</script>
+
+{#if html}
+  <button
+    class="open"
+    type="button"
+    aria-expanded={expanded}
+    onclick={() => (expanded = true)}
+  >
+    <span class="i" aria-hidden="true">i</span> about this sandbox
+  </button>
+{/if}
+
+{#if expanded && html}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_click_events_have_key_events -->
+  <div
+    class="scrim"
+    role="dialog"
+    aria-modal="true"
+    aria-label="About the {meta.title} sandbox"
+    tabindex="-1"
+    bind:this={dialog}
+    onkeydown={(e) => e.key === 'Escape' && (expanded = false)}
+    onclick={(e) => e.target === dialog && (expanded = false)}
+  >
+    <article class="card">
+      <header>
+        <span class="num">{String(meta.number).padStart(2, '0')}</span>
+        <h2>{meta.title}</h2>
+        <button class="close" type="button" onclick={() => (expanded = false)}>close</button>
+      </header>
+      <div class="body">{@html html}</div>
+      {#if meta.tutorial}
+        <p class="tut">
+          How it was built: <a href={meta.tutorial}>the {meta.title} tutorial</a>.
+        </p>
+      {/if}
+    </article>
+  </div>
+{/if}
+
+<style>
+  .open {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    margin-top: 0.9rem; padding: 0.4rem 0.65rem 0.4rem 0.45rem;
+    font: inherit; font-size: 0.72rem; color: #000;
+    background: #fff; border: 1px solid #000; cursor: pointer;
+  }
+  .open:hover { background: #000; color: #fff; }
+  .i {
+    width: 14px; height: 14px; border: 1px solid currentColor; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; font-style: italic; line-height: 1;
+  }
+
+  .scrim:focus { outline: none; }
+  .scrim {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(20, 20, 20, 0.45);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 4vh 1rem; overflow-y: auto;
+  }
+  .card {
+    background: #fff; border: 1px solid #000;
+    width: min(62ch, 100%); padding: 1.75rem 2rem 2rem;
+    font-size: 0.82rem;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 0.6rem;
+    border-bottom: 1px solid #000; padding-bottom: 0.6rem; margin-bottom: 1.25rem;
+  }
+  .num { font-size: 0.7rem; color: #999; }
+  h2 { font-size: 1rem; margin: 0; }
+  .close {
+    margin-left: auto; font: inherit; font-size: 0.7rem; color: #666;
+    background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline;
+  }
+
+  .body { line-height: 1.7; }
+  .body :global(h2) {
+    font-size: 0.72rem; text-transform: lowercase; letter-spacing: 0.04em;
+    margin: 2rem 0 0.6rem; color: #000;
+  }
+  .body :global(h2:first-child) { margin-top: 0; }
+  .body :global(p) { margin: 0 0 0.9rem; }
+  .body :global(ul) { margin: 0 0 0.9rem; padding-left: 1.1rem; }
+  .body :global(li) { margin-bottom: 0.5rem; }
+  .body :global(code) { font-size: 0.9em; background: #f2f2f0; padding: 0 0.2em; }
+  .body :global(strong) { font-weight: 700; }
+
+  .tut { font-size: 0.75rem; color: #666; border-top: 1px solid #ddd; padding-top: 0.9rem; margin: 1.5rem 0 0; }
+
+  @media (max-width: 900px) {
+    .card { padding: 1.25rem 1.25rem 1.75rem; }
+  }
+</style>
