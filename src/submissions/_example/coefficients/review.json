@@ -1,0 +1,19 @@
+{
+  "stage2": {
+    "url": "http://localhost:5174/gallery/_example/coefficients/",
+    "ready": true,
+    "rendered": true,
+    "metrics": {
+      "population": "23",
+      "residential / commercial / industrial demand": "+2000  -1500  -1297",
+      "mean land value": 60,
+      "mean crime": 138,
+      "spread across runs at the final tick": "not run in view mode",
+      "ticks run": 528
+    },
+    "consoleErrors": [],
+    "failedRequests": [],
+    "exceptions": [],
+    "ok": true
+  }
+}

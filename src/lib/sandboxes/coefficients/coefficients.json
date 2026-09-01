@@ -1,0 +1,81 @@
+{
+  "_comment": [
+    "The named constants of micropolisJS, lifted out of the code they were",
+    "written in. Every value here was read from the vendored source at commit",
+    "f13a1624d111d235e804bd80f48ba7c9f66a8e0f and matches it exactly. The file",
+    "location each one came from is recorded beside it.",
+    "",
+    "A default that disagrees with the engine would break the whole argument of",
+    "this sandbox, which is an argument about what the defaults are. If you",
+    "change one, change it here and nowhere else.",
+    "",
+    "schema.json exposes a subset of these as sliders. The rest are edited by",
+    "replacing this file, which is submitted as an asset."
+  ],
+
+  "crime": {
+    "_source": "vendor/src/blockMapUtils.js, crimeScan()",
+    "_asserts": "Crime is poverty plus density minus policing, and it is self-reinforcing: high crime lowers land value (see land_value.crime_penalty), and low land value raises crime.",
+    "base": 128,
+    "land_value_weight": 1,
+    "population_density_weight": 1,
+    "police_weight": 1,
+    "pre_police_clamp_max": 300,
+    "output_min": 0,
+    "output_max": 250
+  },
+
+  "land_value": {
+    "_source": "vendor/src/blockMapUtils.js, pollutionTerrainLandValueScan()",
+    "_asserts": "Land value is a bid-rent gradient falling linearly from the city centre. One line, and no other geometry is expressible.",
+    "centre_base": 34,
+    "distance_divisor": 2,
+    "shift": 2,
+    "crime_threshold": 190,
+    "crime_penalty": 20,
+    "output_min": 1,
+    "output_max": 250
+  },
+
+  "pollution": {
+    "_source": "vendor/src/blockMapUtils.js, getPollutionValue()",
+    "_asserts": "Which land uses are dirty, and by how much. Residential and commercial pollute nothing at all.",
+    "heavy_traffic": 75,
+    "light_traffic": 50,
+    "fire": 90,
+    "radiation": 255,
+    "industrial": 50,
+    "coal_power_plant": 100,
+    "clamp_max": 255
+  },
+
+  "traffic": {
+    "_source": "vendor/src/traffic.js",
+    "_asserts": "A zone has access to jobs if a random walk of at most this many steps finds a destination. There is no routing and no shortest path.",
+    "max_distance": 30
+  },
+
+  "smoothing": {
+    "_source": "vendor/src/blockMapUtils.js, smoothMap() call sites",
+    "_asserts": "Influence spreads by repeated blurring. How far a police station reaches is a convolution count, not a distance anyone measured.",
+    "police_passes": 3,
+    "pollution_passes": 2,
+    "population_density_passes": 3,
+    "terrain_passes": 1,
+    "fire_passes": 1
+  },
+
+  "demography": {
+    "_source": "vendor/src/valves.js, setValves()",
+    "_asserts": "The entire demographic and economic response of the city.",
+    "birth_rate": 0.02,
+    "labour_base_max": 1.3,
+    "internal_market_denom": 3.7,
+    "tax_table_scale": 600,
+    "ext_market_param_table": [1.2, 1.1, 0.98],
+    "tax_table": [
+      200, 150, 120, 100, 80, 50, 30, 0, -10, -40, -100,
+      -150, -200, -250, -300, -350, -400, -450, -500, -550, -600
+    ]
+  }
+}

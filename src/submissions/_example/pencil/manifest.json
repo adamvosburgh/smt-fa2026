@@ -1,0 +1,42 @@
+{
+  "sandbox": "pencil",
+  "student": "_example",
+  "title": "The Ceiling Inverts the Borough",
+  "gallery_text": "The programme lends at most $220,000, so the lots with the most room fail first - a full-size unit costs more than the loan will cover. The grant is set to zero here, which is the version of the programme that exists if nobody funds it.",
+  "description": "<p>Two things are changed from the published terms: the grant is zero, and the map is flat so the pattern can be read.</p><p>At the real grant of $175,000, 62% of eligible lots clear the cushion. At zero, 12% do. The lots that survive are the small ones in the northwest of the borough, because a smaller yard means a smaller unit, a smaller cost, and a loan that fits under the $220,000 ceiling. The eastern lots have the most room and fail first.</p><p>Nothing in the term sheet says the programme is for dense neighbourhoods. It falls out of the arithmetic, and it is the ceiling that does it rather than the rent.</p>",
+  "params": {
+    "grant_max": 0,
+    "equity_share": 0,
+    "interest_rate": 0.05,
+    "term_months": 180,
+    "cost_per_sf": 500,
+    "rent_basis": "ami_cap",
+    "rent_flat": 2000,
+    "vacancy": 0.05,
+    "eligibility": "coy",
+    "cushion": 200,
+    "permits_per_year": 1000,
+    "year": 2035,
+    "tint": "margin",
+    "volumes": false
+  },
+  "cover": {
+    "grant_max": 0,
+    "equity_share": 0,
+    "interest_rate": 0.05,
+    "term_months": 180,
+    "cost_per_sf": 500,
+    "rent_basis": "ami_cap",
+    "rent_flat": 2000,
+    "vacancy": 0.05,
+    "eligibility": "coy",
+    "cushion": 200,
+    "permits_per_year": 1000,
+    "year": 2035,
+    "tint": "margin",
+    "volumes": false
+  },
+  "assets": [],
+  "app_version": "0.1.0",
+  "submitted": "2026-08-31T00:00:00.000Z"
+}

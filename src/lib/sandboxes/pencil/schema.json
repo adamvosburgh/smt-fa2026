@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simmodeltwin.net/schemas/sandbox/pencil.json",
+  "title": "Does It Pencil parameters",
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. Property order is the panel's reading order and it is the order of the argument: pick the subsidy, then the market it lands in, then the rules that gate it, then the clock, then how it is drawn. Every default that comes from the HPD Plus One ADU term sheet is marked as such in its description; the ones that are ours say so too.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "grant_max",
+    "cost_per_sf",
+    "rent_basis",
+    "cushion",
+    "permits_per_year",
+    "year"
+  ],
+  "properties": {
+    "grant_max": {
+      "type": "number",
+      "title": "Maximum grant",
+      "x-group": "the subsidy",
+      "minimum": 0,
+      "maximum": 250000,
+      "x-step": 5000,
+      "default": 175000,
+      "x-unit": "$",
+      "description": "The published HCR grant ceiling: \"$175,000 per grantee\". Money that is given, not lent, so it never appears in the debt service. It is the single biggest lever in the whole model - take it to zero and watch how much of Queens stops working. That number was chosen by an agency, it is written on a term sheet, and almost nobody who is affected by it has read it."
+    },
+    "equity_share": {
+      "type": "number",
+      "title": "Homeowner's own money",
+      "x-group": "the subsidy",
+      "minimum": 0,
+      "maximum": 0.5,
+      "x-step": 0.05,
+      "default": 0,
+      "description": "How much of the cost the homeowner puts in themselves, as a share. The programme's default is nothing, which is what makes it unusual. Raising it shrinks the loan and so the monthly payment, which makes more lots pencil - and quietly restricts the programme to people who have savings. The model has no way to know who those people are, so it shows you a better map and hides a worse fact."
+    },
+    "interest_rate": {
+      "type": "number",
+      "title": "Interest rate",
+      "x-group": "the subsidy",
+      "minimum": 0,
+      "maximum": 0.1,
+      "x-step": 0.005,
+      "default": 0.05,
+      "description": "The published rate is \"5%. Rate may be reduced.\" - to zero, which is why this slider reaches zero. A rate is not a fact about money; it is a decision about how much of the cost the public takes on. Slide it and you are re-deciding that."
+    },
+    "term_months": {
+      "type": "integer",
+      "title": "Loan term",
+      "x-group": "the subsidy",
+      "enum": [
+        180,
+        360
+      ],
+      "x-enum-labels": [
+        "15 years",
+        "30 years"
+      ],
+      "default": 180,
+      "description": "The term sheet says \"180 months (15 years.)\", extendable to 360. Doubling the term nearly halves the monthly payment, so far more lots clear the cushion - and the borrower pays for twice as long. The model sees the monthly number and not the total."
+    },
+    "cost_per_sf": {
+      "type": "number",
+      "title": "Construction cost",
+      "x-group": "the market",
+      "minimum": 200,
+      "maximum": 800,
+      "x-step": 25,
+      "default": 500,
+      "x-unit": "$/sf",
+      "description": "THIS DEFAULT IS AN ASSUMPTION, NOT A PUBLISHED FIGURE. HPD's \"ADU for You\" cost guidance could not be verified to exist, so $500 a square foot is our placeholder and everything downstream inherits it. It is the number in this sandbox you should trust least and move first. A flat rate per square foot also assumes a small backyard build costs the same per foot as a large one, which no builder believes."
+    },
+    "rent_basis": {
+      "type": "string",
+      "title": "What rent it gets",
+      "x-group": "the market",
+      "enum": [
+        "ami_cap",
+        "fmr",
+        "flat"
+      ],
+      "x-enum-labels": [
+        "100% AMI cap",
+        "market (Small Area FMR)",
+        "a flat figure"
+      ],
+      "default": "ami_cap",
+      "x-emphasis": true,
+      "description": "The programme requires the unit be \"rented at or below 100% of the Area Median Income\". That cap is what the public gets in exchange for the subsidy - and here it is one number for the whole of Queens, because HUD publishes income limits only for the New York, NY HUD Metro FMR Area: eight counties, including Putnam, Rockland and Westchester. So the rent ceiling on a house in Ozone Park is set partly by incomes in Scarsdale. Market rent, by contrast, is published by ZIP and does vary. Switch between them and watch what the affordability requirement actually costs - the answer in Queens is surprising, and it is worth working out who it is surprising for."
+    },
+    "rent_flat": {
+      "type": "number",
+      "title": "Flat rent",
+      "x-group": "the market",
+      "minimum": 500,
+      "maximum": 5000,
+      "x-step": 50,
+      "default": 2000,
+      "x-unit": "$/mo",
+      "x-disabled-when": {
+        "rent_basis": "ami_cap"
+      },
+      "x-disabled-note": "using the AMI cap",
+      "description": "One rent for every lot in the borough, set by you. It is here to strip the geography out: with a flat rent, the only thing that varies across the map is what it costs to build, which is a clean way to see how much of the pattern is rent and how much is construction."
+    },
+    "vacancy": {
+      "type": "number",
+      "title": "Vacancy",
+      "x-group": "the market",
+      "minimum": 0,
+      "maximum": 0.15,
+      "x-step": 0.01,
+      "default": 0.05,
+      "description": "The share of the year the unit sits empty, taken off the rent. A single flat rate for every lot, which assumes a unit in Far Rockaway is as easy to fill as one in Astoria."
+    },
+    "eligibility": {
+      "type": "string",
+      "title": "Eligibility rules",
+      "x-group": "the rules",
+      "enum": [
+        "coy",
+        "all"
+      ],
+      "x-enum-labels": [
+        "City of Yes rules",
+        "ignore eligibility"
+      ],
+      "default": "coy",
+      "description": "\"City of Yes rules\" applies the published ADU restrictions: not in the expanded flood area, not detached in a historic district, and not detached in an R1-2A, R2A or R3A district outside the Greater Transit Zone. \"Ignore eligibility\" prices an ADU on every one-to-two-family lot in Queens regardless of legality - so the difference between the two settings is exactly what the zoning rule costs, in units. Note that these eligibility flags are OURS, derived from the published rules, because the city publishes no ADU eligibility layer."
+    },
+    "cushion": {
+      "type": "number",
+      "title": "Required monthly cushion",
+      "x-group": "the rules",
+      "minimum": 0,
+      "maximum": 1000,
+      "x-step": 25,
+      "default": 200,
+      "x-unit": "$/mo",
+      "description": "READ THIS ONE CAREFULLY, BECAUSE THE SANDBOX BENDS IT. The term sheet says loan payments \"will be set so that the household has at least $200 monthly cash flow available after household debt obligations are subtracted\". In the programme that is a test on the HOUSEHOLD, and it sizes the loan. Here it is recast as a build-or-don't-build test on the ADU's own cash flow, because the sandbox has no household data and cannot have any. That substitution is a modelling choice of exactly the kind this course is about, and it is the most important thing on this page."
+    },
+    "permits_per_year": {
+      "type": "integer",
+      "title": "Permits per year",
+      "x-group": "the rules",
+      "minimum": 100,
+      "maximum": 10000,
+      "x-step": 100,
+      "default": 1000,
+      "x-emphasis": true,
+      "description": "How many of the passing lots get built each year. Lots are ranked by return on the owner's equity and released from the top down, so this is the only control that changes WHEN rather than WHETHER. The claim it makes is explicit and arguable: that the binding constraint on a programme like this is permitting throughput rather than demand. Nothing in the model represents a homeowner deciding anything - the ranking is standing in for a decision that thousands of people would actually make."
+    },
+    "year": {
+      "type": "integer",
+      "title": "Year",
+      "x-group": "the clock",
+      "minimum": 2027,
+      "maximum": 2050,
+      "x-step": 1,
+      "default": 2035,
+      "description": "Scrub the clock. Lots released in or before this year stand up as volumes; the rest lie flat. The queue starts in 2027, which is a choice - the programme has no start date in it."
+    },
+    "tint": {
+      "type": "string",
+      "title": "Colour by",
+      "x-group": "how it's drawn",
+      "enum": [
+        "margin",
+        "roe",
+        "release_year",
+        "eligibility"
+      ],
+      "x-enum-labels": [
+        "monthly margin",
+        "return on equity",
+        "year built",
+        "eligible or not"
+      ],
+      "default": "margin",
+      "description": "What the colour means. \"Eligible or not\" is the map this sandbox exists to argue with - the one that shows where an ADU is allowed rather than where it pays."
+    },
+    "volumes": {
+      "type": "boolean",
+      "title": "Stand the units up",
+      "x-group": "how it's drawn",
+      "default": false,
+      "description": "Draw the units that have been built as volumes rising from their lot. Off is the default and it is the better view for the argument: 246,921 columns seen at a shallow angle smear into each other at borough zoom, and the pattern - which neighbourhoods pay and which do not - is what this sandbox is about. Turn volumes on and zoom into a few blocks to watch the time scrubber put units on the ground."
+    }
+  }
+}

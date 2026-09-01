@@ -1,0 +1,182 @@
+{
+  "sandbox": "after-five",
+  "generated": "2026-08-31",
+  "districts": [
+    "MN01",
+    "MN05"
+  ],
+  "buildings": 3728,
+  "bounds": [
+    -74.04698944091797,
+    40.68436813354492,
+    -73.96867370605469,
+    40.76744079589844
+  ],
+  "view_bounds": [
+    -74.01690673828125,
+    40.6906852722168,
+    -73.9725112915039,
+    40.76443862915039
+  ],
+  "district_view_bounds": {
+    "MN01": [
+      -74.02325439453125,
+      40.68739700317383,
+      -74.00106048583984,
+      40.723365783691406
+    ],
+    "MN05": [
+      -73.99513244628906,
+      40.73678970336914,
+      -73.97156524658203,
+      40.765098571777344
+    ]
+  },
+  "columns": [
+    "lon",
+    "lat",
+    "height_ft",
+    "floors",
+    "bldg_area",
+    "office_area",
+    "res_area",
+    "com_area",
+    "year_built",
+    "convertibility",
+    "units_created",
+    "floors_added",
+    "converted_year",
+    "footprint_area",
+    "district"
+  ],
+  "column_units": [
+    "degrees",
+    "degrees",
+    "feet",
+    "storeys",
+    "sq ft",
+    "sq ft",
+    "sq ft",
+    "sq ft",
+    "year",
+    "0-1",
+    "units",
+    "storeys",
+    "year or 0",
+    "sq ft",
+    "index into districts"
+  ],
+  "snapshot_years": [
+    2025,
+    2030,
+    2035,
+    2040,
+    2045,
+    2050
+  ],
+  "household_size": 2.01,
+  "household_size_source": "Census ACS 5-year 2023, B25010_001E, New York County. Used to turn units into residents. It is a borough average applied to every new unit, and new conversion units skew smaller than the borough's stock.",
+  "browser_assumptions": {
+    "note": "These live in the front end (gates.js) because they are arithmetic rather than data. Each is ours unless marked.",
+    "cap_rate": 0.055,
+    "opex_share": 0.35,
+    "office_rent_base_psf_yr": 62,
+    "office_rent_base_note": "Asking rent per square foot per year for Lower Manhattan office space in the base year. AN ASSUMPTION - no published series was verified for it - and it sets where the office_rent_trend control bites.",
+    "sf_per_unit": 900,
+    "sf_per_unit_note": "Floor area per apartment, used to turn converted office area into a unit count.",
+    "base_year": 2025
+  },
+  "convertibility": {
+    "note": "OUR score of published criteria, not Gensler's algorithm. Weights are ours and are exposed here so they can be argued with.",
+    "weights": {
+      "floorplate_depth": 0.35,
+      "floor_to_floor": 0.25,
+      "floorplate_area": 0.2,
+      "age": 0.2
+    },
+    "dropped": {
+      "window_operability": "Not derivable from any dataset available. Dropped.",
+      "elevator_count": "Not in MapPLUTO. Dropped rather than invented from floor area."
+    },
+    "proxies": {
+      "floorplate_depth": "BldgDepth halved, as a core-to-window estimate. Assumes a centred core and a rectangular plate; both are often wrong.",
+      "floor_to_floor": "Modelled height divided by NumFloors. Averages over mechanical floors and lobbies.",
+      "floorplate_area": "BldgArea / NumFloors.",
+      "age": "YearBuilt, standing in for facade type AND structural bay - two criteria it does not actually measure."
+    }
+  },
+  "convertibility_ranges": {
+    "floorplate_depth_ft": [
+      20,
+      70
+    ],
+    "floor_to_floor_ft": [
+      9,
+      16
+    ],
+    "floorplate_area_sf": [
+      5000,
+      40000
+    ],
+    "year_built": [
+      1900,
+      1990
+    ],
+    "note": "Ours. Each proxy is clamped to its range and normalised so that 1 means easier to convert."
+  },
+  "incentive_467m": {
+    "source": "HPD 467-m requirements FAQ, read 2026-08-31",
+    "prior_use_nonresidential_share": 0.9,
+    "min_units": 6,
+    "min_preexisting_share": 0.5,
+    "affordable_share": 0.25,
+    "waami_cap_pct": 80,
+    "commence_after": "2022-12-31",
+    "commence_before": "2031-06-30",
+    "complete_by": "2039-12-31",
+    "benefit_schedule": "NOT VERIFIED - not carried in the FAQ. Modelled as a binary eligibility gate only, with no abatement value."
+  },
+  "dob": {
+    "datasets": {
+      "legacy": "ic3t-wcy2",
+      "certificates_of_occupancy": "pkdm-hqz6"
+    },
+    "job_type_mapping": {
+      "legacy": "job_type == 'A1' (change of use / occupancy)",
+      "certificates_of_occupancy": [
+        "Alteration CO",
+        "CO - New Building with Existing Elements to Remain"
+      ]
+    },
+    "co_filing_types_kept": [
+      "Initial",
+      "Final"
+    ],
+    "coverage": {
+      "legacy": "2000-01-01 to 2025-12-31",
+      "certificates_of_occupancy": "roughly 2022 to 2025"
+    },
+    "dataset_not_used": {
+      "id": "w9ak-ipjd",
+      "name": "DOB NOW: Build - Job Application Filings",
+      "why": "The build doc named this as the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every job filing number prefixed B, no Manhattan at all (checked 2026-08-31). It cannot repair the legacy dataset's Manhattan coverage, so it is not used."
+    },
+    "counts": {
+      "legacy_rows": 44754,
+      "legacy_conversions": 6558,
+      "co_rows": 406,
+      "co_conversions": 194,
+      "co_no_units": 117
+    },
+    "migration_warning": "Legacy Manhattan change-of-occupancy filings fall from 1,109 in 2020 to 237, 77 and 56 in 2021-2023. That is the migration to DOB NOW, not a policy effect. A time series off the legacy dataset alone would show conversions collapsing exactly when everyone says they accelerated.",
+    "renewal_warning": "Of 81,139 certificates of occupancy, 46,772 are 'Renewal Without Change' and 6,595 'Renewal With Change' - re-issued paperwork for buildings that converted years ago or never converted. Counting them would invent a wave of activity out of an administrative process. Only Initial and Final certificates are kept, earliest per building.",
+    "added_floors_note": "Added floors come from LEGACY filings only. The other source carries none: its a certificate of occupancy carries no height, stories or enlargement figure at all. So buildings recorded as converting after about 2021 convert WITHOUT GROWING, and that is a limit of the record rather than of the buildings."
+  },
+  "back_test": "CUT. The spec proposed validating against 421-g from 1995. The legacy dataset's earliest pre-filing date is 2000-01-01, so it cannot reach. The model is not validated against history and the card says so.",
+  "sources": {
+    "massing": "DCP NYC 3D Model by Community District (NYC Open Data u5j4-zxpn), EPSG:2263 feet. THE FILE CARRIES NO ATTRIBUTES - no BIN, no BBL, nothing - so identity is inferred by spatial match against NYC Building Footprints: 99.5% matched, median distance 2 feet.",
+    "pluto": "MapPLUTO 26v2, joined on the BBL recovered by that match.",
+    "dob": "DOB job filings, both systems, unioned."
+  },
+  "why_this_shape": "Per-building constants, both gates recomputed in the browser on every slider move. Same reasoning as sandbox 02: every control changes the arithmetic rather than the data, so there is nothing to precompute except what no parameter can move."
+}

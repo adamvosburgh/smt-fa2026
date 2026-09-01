@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simmodeltwin.net/schemas/sandbox/after-five.json",
+  "title": "After Five parameters",
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema. Property order is the panel's reading order: the clock, then the deal, then the two gates that decide everything, then how it is drawn. THE TIME OF DAY IS DELIBERATELY ABSENT: it would be serialised into every submission and it is not a choice anyone is making.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "conversion_cost_sf",
+    "convertibility_threshold",
+    "year",
+    "residential_rent",
+    "district"
+  ],
+  "properties": {
+    "district": {
+      "type": "string",
+      "title": "District",
+      "x-group": "the clock",
+      "enum": [
+        "mn01",
+        "mn05",
+        "both"
+      ],
+      "x-enum-labels": [
+        "Lower Manhattan",
+        "Midtown South",
+        "both"
+      ],
+      "default": "mn01",
+      "description": "Manhattan Community District 1 is the Financial District, Battery Park City, Tribeca and Governors Island. District 5 is Midtown South, which has a very different office stock - newer, deeper, and much more of it. Both are shipped; the one you are not looking at is drawn faintly rather than hidden, because the edge of a study area is a choice and it helps to see it."
+    },
+    "year": {
+      "type": "integer",
+      "title": "Year",
+      "x-group": "the clock",
+      "enum": [
+        2025,
+        2030,
+        2035,
+        2040,
+        2045,
+        2050
+      ],
+      "x-enum-labels": [
+        "2025",
+        "2030",
+        "2035",
+        "2040",
+        "2045",
+        "2050"
+      ],
+      "default": 2035,
+      "description": "The model tests the deal at each of six dates and a building converts at the first one where it clears. Six dates means the model has six opinions about the future and nothing in between them; the scrubber snaps rather than slides, which is honest about that."
+    },
+    "conversion_cost_sf": {
+      "type": "number",
+      "title": "Conversion cost",
+      "x-group": "the deal",
+      "minimum": 100,
+      "maximum": 600,
+      "x-step": 25,
+      "default": 350,
+      "x-unit": "$/sf",
+      "description": "What it costs to turn a square foot of office into a square foot of apartment: new plumbing risers, new windows where the code demands them, and a floor plan that has to reach daylight. An assumption - no published series was verified for it - and the number most worth arguing with, because the whole debate about conversion is really a debate about this figure."
+    },
+    "residential_rent": {
+      "type": "number",
+      "title": "Residential rent",
+      "x-group": "the deal",
+      "minimum": 30,
+      "maximum": 150,
+      "x-step": 5,
+      "default": 75,
+      "x-unit": "$/sf/yr",
+      "description": "What the converted apartments let for, per square foot per year. One figure for the whole district, so a basement studio on Water Street and a corner unit forty floors up earn the same. The model turns it into a value with a fixed capitalisation rate, which assumes the way buildings are priced does not change between now and 2050."
+    },
+    "office_rent_trend": {
+      "type": "number",
+      "title": "Office rent trend",
+      "x-group": "the deal",
+      "minimum": -0.05,
+      "maximum": 0.05,
+      "x-step": 0.005,
+      "default": -0.01,
+      "description": "How office rent drifts each year from its base. THIS IS THE ONLY THING THAT MAKES TIME PASS IN THIS MODEL. A building converts at the first date the residential deal beats the office income it gives up, so a falling office market is what opens the gate and a rising one holds it shut. The default is a mild decline, which is an assumption and a consequential one - set it to zero and the map stops changing with the year at all, which tells you how much of this story is the office market rather than anything about housing."
+    },
+    "convertibility_threshold": {
+      "type": "number",
+      "title": "Convertibility threshold",
+      "x-group": "the rules",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.5,
+      "x-emphasis": true,
+      "description": "How convertible a building has to be before anyone tries. The score behind it is OURS, not a consultancy's: it is a weighted sum of four proxies for Gensler's published criteria - floorplate depth, floor-to-floor height, floorplate area and age - and two of their criteria are dropped outright because nothing available measures them. So this slider is a number we chose, standing in for a judgement somebody else sells, applied to proxies for the things they actually look at. Move it and watch how much of downtown that judgement decides."
+    },
+    "incentive_467m": {
+      "type": "boolean",
+      "title": "467-m eligibility rules",
+      "x-group": "the rules",
+      "default": true,
+      "x-emphasis": true,
+      "description": "The state tax exemption for office-to-residential conversion. Its published terms are here - the building must have been at least 90% non-residential, must make six or more units, and must set aside a quarter of them as affordable - but its BENEFIT SCHEDULE is not: the exemption percentage and duration are not in the published FAQ. So it cannot be given a value, and it is modelled as a gate rather than as money. On, only buildings meeting the published tests convert, on the argument developers make that the deal does not close without it. Off, the tests are not applied and no benefit is added either. The difference between the two settings is what the eligibility rules exclude, not what the money is worth."
+    },
+    "colour_by": {
+      "type": "string",
+      "title": "Colour by",
+      "x-group": "how it's drawn",
+      "enum": [
+        "use",
+        "convertibility",
+        "year_converted"
+      ],
+      "x-enum-labels": [
+        "use",
+        "convertibility",
+        "year converted"
+      ],
+      "default": "use",
+      "description": "What the colour means. \"Use\" is the one to start with: blue is still office, red has become housing."
+    },
+    "added_floors": {
+      "type": "boolean",
+      "title": "Show added floors",
+      "x-group": "how it's drawn",
+      "default": true,
+      "description": "Where a filing recorded storeys being added, push the roof up by that many. It is the QUANTITY of the change and not its form - no setback, no courtyard, no new envelope, so a building that grew four floors grows a four-floor block. And it only shows for buildings whose record came from the older filing system, because the newer source carries no height figure at all."
+    }
+  }
+}

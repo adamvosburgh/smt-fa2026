@@ -1,0 +1,247 @@
+---
+title: "Tutorial 2 — Does It Pencil"
+date: "2026-08-31"
+author: Adam Vosburgh
+sequence: 2
+cat: tutorial
+published: true
+---
+
+<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+
+This module is about the difference between a map of where something is allowed
+and a map of where it would pay. We take one real housing programme, find the
+nine numbers it actually consists of, and run them as a pro-forma on every
+one-to-two-family lot in Queens at once. By the end you'll have it running on
+your own machine, and you'll be able to point it at a different borough or a
+different subsidy.
+
+There is real data preparation here — more than in any other module — and most
+of it is one file with 101 columns, of which you need about a dozen.
+
+<div class="gap">
+
+**What the tutorial version won't have.** The sandbox runs the whole borough:
+246,921 lots, recomputed on every slider move. The tutorial version runs one
+community district, which is about eight thousand. The arithmetic is identical
+and the code is identical — there is just less of it, and it fits in memory
+while you are still learning what the columns mean. The model *is* the
+arithmetic, so you are not building a reduced version of it.
+
+</div>
+
+## The map that gets published
+
+If you ask a planning department where accessory dwelling units are allowed, you
+will get a map. It will be a good map. It will show the districts where the use
+is permitted, shaded, with the exclusions cut out of it — the historic
+districts, the flood area, the low-density districts outside the transit zone.
+
+That map is a zoning map. It is accurate, it is useful, and it tells you almost
+nothing about whether a single unit will be built.
+
+The reason is that legality is a gate, not a reason. A homeowner does not build
+a unit because it is permitted; they build it because someone will lend them the
+money and the rent will cover the payments. Those are different questions with
+different geographies, and only one of the two gets published — because the
+zoning map is the one the agency has the authority to draw, and the other one
+depends on assumptions the agency would have to defend.
+
+So this module builds the other one. You should expect it to be wrong in
+interesting ways, and the sandbox will let you compare it against the boring map
+whenever you like.
+
+## Producing the data
+
+**One file, 101 columns, twelve that matter.**
+
+MapPLUTO is the city's tax-lot file: every lot in New York, with about a hundred
+attributes each. The shapefile release is around 400MB and the geometry alone is
+141MB of it. You never open the geometry. Everything this model needs is in the
+`.dbf` beside it, which is a fixed-width table you can read by seeking to byte
+offsets — no geopandas, no GDAL, no install that takes an afternoon.
+
+That is worth internalising as a habit. **Before you download a geo stack, ask
+what you actually need out of the file.** Here it is: lot area, building
+footprint dimensions, zoning district, transit zone, historic district, ZIP,
+census tract, units, and a centroid. Twelve columns out of 101, and the reader
+is about forty lines.
+
+**Read `BBL` as an integer.** It is stored as a DBF float field, and a float64
+BBL silently rounds away the lot digits. This is the kind of bug that produces a
+join which looks like it worked.
+
+### Totalling the join
+
+Queens has 324,150 tax lots. Filtering on `BldgClass` starting with A or B gives
+246,925 one-to-two-family lots. Filtering instead on `LandUse` equal to 01 gives
+247,054.
+
+Those are two independent tests of the same thing and they disagree on 129 lots
+— five hundredths of one percent. That agreement is what lets you believe the
+filter. Had they differed by ten percent you would need to find out why before
+going any further, and the answer would have been interesting.
+
+**Total every join against something published before you believe it.** In the
+bathtub module this is how a bug got caught: `UnitsRes` is a count of homes on a
+*lot*, several buildings can share a lot, and joining it onto each building gave
+11.3 million homes in a city with 3.6 million. The same shape of bug is waiting
+here — 114,057 of these lots have more than one building on them.
+
+### Two things about the rent data that are the point, not a detail
+
+The programme caps rent at 100% of Area Median Income. To turn that into a
+number you need HUD's income limits. HUD publishes them for the **New York, NY
+HUD Metro FMR Area**, which is eight counties: Bronx, Kings, New York, Putnam,
+Queens, Richmond, Rockland and Westchester. There is no smaller geography.
+
+So the affordable rent ceiling on a house in Ozone Park is computed partly from
+household incomes in Westchester, and it is the same number in every part of
+Queens. Market rent is not: HUD's Small Area Fair Market Rents are published by
+ZIP code and in Queens they run from about $2,260 to $3,570.
+
+Work out what that means before you read on. **The AMI cap comes out at roughly
+$3,181 a month — which is above market rent in most of the borough.** The
+affordability requirement, in Queens, is barely a constraint at all. It is a
+real constraint in Manhattan, where the same single number meets much higher
+market rents. One figure, one geography, two completely different policies
+depending on where you stand.
+
+### The step that is a guess
+
+Sizing the unit is the weakest thing in this pipeline and you should treat it
+with suspicion.
+
+There is no lot geometry in the `.dbf`. No shape, no orientation, no setbacks,
+no record of what is already in the yard. What there is: lot area, and the
+building's frontage and depth. So the available rear yard is estimated as lot
+area minus the building's footprint, and a third of that is treated as
+buildable, capped at the 800 square feet the rule allows.
+
+An L-shaped lot, a corner lot and a flag lot are all treated identically. And
+109,032 of the lots hit the 800 foot cap, which means that for nearly half the
+borough this careful-looking estimate is not doing any work at all — the answer
+is just "the maximum". **Say that in your card.** A step that looks precise and
+resolves to a constant is worth naming.
+
+## Setting up the web environment
+
+Every sandbox here is one Svelte component taking `params`, `assets` and a
+`mode`. It reports its numbers upward and says when it has settled; the frame
+publishes them. Read `src/lib/sandboxes/bathtub/` first.
+
+The interesting decision in this one is **what to ship**.
+
+You could precompute the answer. Run the pro-forma at build time, store whether
+each lot pencils, and let the browser colour it in. That would be a small file
+and it would be fast.
+
+It is also impossible here, and working out why is the lesson. Every control in
+this sandbox changes the *arithmetic*, not the data. Grant, equity, rate, term,
+cost, rent basis, vacancy, cushion — eight continuous dimensions. There is no
+finite set of answers to precompute, because there is no finite set of questions.
+
+So the pipeline ships the **inputs**: seven numbers per lot, in a flat
+`Float32Array`, plus a byte of eligibility flags. About 7MB. The browser recomputes
+all 246,921 lots on every slider move, in roughly 140 milliseconds, in one pass
+that produces the colours and the panel figures together.
+
+Compare that with the bathtub module, which reached the *opposite* conclusion for
+the same reason. There, connectivity was precomputed into the file, because it
+is a property of the terrain that no parameter changes. Here nothing can be,
+because every parameter changes the sum.
+
+**The question is always the same one: what does a parameter actually move?** If
+it moves the data, precompute. If it moves the arithmetic, ship the inputs. Get
+that backwards and you will either ship a gigabyte or build a sandbox where the
+sliders lag.
+
+## The parameters
+
+Here is the model at the published terms of the programme:
+
+<div data-sandbox="pencil" data-mode="view" data-params='{"grant_max":175000,"equity_share":0,"interest_rate":0.05,"term_months":180,"cost_per_sf":500,"rent_basis":"ami_cap","rent_flat":2000,"vacancy":0.05,"eligibility":"coy","cushion":200,"permits_per_year":1000,"year":2035,"tint":"margin","volumes":false}'></div>
+
+About 62% of eligible lots clear the cushion. Look at where they are. The
+northwest of the borough passes and the east largely does not, which is the
+reverse of what a story about backyard space would predict.
+
+The reason is the **loan ceiling**. A big eastern lot fits the full 800 square
+foot unit, which at $500 a foot costs $430,000 all in; the grant takes $175,000
+off, and the remaining $255,000 is more than the $220,000 the programme will
+lend. The deal dies on the borrowing limit before rent is even considered. A
+smaller lot fits a smaller unit, which fits inside the loan.
+
+**So the programme's own ceiling is inverting its geography.** Nothing in the
+term sheet says "this is for dense neighbourhoods with small yards", and it does
+not say the opposite either. It falls out of the arithmetic.
+
+Now take the grant to zero:
+
+<div data-sandbox="pencil" data-mode="view" data-params='{"grant_max":0,"equity_share":0,"interest_rate":0.05,"term_months":180,"cost_per_sf":500,"rent_basis":"ami_cap","rent_flat":2000,"vacancy":0.05,"eligibility":"coy","cushion":200,"permits_per_year":1000,"year":2035,"tint":"margin","volumes":false}'></div>
+
+12%. One number, chosen by an agency, and five sixths of the programme
+disappears.
+
+Then work through these yourself, and in this order:
+
+- **The rent basis.** Switch from the AMI cap to market rent. Almost nothing
+  happens, for the reason worked out above — and that is the finding. Then ask
+  what the same switch would do in a borough where market rent is $6,000.
+- **Eligibility.** Set it to "ignore eligibility" and the eligible set grows
+  from 165,956 to 244,301 lots. The difference is exactly what the zoning rules
+  cost, in lots, and most of it is the low-density districts outside the transit
+  zone rather than the flood area.
+- **The interest rate and the term.** Both change the margin and neither changes
+  how many lots pencil at the default. Work out why before reading the answer:
+  it is because the binding constraint at these settings is the loan *ceiling*,
+  not the payment, and no rate makes a $255,000 need fit into a $220,000 loan.
+- **Permits per year**, with the year scrubber. This one changes *when* rather
+  than *whether*, and it is the only control that does.
+
+## The assumptions
+
+**The cushion is not the programme's cushion.** In the term sheet, the $200 is a
+test on the household, and it *sizes the loan*: HPD lends whatever amount leaves
+that borrower with $200 a month after their existing debts. It is a rule about a
+person.
+
+Here it is a per-lot build-or-don't-build test on the unit's own cash flow. That
+is a different thing, applied to a different object, producing a different
+number — and it was done because there is no household data and there cannot be,
+since the model does not know who lives anywhere.
+
+That substitution is the whole subject of this course in one move. It is not
+cheating and it is not wrong; it is the only thing available, and the entire
+obligation is to say so out loud where anyone reading the map will see it. It is
+in the model card, it is in the schema, and it is here.
+
+**Ranking is standing in for deciding.** The order in which units get built is
+return on equity, descending. Nobody in the model chooses anything. Thousands of
+separate households, each with their own reasons, are replaced by a sort.
+
+**A tract-uniform rent, and an eight-county rent cap.** Every lot in a ZIP gets
+the same market rent, and every lot in the city gets the same AMI ceiling.
+
+**And the largest one, which is structural:** the model asserts that a subsidy
+programme's reach is a function of its terms. It is at least as much a function
+of who hears about it, who has a contractor they trust, who can survive a
+building site in their garden for eight months, and who believes a city agency
+will do what it said. None of that is in any dataset, so none of it is in the
+map, and the map looks complete anyway. That is the danger.
+
+## Challenge
+
+Point it at another borough — Staten Island is the obvious comparison, and
+Brooklyn is the hard one — and argue about what moves and why.
+
+Or keep Queens and change the instrument rather than its settings. Make the loan
+forgivable. Replace the grant with a tax abatement over ten years. Remove the
+loan ceiling and cap the grant instead. Each of those is a real proposal someone
+has made, each is a small change to the pro-forma, and each produces a
+recognisably different city. Show which neighbourhoods change hands between two
+of them, and say who won.
+
+---
+
+Module by Adam Vosburgh, Fall 2026.

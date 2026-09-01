@@ -18,16 +18,10 @@
   // (metrics.js); both decode the same two PNGs with the same formula.
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
-  // MapLibre finds its tile-parsing worker with
-  //   new Worker(new URL('./maplibre-gl-worker.mjs', import.meta.url))
-  // which is only correct while maplibre-gl.mjs is being served from its own
-  // dist folder. It never is: in dev Vite pre-bundles it into .vite/deps, in the
-  // build Rollup hashes it into _app/immutable/chunks, and in both cases the
-  // worker 404s. Nothing announces this. The style still loads, the attribution
-  // still draws, and not one vector tile is ever parsed - a blank basemap under
-  // a working overlay, with a clean 200 for the page. Hand maplibre a worker
-  // Vite has actually emitted instead of letting it guess.
-  import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+  // The MapLibre worker fix and the never-await-`load` fix both live in
+  // _shared/maplibre.js now that a second sandbox needs them. Read the comments
+  // there before changing anything about how this map is constructed.
+  import { createMap, attachRedraw, toLngLat } from '../_shared/maplibre.js';
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready } = $props();
 
@@ -36,7 +30,7 @@
   let manifest = $state(null);
   let loading = $state('loading the ground heights…');
 
-  let map, overlay, deck, grid, buildings, FloodLayer;
+  let map, overlay, deck, grid, buildings, FloodLayer, detachRedraw;
   let ready = false;
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
@@ -61,75 +55,29 @@
 
   async function boot() {
     try {
-      const [{ Map: MapLibre, setWorkerUrl }, { MapboxOverlay }, deckLayers, flood, metrics] =
-        await Promise.all([
-          import('maplibre-gl'),
-          import('@deck.gl/mapbox'),
-          import('@deck.gl/layers'),
-          import('./FloodLayer.js'),
-          import('./metrics.js')
-        ]);
+      const [deckLayers, flood, metrics] = await Promise.all([
+        import('@deck.gl/layers'),
+        import('./FloodLayer.js'),
+        import('./metrics.js')
+      ]);
       FloodLayer = flood.default;
-      // Before any Map is constructed - the worker pool is built on demand and
-      // then reused for the life of the page.
-      setWorkerUrl(maplibreWorkerUrl);
 
       // The manifest carries both the derived grid's shape and the published
       // constants (NPCC projections, Battery tidal datums) with their citations.
       const m = await (await fetch(`${dataBase}/manifest.json`)).json();
       manifest = m;
 
-      await import('maplibre-gl/dist/maplibre-gl.css');
-
       const [west, south, east, north] = m.bounds3857;
-      const R = 6378137;
-      const toLngLat = (x, y) => [
-        (x / R) * 180 / Math.PI,
-        (2 * Math.atan(Math.exp(y / R)) - Math.PI / 2) * 180 / Math.PI
-      ];
       const sw = toLngLat(west, south);
       const ne = toLngLat(east, north);
 
-      map = new MapLibre({
+      ({ map, overlay } = await createMap({
         container,
-        // Third-party tiles: this course is not about cartography, and a real
-        // basemap makes the flood extent legible as a place rather than a blob.
-        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
         bounds: [sw, ne],
-        fitBoundsOptions: { padding: 10 },
-        attributionControl: { compact: true },
-        interactive: mode === 'edit'
-      });
-      // The basemap is context, not the model. If Carto is unreachable - a
-      // blocked network, a dead CDN, a student on a train - the flood extent
-      // must still draw. Fall back to a blank ground and carry on.
-      // Only a failure of the STYLE ITSELF is fatal to the basemap. An
-      // individual tile that 404s or times out must not trigger the fallback -
-      // the previous version matched "Failed to fetch" anywhere, so one bad
-      // tile blanked the whole map.
-      let fellBack = false;
-      map.on('error', (e) => {
-        const msg = String(e?.error?.message ?? '');
-        const url = String(e?.error?.url ?? e?.sourceId ?? '');
-        const isTile = /\.(pbf|mvt|png|jpg|webp)(\?|$)/i.test(url);
-        // A basemap that silently renders nothing is the worst outcome, so
-        // count tile failures and say so rather than showing a blank field.
-        if (isTile) tileFailures += 1;
-        if (!fellBack && !isTile && /style/i.test(msg)) {
-          fellBack = true;
-          basemapFailed = true;
-          try {
-            map.setStyle({
-              version: 8, sources: {}, glyphs: undefined,
-              layers: [{ id: 'bg', type: 'background',
-                         paint: { 'background-color': '#e9e9e6' } }]
-            });
-          } catch { /* nothing more to do */ }
-        }
-      });
-
-      overlay = new MapboxOverlay({ interleaved: false, layers: [] });
-      map.addControl(overlay);
+        interactive: mode === 'edit',
+        onBasemapFail: () => { basemapFailed = true; },
+        onTileFail: (n) => { tileFailures = n; }
+      }));
 
       loading = 'reading the grid…';
       [grid, buildings] = await Promise.all([
@@ -139,15 +87,9 @@
       deck = { metrics, layersModule: deckLayers, bounds: [sw[0], sw[1], ne[0], ne[1]] };
 
       loading = null;
-      // Do not wait on the map's load event to draw. The overlay is independent
-      // of the basemap, and a style that never loads must not hold up the model.
+      // Draw before the basemap has loaded, never after - see _shared/maplibre.js.
       render();
-      map.on('load', () => { map.resize(); render(); });
-      map.on('styledata', render);
-      // The container is sized by CSS after the map is constructed, so MapLibre
-      // can latch a stale size and render nothing.
-      requestAnimationFrame(() => map.resize());
-      new ResizeObserver(() => map.resize()).observe(container);
+      detachRedraw = attachRedraw(map, container, render);
     } catch (err) {
       error = String(err?.message ?? err);
       onready?.(true); // never hang the cover pipeline on a data failure
@@ -216,6 +158,7 @@
   });
 
   onDestroy(() => {
+    try { detachRedraw?.(); } catch { /* never attached */ }
     try { map?.remove(); } catch { /* already gone */ }
   });
 </script>

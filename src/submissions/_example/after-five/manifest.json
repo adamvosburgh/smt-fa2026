@@ -1,0 +1,30 @@
+{
+  "sandbox": "after-five",
+  "student": "_example",
+  "title": "Nothing Happens At Zero",
+  "gallery_text": "The office rent trend is set to zero and the year scrubber stops working - the district is identical in 2025 and 2050. A sandbox that looks like it is about housing turns out to be about the office market.",
+  "description": "<p>One value changed from the defaults: the office rent trend, from a mild decline to flat.</p><p>With it, buildings convert progressively across the six dates. Without it, the map is frozen: whatever cleared the deal in 2025 clears it in 2050, and whatever failed keeps failing. The year control is still there and still moves, and it changes nothing at all.</p><p>That is worth more than the conversions. The clock in this model is not a clock. It is the office market, wearing a clock's clothes.</p>",
+  "params": {
+    "year": 2050,
+    "conversion_cost_sf": 350,
+    "residential_rent": 75,
+    "office_rent_trend": 0,
+    "incentive_467m": true,
+    "convertibility_threshold": 0.5,
+    "colour_by": "use",
+    "added_floors": true
+  },
+  "cover": {
+    "year": 2050,
+    "conversion_cost_sf": 350,
+    "residential_rent": 75,
+    "office_rent_trend": 0,
+    "incentive_467m": true,
+    "convertibility_threshold": 0.5,
+    "colour_by": "use",
+    "added_floors": true
+  },
+  "assets": [],
+  "app_version": "0.1.0",
+  "submitted": "2026-08-31T00:00:00.000Z"
+}

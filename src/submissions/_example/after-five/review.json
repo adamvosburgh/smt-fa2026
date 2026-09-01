@@ -1,0 +1,18 @@
+{
+  "stage2": {
+    "url": "http://localhost:5174/gallery/_example/after-five/",
+    "ready": true,
+    "rendered": true,
+    "metrics": {
+      "units created": "0",
+      "office floor area removed": "0.0M sf",
+      "buildings converted": "0 of 0 office buildings",
+      "residents living here afterwards": "0",
+      "share of office buildings converted": "0.0%"
+    },
+    "consoleErrors": [],
+    "failedRequests": [],
+    "exceptions": [],
+    "ok": true
+  }
+}

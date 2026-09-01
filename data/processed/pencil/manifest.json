@@ -1,0 +1,110 @@
+{
+  "sandbox": "pencil",
+  "generated": "2026-08-31",
+  "borough": "Queens (BoroCode 4)",
+  "lots": 246921,
+  "start_year": 2027,
+  "start_year_note": "The first year the permitting queue releases lots. A choice, not a finding - the programme has no start date in it.",
+  "bounds": [
+    -73.9557776,
+    40.5676795,
+    -73.700419,
+    40.8008292
+  ],
+  "columns": [
+    "lon",
+    "lat",
+    "adu_sf",
+    "lot_area",
+    "rent_fmr",
+    "tract_income",
+    "tract_idx"
+  ],
+  "column_units": [
+    "degrees",
+    "degrees",
+    "square feet",
+    "square feet",
+    "dollars per month",
+    "dollars per year",
+    "index into tracts.json, -1 for none"
+  ],
+  "flags": {
+    "two_family": 1,
+    "eligible_attached": 2,
+    "eligible_detached": 4,
+    "in_flood_2050": 8,
+    "in_flood_2080": 16,
+    "in_historic_district": 32,
+    "excluded_district": 64,
+    "city_owned": 128
+  },
+  "programme": {
+    "source": "HPD Plus One ADU term sheet, nyc.gov/assets/hpd/downloads/pdfs/services/adu-term-sheet.pdf, read 2026-08-31",
+    "loan_max": 220000,
+    "grant_max": 175000,
+    "interest_rate": 0.05,
+    "term_months": 180,
+    "borrower_income_limit_pct_ami": 165,
+    "rent_cap_pct_ami": 100,
+    "rent_escalation_max": 0.02,
+    "owner_occupancy_days": 270,
+    "cushion": 200
+  },
+  "assumptions": {
+    "soft_cost": {
+      "value": 30000,
+      "note": "Design, filing, permits and survey, as a flat sum per project. No published figure was found for New York ADUs. This is an assumption and the sandbox says so."
+    },
+    "opex_share": {
+      "value": 0.25,
+      "note": "Operating cost - insurance, maintenance, water - as a share of effective rent. A conventional small-landlord rule of thumb, not a measured figure for ADUs."
+    },
+    "property_tax": {
+      "value": 0,
+      "note": "THE MODEL IGNORES PROPERTY TAX. MapPLUTO carries AssessTot for the existing lot, but the marginal assessment of an added ADU is not in any dataset we found, and deriving one would produce a number that looks sourced and is not. Margins here are therefore optimistic by whatever the tax would have been."
+    },
+    "adu_bedrooms": {
+      "value": 1,
+      "note": "Every ADU is priced as a one-bedroom. Rent limits are taken at 1.5 persons per bedroom, which is the convention HUD's own rent schedules use."
+    },
+    "cost_per_sf_default": {
+      "value": 500,
+      "note": "Default construction cost. HPD's 'ADU for You' cost figures could not be verified to exist, so this is an assumption and the schema description says so. It is a control - move it."
+    }
+  },
+  "adu_sizing": {
+    "method": "min(0.33 * (LotArea - BldgFront * BldgDepth), 800), zeroed below 200sf",
+    "buildable_share": 0.33,
+    "max_sf": 800,
+    "note": "The weakest step in the pipeline. The DBF has no lot geometry - no shape, no orientation, no setbacks - so an L-shaped lot, a corner lot and a flag lot are treated identically. The 800sf cap is the published rule; everything before it is an estimate."
+  },
+  "rent_ami_monthly": 3181.25,
+  "rent_ami_note": "The programme's 100%-AMI rent cap, for a 1-bedroom at 1.5 persons. ONE NUMBER FOR THE WHOLE OF QUEENS, and indeed for eight counties: HUD publishes income limits only for the New York, NY HUD Metro FMR Area (Bronx, Kings, New York, Putnam, Queens, Richmond, Rockland, Westchester), so the AMI that sets this cap is computed partly from Westchester and Rockland incomes. It is a scalar here rather than a column because it genuinely does not vary. Market rent does.",
+  "income_limits_100pct": 127250.0,
+  "median_family_income": 104300,
+  "sources": {
+    "pluto": "MapPLUTO 26v2 (data/original/nyc_mappluto_26v2_shp/MapPLUTO.dbf). 856,687 records, 101 fields; only the .dbf is read.",
+    "safmr": "HUD Small Area Fair Market Rents FY2026, 1-bedroom, by ZIP. Small Area rather than county on purpose - the county figure is one number for the whole metro and would not vary.",
+    "income_limits": "HUD FY2026 Income Limits, New York, NY HUD Metro FMR Area - EIGHT COUNTIES, not Queens. No smaller geography is published.",
+    "acs": "Census ACS 5-year 2023, B19013_001E and B25003, tracts in state 36 county 081.",
+    "flood": "NYC Open Data 27ya-gqtm (Future Floodplain 2050s) and ek8y-fsqz (Sea Level Rise Maps, 2080s 100-year), downloaded 2026-08-31, rasterised to a 2048-cell grid over Queens (about 20m). NOTE: these are the published floodplain layers, which are NOT identical to the Zoning Resolution's 'expanded flood area' that the City of Yes ADU rule actually names. They are used as the closest available approximation and the card says so.",
+    "eligibility": "DERIVED BY US from DCP's City of Yes for Housing Opportunity ADU guide. NYC Open Data publishes no ADU eligibility layer - the catalogue was searched on 2026-08-31 and there is none. These flags are our reading of a published rule, not a city determination."
+  },
+  "joins": {
+    "queens_lots": 324150,
+    "bldgclass_a_or_b": 246925,
+    "landuse_01": 247054,
+    "tests_disagree": 129,
+    "dropped_bad_unitsres": 4,
+    "dropped_no_centroid": 0,
+    "kept": 246921,
+    "lots_with_more_than_one_building": 114057,
+    "lots_joined_to_a_tract": 246921,
+    "lots_with_no_safmr_for_their_zip": 3,
+    "eligible_attached": 244301,
+    "eligible_detached": 165956,
+    "note": "Total every join against a published figure before believing it. BldgClass A*/B* and LandUse 01 are independent tests of the same thing and they are reported separately above so a disagreement between them is visible rather than averaged away."
+  },
+  "why_this_shape": "Precompute the INPUTS to the pro-forma, never its answers. Every control changes the arithmetic rather than the data, and the parameter space is continuous and six-dimensional, so there is no set of results to precompute. The browser recomputes every lot on every slider move in one pass over these arrays."
+}

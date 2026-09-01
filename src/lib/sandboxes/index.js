@@ -7,6 +7,9 @@
 
 import bathtub from './bathtub/meta.js';
 import bathtubSchema from './bathtub/schema.json';
+import coefficientsSchema from './coefficients/schema.json';
+import pencilSchema from './pencil/schema.json';
+import afterFiveSchema from './after-five/schema.json';
 
 // --- stubs. Each gets a meta.js + schema.json + component as it is built. ---
 import studioTwin from './studio-twin/meta.js';
@@ -27,7 +30,10 @@ const loaders = {
 };
 
 const schemas = {
-  bathtub: bathtubSchema
+  bathtub: bathtubSchema,
+  coefficients: coefficientsSchema,
+  pencil: pencilSchema,
+  'after-five': afterFiveSchema
   // ...one per sandbox as it is built.
 };
 

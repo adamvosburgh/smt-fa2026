@@ -18,6 +18,20 @@ See the header of each script for what that means in its case.
 
 | Script | Sandbox | Reads | Writes |
 | --- | --- | --- | --- |
+| `pencil.py` | 02 Does It Pencil | MapPLUTO, HUD Small Area FMR + Income Limits, ACS tract income, NYC floodplain layers | `processed/pencil/` |
+| `after-five.py` | 03 After Five | DCP 3-D Building Model (CityGML), NYC Building Footprints, MapPLUTO, DOB filings + certificates of occupancy | `processed/after-five/` |
 | `bathtub.py` | 07 Bathtub | USGS 3DEP DEM, Building Footprints, MapPLUTO, ACS tracts | `processed/bathtub/` |
+
+Sandbox 04, The Coefficients, has **no pipeline and no processed data**. Its data
+is source code - a vendored simulation engine under
+`src/lib/sandboxes/coefficients/vendor/` - so there is nothing here for it and
+nothing in `processed/`.
+
+Two shared modules sit beside the pipelines:
+
+| Module | What it is |
+| --- | --- |
+| `_common.py` | Locating `data/original`, reading named columns out of a DBF without a geo stack, and one value out of `.env`. |
+| `afterfive_massing.py` | Streaming CityGML into footprint-plus-height records. Its header explains why the CityGML is used rather than the Rhino files DCP also publishes. |
 
 Run them from the repo root, not from this folder.
