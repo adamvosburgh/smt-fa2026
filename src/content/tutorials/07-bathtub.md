@@ -132,7 +132,7 @@ implementation and it's commented for that purpose.
 
 ## The parameters
 
-Two of these carry the sandbox and the rest are furniture.
+Three of these carry the sandbox and the rest are furniture.
 
 **Hydraulic connectivity.** This is the one. A naive bathtub floods every low
 spot below the waterline, whether or not water can physically get there - the
@@ -149,7 +149,7 @@ claim that a coastline is a contour.
 
 Here it is with connectivity off, at a metre and a half:
 
-<div data-sandbox="bathtub" data-mode="view" data-params='{"slr_m":1.5,"link_year":false,"connectivity":false,"surge_m":0,"tide":"mhhw","percentile":75,"year":2080,"basemap":"elevation","flood_line":true}'></div>
+<div data-sandbox="bathtub" data-mode="view" data-params='{"slr_m":1.5,"link_year":false,"connectivity":false,"aep":"none","surge_m":0,"tide":"mhhw","percentile":75,"year":2080,"basemap":"elevation","flood_line":true}'></div>
 
 **Which projection.** The percentile control. Since there are four published
 values and no median, choosing one is unavoidable, and the choice is an editorial
@@ -157,10 +157,34 @@ one made on the reader's behalf. Set the date to 2150 and click through the four
 the 10th percentile is 1.0 metres and the 90th is 4.5. The spread is not
 symmetric, and the interesting disagreement lives in the tail.
 
-The rest - surge, tide state, depth shading, the flood line toggle - are there so
-you can see what each one contributes. Storm surge in particular is worth playing
-with precisely because of how crude it is here: it's a number added to every
-cell at once, with no arrival, no peak, and no wind.
+**The storm, by how often.** Storm surge started out as a slider in metres, which
+is an honest control and a useless one - nobody knows what 1.75 metres means.
+It is now a choice between the four levels NOAA publishes for this gauge, named
+by how often the water gets that high: 99%, 50%, 10% and 1% in any given year.
+The metre slider is still there as an override, so you can set a height by hand
+and read off roughly how often it happens.
+
+Two things fell out of doing that, and both are the kind of thing that only
+shows up when you go to the source. The first is that the four levels are the
+four levels: there is no 2% and no 0.2% in this product, and the "500-year
+flood" people talk about is a FEMA quantity computed a different way. If your
+control offers a value the source doesn't publish, you invented it.
+
+The second is arithmetic. These levels are fitted to the highest water level of
+each year, and the highest water level of a year happens at high tide - so the
+tide is already inside the number. NOAA states the 1% level twice, as 2.40m
+above NAVD88 and as 1.70m above mean higher high water, and those are the same
+sentence. Which means the tide control cannot be added to it, and picking a
+probability greys the tide out instead. Getting that wrong would have added
+about 70cm of water to every 100-year map the sandbox draws, and nothing on the
+screen would have looked broken.
+
+Worth knowing what these levels leave out, too: they are still water, no waves.
+The 1% is about 7.9 feet above NAVD88 and Sandy reached about 11.3 feet at this
+gauge. That gap is not an error in either number.
+
+The rest - tide state, depth shading, the flood line toggle - are there so you
+can see what each one contributes.
 
 ## The assumptions
 

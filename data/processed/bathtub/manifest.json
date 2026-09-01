@@ -5,7 +5,8 @@
   "sources": {
     "dem": "USGS 3DEP 1/3 arc-second (~10m), clipped to NYC. EPSG:4269, metres NAVD88.",
     "sea_level": "NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. 10th/25th/75th/90th percentiles - no median is published.",
-    "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, relative to NAVD88."
+    "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, relative to NAVD88.",
+    "exceedance": "NOAA Extreme Water Levels, station 8518750, Tidal Datums and Exceedance Probability Levels, read 2026-09-01. Still-water levels from a GEV fit to annual maxima with the MSL trend removed - not FEMA base flood elevations. This product retires 2026-09-30."
   },
   "tractid": {
     "file": "tractid.png",
@@ -107,5 +108,17 @@
     "msl": -0.061,
     "mhhw": 0.695
   },
-  "waterSurfaceM": 0.3
+  "waterSurfaceM": 0.3,
+  "exceedanceM": {
+    "99": 1.2,
+    "50": 1.44,
+    "10": 1.78,
+    "1": 2.4
+  },
+  "exceedance2026M": {
+    "99": 1.3,
+    "50": 1.54,
+    "10": 1.88,
+    "1": 2.5
+  }
 }

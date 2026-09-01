@@ -1,14 +1,15 @@
 {
   "stage2": {
-    "url": "http://localhost:5174/gallery/_example/after-five/",
+    "url": "http://localhost:5173/gallery/_example/after-five/",
     "ready": true,
     "rendered": true,
     "metrics": {
-      "units created": "0",
-      "office floor area removed": "0.0M sf",
-      "buildings converted": "0 of 0 office buildings",
-      "residents living here afterwards": "0",
-      "share of office buildings converted": "0.0%"
+      "units created": "2,288",
+      "office floor area removed": "2.7M sf",
+      "buildings converted": "67 of 381 office buildings",
+      "residents living here afterwards": "4,599",
+      "office jobs displaced": "5,453",
+      "share of office buildings converted": "17.6%"
     },
     "consoleErrors": [],
     "failedRequests": [],

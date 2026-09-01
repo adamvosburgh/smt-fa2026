@@ -35,6 +35,7 @@ For `pencil.py` (Sandbox 02):
 | `future_floodplain_2050s_*.geojson` | Future Floodplain 2050s, NYC Open Data `27ya-gqtm`. |
 | `sea_level_rise_2080s_100yr_*.geojson` | Sea Level Rise Maps, 2080s 100-year floodplain, NYC Open Data `ek8y-fsqz`. |
 | `acs_queens_tracts_2023.json` | Cached Census API response, ACS 5-year 2023, tracts in state 36 county 081. Written by the script; delete it to refetch. |
+| `hpd_papl_plans.json` | HPD Pre-Approved Plan Library, all eleven designs, read from `housing.hpd.nyc.gov/adu/library` on 2026-09-01. Hand-transcribed rather than scraped, so it carries its own provenance notes in `_source` and `_note`. Median published cost midpoint is $603/sf across a $248-$1,500 spread. |
 
 For `after-five.py` (Sandbox 03):
 
@@ -43,11 +44,19 @@ For `after-five.py` (Sandbox 03):
 | `DA_WISE_GML/DA_WISE_GMLs/DA*.gml` | DCP 3-D Building Model as CityGML 2.0, NYC Open Data `tnru-abg2`. Twenty delivery areas, 13GB, EPSG:2263 in feet. Only DA12 and DA19 are read - they hold Manhattan Community Districts 1 and 5. Every surface carries its BIN, which is why this is used and not the file below. |
 | `3D/NYC_3DModel_MN01.3dm`, `MN05` | The same survey as Rhino files, NYC Open Data `u5j4-zxpn`. **Not used.** They carry no attributes at all - no BIN, no BBL - so identity had to be inferred by position, and that was wrong for one building in five. Kept only because the comparison is documented in `afterfive_massing.py`. |
 | `dob_manhattan_conversions.json` | Cached DOB responses: legacy job filings `ic3t-wcy2` and certificates of occupancy `pkdm-hqz6`. Written by the script; delete it to refetch. |
+| `ny_wac_S000_JT00_2023.csv.gz` | LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs, 2023. One row per workplace census block: `C000` total primary jobs, `CNS01`-`CNS20` by NAICS sector. Joined to the districts on MapPLUTO's `BCTCB2020`, not by position. |
+| `DECENNIALDP2020.DP1_*/` | Also read by `after-five.py`, for resident counts by tract. Manhattan's tracts total 1,694,251, which is the published 2020 New York County figure - that total is the join's check. |
 
 Download URLs are deliberately not listed here: they have not been verified
 against what was actually fetched, and a stale URL that looks authoritative is
 worse than none. Add one only once you have re-downloaded from it and the
 pipeline has run clean.
+
+**One exception, added 2026-09-01.** `data/scripts/fetch-sources.sh` carries URLs
+for the sources identified in `utilities/2026-09-01 Sources — The Unfetched
+Datasets.md`. Those URLs were verified by reading the pages, not by downloading
+the files, so the first run of that script is also the first test of them. If one
+fails, fix it there rather than adding it to this table.
 
 Two further inputs to the bathtub model are not files and are already in the
 repo, hardcoded with their citations: the NPCC4 sea level rise projections

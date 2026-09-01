@@ -91,6 +91,19 @@ INPUTS  (data/original/, as downloaded, never edited in place)
       Consequence, stated in the card: ADDED FLOORS COME FROM LEGACY FILINGS
       ONLY. Buildings that converted through DOB NOW convert without growing.
 
+  ny_wac_S000_JT00_2023.csv.gz
+      LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs,
+      2023. One row per WORKPLACE census block. TAKEN: C000, total primary jobs,
+      and CNS09-CNS14, the office-using sectors.
+      JOINED ON MapPLUTO's BCTCB2020 - the lot's own 2020 census block - and not
+      by position, like everything else here.
+
+  DECENNIALDP2020.DP1-Data.csv
+      2020 decennial census, DP1, total population by tract. TAKEN: DP1_0001C,
+      summed over the tracts the district's lots stand in. The check that this
+      join is right: Manhattan's tracts total 1,694,251, which is the published
+      New York County count exactly.
+
 OUTPUTS (data/processed/after-five/)
 ------------------------------------
   manifest.json     district bounds, building count, column order, the
@@ -111,6 +124,21 @@ WHAT IS CUT, AND WHY
 
   THE WEEKEND ACTIVITY INDEX. It needs a weekend profile. Deriving one from a
   weekday distribution is invented precision.
+
+  THE MOVING CROWD, and it is cut for a reason worth reading rather than for
+  time. The two POPULATIONS are counted and shipped - office-using jobs from
+  LODES, residents from the census - and that is the presence panel over the
+  map. What does not exist is the HOURS between them.
+      NHTS table 8-1 is national and six bands wide. Its entire statement about
+      the evening is that 28% of trips begin between 6pm and midnight.
+      ACS B08302 is half-hour bands at tract level - the right shape - but its
+      universe is departures TO work. It is a morning table and there is no
+      evening counterpart, because the census does not ask.
+  Nothing published says when a Manhattan office empties. And the schedule is
+  not even all of it: which building a trip starts at would be an assumption
+  doing as much work as the schedule is. An animation over both would look far
+  more specific than either. So two counts ship and no curve is drawn through
+  them.
 
 USAGE
 -----
@@ -170,13 +198,27 @@ INCENTIVE_467M = {
 # here is OUR score of THEIR criteria. That sentence, or one like it, is in the
 # model card. Do not present this as Gensler's algorithm.
 #
-# Two of their criteria are dropped outright rather than faked:
+# THREE of their criteria are dropped outright rather than faked. The third was
+# added on 2026-09-01: YearBuilt was carrying facade type AND structural bay,
+# which is one proxy asked to stand in for two different things it does not
+# measure. A 1920s building can have been re-clad and a 1960s one can have a
+# 30-foot bay; the year says nothing about either. Facade type is at least
+# CORRELATED with age, so age keeps that job and structural bay is named as
+# missing instead.
 #   window operability - not derivable from anything available
 #   elevator count     - not in MapPLUTO; inventing one from floor area would
 #                        be exactly the failure this course is about
+#   structural bay     - not in any dataset here. Was silently folded into age.
+#
+# THE FOUR SUB-SCORES SHIP AS FOUR COLUMNS, not as one weighted total. The
+# weights are ours, and a weight the reader cannot move is a weight the reader
+# cannot argue with - so the browser holds them as controls and does the sum.
+# That is the only reason buildings.bin is 18 wide rather than 15.
 CONVERTIBILITY = {
-    "note": "OUR score of published criteria, not Gensler's algorithm. Weights "
-            "are ours and are exposed here so they can be argued with.",
+    "note": "OUR score of published criteria, not Gensler's algorithm. The four "
+            "sub-scores ship as columns and the weighted sum is done in the "
+            "browser, so the weights are controls rather than something baked "
+            "in. These are the DEFAULTS the schema starts from.",
     "weights": {
         "floorplate_depth": 0.35,
         "floor_to_floor": 0.25,
@@ -187,6 +229,9 @@ CONVERTIBILITY = {
         "window_operability": "Not derivable from any dataset available. Dropped.",
         "elevator_count": "Not in MapPLUTO. Dropped rather than invented from "
                           "floor area.",
+        "structural_bay": "Not in any dataset here. It used to be folded into "
+                          "the age proxy, which does not measure it. Named as "
+                          "missing instead.",
     },
     "proxies": {
         "floorplate_depth": "BldgDepth halved, as a core-to-window estimate. "
@@ -195,10 +240,395 @@ CONVERTIBILITY = {
         "floor_to_floor": "Modelled height divided by NumFloors. Averages over "
                           "mechanical floors and lobbies.",
         "floorplate_area": "BldgArea / NumFloors.",
-        "age": "YearBuilt, standing in for facade type AND structural bay - two "
-               "criteria it does not actually measure.",
+        "age": "YearBuilt, standing in for facade type only. It no longer "
+               "stands in for structural bay as well - see dropped.",
     },
+    # The only number Gensler published that anyone can check themselves: of
+    # the 1,300+ buildings they scored, about a quarter came out suitable. Their
+    # ALGORITHM is closed, so this is not a validation - it is the one place our
+    # score and theirs can be held up beside each other. The sandbox marks the
+    # threshold at which our score passes a quarter of the district, and that
+    # mark MOVES when the weights move, which is the point of it.
+    "gensler_published_share": 0.25,
+    "gensler_share_note": "Gensler's published result: about 25% of the 1,300+ "
+                          "buildings they scored were suitable for conversion. "
+                          "The criteria are published, the scoring is not. This "
+                          "is a comparison, not a validation.",
 }
+
+# --- the economics ----------------------------------------------------------
+# These used to live only in gates.js, and one of them lived in BOTH places with
+# two different values: gates.js had officeRentBase 38, this manifest had
+# office_rent_base_psf_yr 62. Neither was sourced, and the code's comment called
+# its 38 "EFFECTIVE" against the manifest's "asking" - so the front end was
+# quietly applying a 39% haircut to a figure nobody had published either, in a
+# comment, where no reader would ever find it. That is the whole reason the
+# asking-to-effective discount is now a CONTROL with a stated default of zero.
+#
+# A constant that lives in two places has two values. These now live here, and
+# gates.js reads them off the manifest.
+ECONOMICS = {
+    "note": "Where a figure is published, it is cited and the browser reads it "
+            "from here. Where it is a market convention or a choice, it is a "
+            "control in schema.json and this is only its default.",
+
+    "office_rent_base_psf_yr": 54,
+    "office_rent_base_source":
+        "$54/sf/yr ASKING rent, Manhattan Class B and C offices combined, "
+        "CoStar data as of 30 April 2024, published in the NYC Comptroller's "
+        "Spotlight on the office market, 14 May 2024. Class B and C are the "
+        "stock anyone would convert; the 5-star figure in the same report is "
+        "roughly twice this and describes buildings nobody converts, while an "
+        "all-class average makes conversion look worse than it is. B and C are "
+        "COMBINED in the source and this model must not pretend to separate "
+        "them.",
+    "office_rent_base_staleness":
+        "Pinned to that edition on purpose. The figure is 28 months old at the "
+        "start of the course, and the November 2025 successor report DROPS "
+        "rent-by-class entirely, so it cannot be refreshed from this source. "
+        "Re-pointing the citation means finding a different source, not a newer "
+        "edition of this one.",
+    "office_rent_asking_vs_effective":
+        "ASKING IS NOT EFFECTIVE. Free rent, tenant improvement allowances and "
+        "other concessions sit between the two, and in this market they are "
+        "large. NO PUBLISHED EFFECTIVE-RENT SERIES WAS FOUND for Manhattan B "
+        "and C stock. So nothing is subtracted here: the discount is a control "
+        "and its default is zero, which means the shipped model values office "
+        "space at the published asking rent and is therefore valuing it high.",
+
+    "cap_rate": 0.055,
+    "cap_rate_note":
+        "A MARKET CONVENTION, NOT A MEASUREMENT. No published New York office "
+        "cap-rate series was verified for this build. It is a control. Note "
+        "that one cap rate is applied to BOTH uses, which is known to be wrong "
+        "- office and residential do not trade at the same yield, and the gap "
+        "between them is part of why conversion pencils at all - and it also "
+        "makes the control nearly inert, because it scales both sides of the "
+        "comparison at once.",
+
+    "opex_share": 0.35,
+    "opex_share_note": "Operating cost as a share of gross rent. Ours. A "
+                       "control.",
+
+    "base_year": 2025,
+    "cost_penalty": 1.0,
+    "cost_penalty_note":
+        "How much harder a badly-shaped building is to convert, as a multiplier "
+        "on the cost control: a building scoring 1 costs what the control says, "
+        "one scoring 0 costs twice that. OURS. It is what makes the pro-forma "
+        "differ from building to building at all - without it every building in "
+        "the district faces the same three district-wide numbers and the gate "
+        "opens for all of them at once or for none. It also makes the two gates "
+        "correlated by construction, which the card says.",
+}
+
+
+# --- who is actually here ---------------------------------------------------
+# LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs, 2023:
+#   ny_wac_S000_JT00_2023.csv.gz
+# One row per workplace census block, C000 = total primary jobs, CNS01-CNS20 =
+# jobs by NAICS sector.
+#
+# "Office-using" is the standard real-estate reading of those sectors -
+# Information, Financial Activities, and Professional and Business Services -
+# which in LODES is CNS09 through CNS14. It is a CONVENTION, and a broad one: it
+# counts a bank teller and a lawyer alike and it excludes a hospital
+# administrator. It is used here because the model removes OFFICE FLOOR AREA and
+# needs to say how many jobs went with it.
+#
+# THE JOIN IS ID TO ID like every other join in this pipeline. MapPLUTO carries
+# BCTCB2020, the lot's 2020 census block: one borough digit, six tract digits,
+# four block digits. LODES keys on the 15-digit GEOID, which for Manhattan is
+# "36061" plus the last ten of those. Nothing is matched by position.
+LODES_FILE = "ny_wac_S000_JT00_2023.csv.gz"
+CENSUS_DP1 = "DECENNIALDP2020.DP1-Data.csv"   # 2020 decennial, by census tract
+OFFICE_USING = {
+    "CNS09": "Information (NAICS 51)",
+    "CNS10": "Finance and insurance (52)",
+    "CNS11": "Real estate (53)",
+    "CNS12": "Professional, scientific and technical services (54)",
+    "CNS13": "Management of companies (55)",
+    "CNS14": "Administrative and support services (56)",
+}
+
+
+def read_jobs(original, pluto, districts):
+    """Jobs at work in each district, from LODES, joined on the census block.
+
+    Returns the counts and the density the browser needs to turn converted
+    office floor area into displaced office jobs - plus the coverage figures,
+    because a join total that is not checked against something is not a join
+    total, it is a hope.
+    """
+    path = original / LODES_FILE
+    if not path.exists():
+        print(f"lodes: {LODES_FILE} not found - the presence figures are skipped")
+        return None
+
+    # district index -> the set of block GEOIDs its lots stand on, and its
+    # office floor area. Both come off the SAME lots, so the density below is a
+    # ratio of two quantities measured over one footprint.
+    blocks = {i: set() for i in range(len(districts))}
+    tracts = {i: set() for i in range(len(districts))}
+    office_sf = {i: 0.0 for i in range(len(districts))}
+    homes = {i: 0.0 for i in range(len(districts))}
+    cd_index = {DISTRICT_CD[d]: i for i, d in enumerate(districts)}
+    for rec in pluto.values():
+        try:
+            i = cd_index[int(float(rec["cd"]))]
+        except (ValueError, TypeError, KeyError):
+            continue
+        b = (rec.get("bctcb2020") or "").strip()
+        if len(b) == 11 and b[0] == "1":
+            blocks[i].add("36061" + b[1:])
+        t = (rec.get("bct2020") or "").strip()
+        if len(t) == 7 and t[0] == "1":
+            tracts[i].add("36061" + t[1:])
+        try:
+            office_sf[i] += float(rec["officearea"] or 0)
+        except (ValueError, KeyError):
+            pass
+        # UnitsRes is PER LOT and is summed per lot here, so it does NOT hit
+        # bathtub's multiply-by-buildings bug - nothing is joined onto footprints.
+        try:
+            homes[i] += float(rec["unitsres"] or 0)
+        except (ValueError, KeyError):
+            pass
+
+    county_total = county_office = 0
+    jobs = {i: 0 for i in blocks}
+    office_jobs = {i: 0 for i in blocks}
+    seen = {i: set() for i in blocks}
+    import gzip as _gzip
+    import csv as _csv
+    with _gzip.open(path, "rt") as f:
+        for row in _csv.DictReader(f):
+            g = row["w_geocode"]
+            if not g.startswith("36061"):       # New York County only
+                continue
+            total = int(row["C000"])
+            office = sum(int(row[k]) for k in OFFICE_USING)
+            county_total += total
+            county_office += office
+            for i, want in blocks.items():
+                if g in want:
+                    jobs[i] += total
+                    office_jobs[i] += office
+                    seen[i].add(g)
+
+    # --- who LIVES here, from the published count rather than a multiplier.
+    # UnitsRes times a borough-average household size gives CD1 about 98,000
+    # people; the 2020 census counted 85,841. The multiplier is wrong in a
+    # knowable direction - Lower Manhattan's households are smaller than the
+    # borough's and its units are not all occupied - so the counted figure is
+    # used and the multiplier is kept only as the cross-check that found it.
+    #
+    # The check that this join is right: Manhattan's tracts total 1,694,251,
+    # which is the published 2020 population of New York County exactly. Nothing
+    # here is believed until a total lands on a published one - the same rule
+    # sandbox 07 uses. No tract falls in both districts.
+    pop_by_tract = {}
+    dp1 = next(original.rglob(CENSUS_DP1), None)
+    if dp1:
+        import csv as _c
+        with open(dp1, newline="") as f:
+            rd = _c.reader(f)
+            next(rd, None), next(rd, None)
+            for row in rd:
+                g = row[0]
+                if g.startswith("1400000US36061"):
+                    try:
+                        pop_by_tract[g[9:]] = int(row[2])
+                    except (ValueError, IndexError):
+                        pass
+        print(f"census: {len(pop_by_tract):,} Manhattan tracts, "
+              f"{sum(pop_by_tract.values()):,} people (2020 decennial DP1) - "
+              f"the published New York County count is 1,694,251")
+    else:
+        print(f"census: {CENSUS_DP1} not found - resident counts are skipped")
+
+    out = {}
+    for i, d in enumerate(districts):
+        if not office_jobs[i] or not office_sf[i]:
+            continue
+        out[d] = {
+            "jobs": jobs[i],
+            "office_using_jobs": office_jobs[i],
+            "office_sq_ft": round(office_sf[i]),
+            "sq_ft_per_office_job": round(office_sf[i] / office_jobs[i]),
+            "residents_2020": sum(pop_by_tract.get(t, 0) for t in tracts[i]),
+            "tracts": len(tracts[i]),
+            "homes": round(homes[i]),
+            "blocks": len(blocks[i]),
+            "blocks_with_no_lodes_row": len(blocks[i]) - len(seen[i]),
+        }
+        print(f"census: {d} {out[d]['residents_2020']:,} residents over "
+              f"{len(tracts[i])} tracts (UnitsRes times household size would "
+              f"say {round(homes[i] * 2.01):,} - it is a multiplier, not a count)")
+        print(f"lodes: {d} {jobs[i]:,} jobs, {office_jobs[i]:,} office-using, "
+              f"one per {out[d]['sq_ft_per_office_job']:,} sq ft of office floor "
+              f"area ({out[d]['blocks_with_no_lodes_row']} of {len(blocks[i])} "
+              f"blocks carry no LODES row)")
+    print(f"lodes: New York County {county_total:,} jobs, {county_office:,} "
+          f"office-using ({100 * county_office / county_total:.0f}%)")
+
+    return {
+        "note": "How many people are AT WORK in each district, so that removing "
+                "office floor area can remove jobs with it. Everything here is "
+                "counted. What is NOT here is a schedule - see what_is_missing.",
+        "source": "LEHD LODES 8, Workplace Area Characteristics, New York "
+                  "State, all jobs, 2023 (ny_wac_S000_JT00_2023.csv.gz). "
+                  "Primary jobs by workplace census block.",
+        "residents_source": "2020 decennial census, DP1 total population, "
+                            "summed over the census tracts the district's lots "
+                            "stand in. Manhattan's tracts total 1,694,251, which "
+                            "is the published New York County count exactly, and "
+                            "no tract falls in two districts.",
+        "homes_note": "MapPLUTO's UnitsRes, totalled per LOT and never pushed "
+                      "onto buildings - which is the bug that gave sandbox 07 "
+                      "eleven million homes in a city of three and a half. It is "
+                      "here as the cross-check that caught a mistake: UnitsRes "
+                      "times the borough household size makes Lower Manhattan "
+                      "about 98,000 people and the census counted 85,841. The "
+                      "counted number is the one used.",
+        "joined_on": "MapPLUTO BCTCB2020, the lot's 2020 census block, against "
+                     "the LODES 15-digit block GEOID. An ID join, not a spatial "
+                     "one.",
+        "office_using_sectors": OFFICE_USING,
+        "office_using_note": "The standard real-estate reading of those sectors, "
+                             "and a broad one: it counts a bank teller and a "
+                             "lawyer alike and leaves out a hospital "
+                             "administrator.",
+        "county_jobs": county_total,
+        "county_office_using_jobs": county_office,
+        "districts": out,
+        "density_caveat": "Roughly one office job per 490 square feet in Lower "
+                          "Manhattan and per 324 in Midtown South. Both are well "
+                          "above the 150-250 square feet per worker that gets "
+                          "quoted for a fitted-out floor, and the difference is "
+                          "vacancy plus the fact that OfficeArea is gross floor "
+                          "area and LODES counts primary jobs only. The model "
+                          "uses the measured ratio rather than the rule of "
+                          "thumb, so a converted building displaces the jobs "
+                          "that were really recorded on that floor area.",
+        "what_is_missing":
+            "THE HOURS. This gives the size of the two populations and nothing "
+            "about when either of them is on the street, which is the thing the "
+            "sandbox is named after. NHTS Table 8-1 is national, six bands wide, "
+            "and its finest statement about the evening is that 28% of trips "
+            "begin somewhere between 6pm and midnight. ACS B08302 is half-hour "
+            "bands at tract level, but its universe is departures TO work, so it "
+            "describes the morning only. There is no published table of when "
+            "people leave Manhattan offices in the evening. So the counts are "
+            "reported and no curve is drawn through them.",
+    }
+
+
+def measure_sf_per_unit(raw):
+    """Floor area per apartment, MEASURED from the conversions on record.
+
+    It used to be 900, which was not from anywhere. This is the same DOB legacy
+    filing set the historical record comes from, read for a different question:
+    when a Manhattan building with no apartments in it became a residential
+    building, how much floor area was there per dwelling unit afterwards.
+
+    Four filters, and each one is load-bearing:
+
+      1. PROPOSED occupancy residential, EXISTING occupancy a business use.
+         The occupancy letters mean DIFFERENT THINGS in the two building-code
+         vintages this dataset spans - under the 1968 code E is business and B
+         is storage; under the 2008/2014 code B is business and E is
+         educational - so the letter is read against the filing's own year.
+         'COM', DOB's own generic, is unambiguous in both.
+      2. existing_dwelling_units == 0. The building had no apartments, so this
+         is a conversion rather than an alteration to an apartment house.
+      3. A UNIT FLOOR. proposed_zoning_sqft is the floor area of the WHOLE
+         BUILDING, not of the part being converted, so a filing that adds two
+         apartments to a twenty-storey tower reports the whole tower against two
+         units. Requiring ten or more units keeps the filings where the building
+         really is being converted. THIS CHOICE MOVES THE ANSWER BY 40% and the
+         whole ladder is reported below rather than just the rung we picked.
+      4. Totals, not the median of ratios. The model turns a district's entire
+         office stock into units, so the quantity that has to be right is the
+         district-level ratio: all the floor area over all the units.
+
+    Returns the figure and everything needed to argue with it.
+    """
+    RESIDENTIAL = {"J-1", "J-2", "J-3", "R-1", "R-2", "R-3", "RES"}
+    rows = []
+    for r in raw["legacy"]:
+        d = r.get("pre__filing_date") or ""
+        year = int(d[-4:]) if len(d) >= 4 and d[-4:].isdigit() else None
+        if year is None:
+            continue
+        was = (r.get("existing_occupancy") or "").strip()
+        now = (r.get("proposed_occupancy") or "").strip()
+        if now not in RESIDENTIAL:
+            continue
+        # 'B' is business only under the newer code; 'E' only under the older.
+        if not (was == "COM" or (was == "E" and year < 2009)
+                or (was == "B" and year >= 2009)):
+            continue
+
+        def num(k):
+            try:
+                return float(r.get(k) or 0)
+            except (TypeError, ValueError):
+                return 0.0
+
+        before, after = num("existing_dwelling_units"), num("proposed_dwelling_units")
+        area = num("proposed_zoning_sqft")
+        if before != 0 or after <= 0 or area <= 0:
+            continue
+        rows.append((area, after, year))
+
+    ladder = {}
+    for cut in (1, 2, 5, 10, 20, 50):
+        keep = [(a, u) for a, u, _ in rows if u >= cut]
+        if not keep:
+            continue
+        sf = sum(a for a, _ in keep)
+        un = sum(u for _, u in keep)
+        ladder[str(cut)] = {"filings": len(keep), "sq_ft": round(sf),
+                            "units": round(un), "sf_per_unit": round(sf / un)}
+
+    kept = [(a, u, y) for a, u, y in rows if u >= 10]
+    sf = sum(a for a, _, _ in kept)
+    un = sum(u for _, u, _ in kept)
+    value = sf / un if un else 0.0
+    print(f"units: {len(kept):,} conversion filings of 10+ units, "
+          f"{sf:,.0f} sf over {un:,.0f} units = {value:,.0f} sf/unit "
+          f"(was an unsourced 900)")
+    return {
+        "sf_per_unit": round(value),
+        "measured_from": "DOB Job Application Filings (ic3t-wcy2), Manhattan, "
+                         "change of use/occupancy, "
+                         f"{min(y for *_, y in kept)}-{max(y for *_, y in kept)}",
+        "filings": len(kept),
+        "total_sq_ft": round(sf),
+        "total_units": round(un),
+        "filters": [
+            "proposed occupancy residential; existing occupancy a business use, "
+            "read against the filing's year because the occupancy letters mean "
+            "different things under the 1968 and the 2008/2014 codes",
+            "existing_dwelling_units == 0, so the building had no apartments "
+            "before - a conversion, not an alteration",
+            "ten or more proposed dwelling units",
+            "total floor area over total units, not the median of the ratios",
+        ],
+        "why_a_unit_floor":
+            "proposed_zoning_sqft is the WHOLE BUILDING'S zoning floor area, "
+            "not the converted part, so a filing that adds two apartments to a "
+            "twenty-storey tower reports the whole tower against two units. "
+            "Without a floor the number is inflated by exactly that.",
+        "sensitivity_to_the_unit_floor": ladder,
+        "sensitivity_note":
+            "The cut is ours and it moves the answer by 40%: 1,366 sf/unit with "
+            "no floor, 907 if only conversions of fifty units or more count. "
+            "The old unsourced 900 is what you get at the top of that ladder, "
+            "which is a coincidence worth noticing rather than a vindication.",
+    }
+
 
 DOB_LEGACY = "ic3t-wcy2"     # DOB Job Application Filings (legacy BIS)
 DOB_CO = "pkdm-hqz6"         # DOB NOW: Certificate of Occupancy
@@ -369,7 +799,7 @@ def main():
     cols = ["BBL", "CD", "BoroCode", "BldgClass", "BldgArea", "OfficeArea",
             "ComArea", "ResArea", "NumFloors", "YearBuilt", "LotArea",
             "BldgFront", "BldgDepth", "BuiltFAR", "CommFAR", "ResidFAR",
-            "UnitsRes", "Address"]
+            "UnitsRes", "Address", "BCTCB2020"]
     pluto = {}
     for rec in read_dbf(original / "nyc_mappluto_26v2_shp" / "MapPLUTO.dbf", cols):
         if rec["borocode"] != "1":
@@ -383,6 +813,9 @@ def main():
             pluto[bbl] = rec
     print(f"pluto: {len(pluto):,} lots in {'/'.join(args.districts)} "
           f"(CD {sorted(wanted_cd)})")
+
+    # ---- 1b. who works here ----------------------------------------------
+    presence = read_jobs(original, pluto, args.districts)
 
     # ---- 2. BIN -> BBL, then the massing ----------------------------------
     # NYC Building Footprints is used ONLY as a lookup table here: it turns a
@@ -429,6 +862,8 @@ def main():
     # ---- 3. filings ------------------------------------------------------
     raw = fetch_filings(original / "dob_manhattan_conversions.json", args.skip_dob)
     filings, dob_stats = index_filings(raw)
+    # The same filings, read for a different question - see measure_sf_per_unit.
+    sf_per_unit = measure_sf_per_unit(raw)
     matched_filings = sum(1 for b in buildings if str(b["bin"]) in filings)
     print(f"dob: {matched_filings:,} of {len(buildings):,} modelled buildings "
           f"carry a conversion filing")
@@ -478,13 +913,13 @@ def main():
 
         # The four proxies, each normalised to 0..1 where 1 is EASIER to convert.
         # The ranges are ours and they are in the manifest.
+        # THE WEIGHTED SUM IS NOT DONE HERE. All four ship, and the browser
+        # weights them, because a weight baked into a binary file is a weight
+        # nobody can argue with.
         s_depth = 1.0 - norm(depth / 2.0, 20.0, 70.0)      # shallow plate is better
         s_f2f = norm(f2f, 9.0, 16.0)                        # taller floor is better
         s_area = 1.0 - norm(plate_area, 5000.0, 40000.0)    # smaller plate is better
         s_age = 1.0 - norm(year_built, 1900.0, 1990.0)      # older is better
-        w = CONVERTIBILITY["weights"]
-        score = (w["floorplate_depth"] * s_depth + w["floor_to_floor"] * s_f2f
-                 + w["floorplate_area"] * s_area + w["age"] * s_age)
 
         f = filings.get(str(b["bin"]))
         rows.append({
@@ -493,7 +928,7 @@ def main():
                 b["centroid_ll"][0], b["centroid_ll"][1],
                 height_ft, floors, bldg_area, office_area,
                 num("ResArea", True), num("ComArea", True), year_built,
-                score,
+                s_depth, s_f2f, s_area, s_age,
                 f["units_after"] - f["units_before"] if f else 0.0,
                 f["floors_added"] if f else 0.0,
                 f["year"] if (f and f["year"]) else 0.0,
@@ -503,15 +938,23 @@ def main():
         kept += 1
 
     print(f"build: {kept:,} buildings with both massing and PLUTO")
-    scores = np.array([r["vals"][9] for r in rows])
-    print(f"build: convertibility score {scores.min():.2f}-{scores.max():.2f}, "
-          f"median {np.median(scores):.2f}")
+    w = CONVERTIBILITY["weights"]
+    scores = np.array([
+        w["floorplate_depth"] * r["vals"][9] + w["floor_to_floor"] * r["vals"][10]
+        + w["floorplate_area"] * r["vals"][11] + w["age"] * r["vals"][12]
+        for r in rows])
+    print(f"build: convertibility at the DEFAULT weights "
+          f"{scores.min():.2f}-{scores.max():.2f}, median {np.median(scores):.2f}")
     off = np.array([r["vals"][5] for r in rows])
     print(f"build: {int((off > 0).sum()):,} buildings carry office floor area "
           f"({off.sum() / 1e6:,.1f}M sf in total)")
 
+    # 18 wide, not 15: the single baked `convertibility` float became the four
+    # sub-scores it was made of, so the weights can be controls.
     COLUMNS = ["lon", "lat", "height_ft", "floors", "bldg_area", "office_area",
-               "res_area", "com_area", "year_built", "convertibility",
+               "res_area", "com_area", "year_built",
+               "s_floorplate_depth", "s_floor_to_floor", "s_floorplate_area",
+               "s_age",
                "units_created", "floors_added", "converted_year", "footprint_area",
                "district"]
     arr = np.array([r["vals"] for r in rows], dtype=np.float32)
@@ -573,16 +1016,18 @@ def main():
         "view_bounds": [float(np.percentile(lons, 2)), float(np.percentile(lats, 2)),
                         float(np.percentile(lons, 98)), float(np.percentile(lats, 98))],
         "district_view_bounds": {
-            d: ([float(np.percentile(arr[arr[:, 14] == i][:, 0], 2)),
-                 float(np.percentile(arr[arr[:, 14] == i][:, 1], 2)),
-                 float(np.percentile(arr[arr[:, 14] == i][:, 0], 98)),
-                 float(np.percentile(arr[arr[:, 14] == i][:, 1], 98))]
-                if (arr[:, 14] == i).any() else None)
+            d: ([float(np.percentile(arr[arr[:, 17] == i][:, 0], 2)),
+                 float(np.percentile(arr[arr[:, 17] == i][:, 1], 2)),
+                 float(np.percentile(arr[arr[:, 17] == i][:, 0], 98)),
+                 float(np.percentile(arr[arr[:, 17] == i][:, 1], 98))]
+                if (arr[:, 17] == i).any() else None)
             for i, d in enumerate(args.districts)
         },
         "columns": COLUMNS,
         "column_units": ["degrees", "degrees", "feet", "storeys", "sq ft", "sq ft",
-                         "sq ft", "sq ft", "year", "0-1", "units", "storeys",
+                         "sq ft", "sq ft", "year",
+                         "0-1", "0-1", "0-1", "0-1",
+                         "units", "storeys",
                          "year or 0", "sq ft", "index into districts"],
         "snapshot_years": [2025, 2030, 2035, 2040, 2045, 2050],
         "household_size": household_size or None,
@@ -591,22 +1036,10 @@ def main():
                                  "is a borough average applied to every new "
                                  "unit, and new conversion units skew smaller "
                                  "than the borough's stock.",
-        "browser_assumptions": {
-            "note": "These live in the front end (gates.js) because they are "
-                    "arithmetic rather than data. Each is ours unless marked.",
-            "cap_rate": 0.055,
-            "opex_share": 0.35,
-            "office_rent_base_psf_yr": 62,
-            "office_rent_base_note": "Asking rent per square foot per year for "
-                                     "Lower Manhattan office space in the base "
-                                     "year. AN ASSUMPTION - no published series "
-                                     "was verified for it - and it sets where "
-                                     "the office_rent_trend control bites.",
-            "sf_per_unit": 900,
-            "sf_per_unit_note": "Floor area per apartment, used to turn "
-                                "converted office area into a unit count.",
-            "base_year": 2025,
-        },
+        # Renamed from browser_assumptions: half of these are no longer
+        # assumptions. gates.js READS THESE rather than carrying its own copy,
+        # which is how the 38-against-62 disagreement happened.
+        "economics": {**ECONOMICS, **sf_per_unit},
         "convertibility": CONVERTIBILITY,
         "convertibility_ranges": {
             "floorplate_depth_ft": [20, 70],
@@ -616,6 +1049,24 @@ def main():
             "note": "Ours. Each proxy is clamped to its range and normalised so "
                     "that 1 means easier to convert.",
         },
+        # Where our score has to sit for it to call a quarter of each district
+        # convertible - Gensler's published share. Computed at the DEFAULT
+        # weights; the browser recomputes it whenever the weights move, because
+        # a mark that stays put while the score changes underneath it is a lie.
+        "gensler_calibration": {
+            d: (round(float(np.percentile(
+                scores[(arr[:, 17] == i) & (arr[:, 5] > 0)], 75)), 3)
+                if ((arr[:, 17] == i) & (arr[:, 5] > 0)).any() else None)
+            for i, d in enumerate(args.districts)
+        },
+        "gensler_calibration_note":
+            "The threshold at which our score passes 25% of each district's "
+            "office buildings, at the default weights. Gensler published that "
+            "about a quarter of the 1,300+ buildings they scored were suitable "
+            "and did not publish the scoring, so this is the one number our "
+            "score and theirs can be held up against each other. It is a "
+            "comparison and not a validation.",
+        "presence": presence,
         "incentive_467m": INCENTIVE_467M,
         "dob": {
             "datasets": {"legacy": DOB_LEGACY, "certificates_of_occupancy": DOB_CO},

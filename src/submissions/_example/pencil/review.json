@@ -1,15 +1,17 @@
 {
   "stage2": {
-    "url": "http://localhost:5174/gallery/_example/pencil/",
+    "url": "http://localhost:5173/gallery/_example/pencil/",
     "ready": true,
     "rendered": true,
     "metrics": {
-      "lots that pencil": "20,475 of 165,956 (12.3%)",
-      "units built by this year": "9,000",
-      "units this year": "1,000",
-      "margin at the median passing lot": "$714/mo",
-      "median tract income where units land": "$89,065",
-      "share of units in the top tenth of tracts": "38.7%"
+      "lots that pencil": "0 of 22,333 (0.0%)",
+      "units built by this year": "0",
+      "units this year": "0",
+      "margin at the median passing lot": "$0/mo",
+      "unit size at the median passing lot": "0 sf",
+      "of those, with room behind the house": "0 (0.0%)",
+      "median tract income where units land": "—",
+      "share of units in the top tenth of tracts": "0.0%"
     },
     "consoleErrors": [],
     "failedRequests": [],

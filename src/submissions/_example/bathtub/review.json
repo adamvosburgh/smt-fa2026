@@ -1,6 +1,6 @@
 {
   "stage2": {
-    "url": "http://localhost:5174/gallery/_example/bathtub/",
+    "url": "http://localhost:5173/gallery/_example/bathtub/",
     "ready": true,
     "rendered": true,
     "metrics": {

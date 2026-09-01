@@ -34,7 +34,7 @@
   </div>
 </nav>
 
-<main class="site-main" class:wide={page.data.wide}>
+<main class="site-main" class:wide={page.data.wide} class:full={page.data.wide === 'full'}>
   {#if page.data.title && page.data.showTitle !== false}
     <h1 class="page-title">{page.data.title}</h1>
   {/if}

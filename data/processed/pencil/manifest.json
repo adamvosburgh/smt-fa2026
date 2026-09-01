@@ -1,6 +1,6 @@
 {
   "sandbox": "pencil",
-  "generated": "2026-08-31",
+  "generated": "2026-09-01",
   "borough": "Queens (BoroCode 4)",
   "lots": 246921,
   "start_year": 2027,
@@ -14,27 +14,40 @@
   "columns": [
     "lon",
     "lat",
-    "adu_sf",
+    "lot_front",
+    "required_rear_yard_depth",
     "lot_area",
     "rent_fmr",
     "tract_income",
-    "tract_idx"
+    "tract_idx",
+    "bldg_type",
+    "rear_box_x_ft",
+    "rear_box_y_ft",
+    "rear_box_depth_ft",
+    "rear_box_width_ft"
   ],
   "column_units": [
     "degrees",
     "degrees",
-    "square feet",
+    "feet",
+    "feet",
     "square feet",
     "dollars per month",
     "dollars per year",
-    "index into tracts.json, -1 for none"
+    "index into tracts.json, -1 for none",
+    "0 attached, 1 semi-detached, 2 detached, 3 unknown",
+    "feet east of the lot centroid, to the centre of the open ground behind the house",
+    "feet north of the same",
+    "feet, its depth away from the house",
+    "feet, its width across the lot"
   ],
+  "columns_note": "adu_sf IS NOT SHIPPED. It was, and it could not stay: rear_yard_fraction and side_setback_ft are controls, so the unit's floor area moves when they move and the browser computes it from these columns. Precompute the inputs to the answer, never the answer - the same rule the rest of this pipeline follows.",
   "flags": {
     "two_family": 1,
-    "eligible_attached": 2,
-    "eligible_detached": 4,
-    "in_flood_2050": 8,
-    "in_flood_2080": 16,
+    "eligible_backyard": 2,
+    "in_10yr_rainfall_frra": 4,
+    "in_coastal_frra": 8,
+    "in_high_risk_flood_zone": 16,
     "in_historic_district": 32,
     "excluded_district": 64,
     "city_owned": 128
@@ -52,14 +65,6 @@
     "cushion": 200
   },
   "assumptions": {
-    "soft_cost": {
-      "value": 30000,
-      "note": "Design, filing, permits and survey, as a flat sum per project. No published figure was found for New York ADUs. This is an assumption and the sandbox says so."
-    },
-    "opex_share": {
-      "value": 0.25,
-      "note": "Operating cost - insurance, maintenance, water - as a share of effective rent. A conventional small-landlord rule of thumb, not a measured figure for ADUs."
-    },
     "property_tax": {
       "value": 0,
       "note": "THE MODEL IGNORES PROPERTY TAX. MapPLUTO carries AssessTot for the existing lot, but the marginal assessment of an added ADU is not in any dataset we found, and deriving one would produce a number that looks sourced and is not. Margins here are therefore optimistic by whatever the tax would have been."
@@ -68,16 +73,105 @@
       "value": 1,
       "note": "Every ADU is priced as a one-bedroom. Rent limits are taken at 1.5 persons per bedroom, which is the convention HUD's own rent schedules use."
     },
-    "cost_per_sf_default": {
-      "value": 500,
-      "note": "Default construction cost. HPD's 'ADU for You' cost figures could not be verified to exist, so this is an assumption and the schema description says so. It is a control - move it."
+    "shallow_lot_vintage": {
+      "value": true,
+      "note": "ZR 23-342's shallow-lot reduction applies to interior lots 'existing on December 15, 1961'. MapPLUTO cannot say whether a lot line existed on that date, so every shallow lot is treated as qualifying. This makes the model slightly GENEROUS on the 13.9% of lots the reduction touches."
+    },
+    "adu_sits_in_the_required_rear_yard": {
+      "value": true,
+      "note": "OPEN QUESTION, AND IT IS THE ONE THAT WOULD MOVE THE ANSWER MOST. ZR 23-341 permits an ADU in the required rear yard, as an obstruction. A lot whose open area runs deeper than the required yard has space between the house and that yard which is not a required yard at all, and is governed by lot coverage and FAR instead. If an ADU may sit there, the one-third rule is not the binding cap on deep lots and this map is too harsh. HPD's guidebook and its eligibility tool both present the one-third rule as THE size cap, so modelling it as the cap is defensible - but it has not been checked against the lot coverage rules."
     }
   },
   "adu_sizing": {
-    "method": "min(0.33 * (LotArea - BldgFront * BldgDepth), 800), zeroed below 200sf",
-    "buildable_share": 0.33,
+    "method": "adu_sf = min(LotFront * required_rear_yard_depth / 3, 800), zeroed below 300sf, and zero for attached buildings and for lots too narrow to hold a published design between two five-foot side setbacks.",
+    "source": "ZR 23-341(b)(4) and ZR 23-342, zoningresolution.planning.nyc.gov, verified 2026-09-01. HPD's ADU Homeowner Guidebook is cited for the plain-language framing and for the 250-300sf practical minimum, but its flat '20 feet' rear yard is the DETACHED case only and the ZR is used instead.",
+    "rear_yard_fraction": 0.3333333333333333,
+    "side_setback_ft": 5.0,
+    "required_rear_yard_depth_ft": {
+      "detached": 20.0,
+      "semi_narrow": 30.0,
+      "semi_wide": 20.0
+    },
+    "shallow_lot": {
+      "under_depth_ft": 95.0,
+      "reduction_ft_per_ft": 0.5,
+      "floor_ft": 10.0,
+      "lots_affected": 34455
+    },
+    "min_sf": 300,
     "max_sf": 800,
-    "note": "The weakest step in the pipeline. The DBF has no lot geometry - no shape, no orientation, no setbacks - so an L-shaped lot, a corner lot and a flag lot are treated identically. The 800sf cap is the published rule; everything before it is an estimate."
+    "narrowest_detached_plan_ft": 14.0,
+    "eligible_building_types": [
+      "detached",
+      "zero lot line",
+      "semi-detached"
+    ],
+    "median_cap_sf": 228.86666666666662,
+    "median_adu_sf_where_it_fits": 333.3333333333333,
+    "lots_at_the_statutory_cap": 384,
+    "lots_below_the_habitability_floor": 136830,
+    "note": "THE 800sf STATUTORY CAP ALMOST NEVER BINDS. It is reached on about 1% of the lots that fit a unit at all, against 109,032 under the old sizing. The one-third rule and the five-foot setbacks are what decide this map. The previous version of this pipeline applied the one-third fraction to the whole open area of the lot rather than to the required rear yard, which put the median at 707sf and pinned 109,032 lots to the cap - a step that looked precise and resolved to a constant for nearly half the borough. What remains an estimate: MapPLUTO has no lot geometry, so the rear yard is a rectangle LotFront wide, and an L-shaped lot, a corner lot and a flag lot are still treated identically. What is no longer an estimate is the depth of that rectangle and the fraction of it that may be built on."
+  },
+  "building_type": {
+    "source": "MapPLUTO ProxCode, the Department of Finance proximity code: 1 detached, 2 semi-attached, 3 attached, 0 not available.",
+    "counts": {
+      "detached": 154470,
+      "semi_detached": 50664,
+      "attached": 41787
+    },
+    "no_proxcode": 281,
+    "fallback": "Lots with no ProxCode take the LotFront - BldgFront gap proxy instead, with cutoffs at 2 and 10 feet.",
+    "cross_check": {
+      "method": "LotFront - BldgFront, cutoffs at 2ft and 10ft. OURS.",
+      "agrees_with_proxcode": 189606,
+      "of_lots_with_both": 246432,
+      "note": "Two independent tests of the same thing, totalled against each other the way BldgClass A*/B* and LandUse 01 are. They disagree a great deal, and that disagreement is the reason to prefer the field DOF recorded over two cutoffs we chose. The build doc that specified this rebuild believed MapPLUTO had no building-type field; it has one."
+    },
+    "interpretation": "DOF says 'semi-attached' and the Zoning Resolution says 'semi-detached'. They are treated here as the same category. That is a reading, not a fact."
+  },
+  "siting": {
+    "sited": 202733,
+    "of_lots": 246921,
+    "method": "The unit is placed on the ray that leaves the lot centroid heading directly away from the buildings already on the lot: pushed back to the rear lot line, pulled forward by the setback plus half its own depth, and required to clear the far edge of the existing buildings. rear_x_ft and rear_y_ft give the direction and the distance to the lot line, house_reach_ft how far the buildings already extend that way; the browser finishes the sum, because the setback is a control.",
+    "when_it_does_not_fit": "A unit whose square will not sit between the back of the house and the setback off the rear lot line is NOT DRAWN, and the legend counts it. It still counts as eligible and it still pencils, because the rule the programme applies is about the AREA of the required rear yard and not about whether a square fits behind the house. That gap between an area test and a plan is worth seeing rather than papering over.",
+    "recorded": "The lot outline, from MapPLUTO's shapefile (EPSG:2263, feet). The footprints of the buildings on it, from the city's building layer, joined on base_bbl.",
+    "inferred": "WHICH END OF THE LOT IS THE BACK. Neither dataset says where the street is, so the back of the lot is taken to be the direction away from the existing house. That is right for an ordinary house set toward the street and WRONG for a corner lot, a through lot, and a house built at the back of its own parcel. The unit is drawn as a plain square rather than as a building because the position is this good and no better.",
+    "not_sited": "Lots with no building footprint on record, a building centred exactly on the lot, or a centroid lying outside its own polygon - which is what an L-shaped or flag lot does. They are drawn flat and no volume is guessed for them.",
+    "grid_convergence_note": "The direction is measured against true north and the polygon against State Plane grid north. Over New York City those differ by about a third of a degree, which across a fifty-foot lot is about three inches."
+  },
+  "hpd_budget": {
+    "source": "HPD ADU Budgeting Tool, housing.hpd.nyc.gov/adu/budget. The defaults were read off the controls and the behaviour was measured by varying one control at a time at a $500,000 hard cost, on 2026-09-01.",
+    "soft_cost_flat": 50000,
+    "soft_cost_share_of_hard": 0.48,
+    "soft_cost_formula": "soft cost = $50,000 + 0.48 x hard cost. Exact, checked at hard costs of 100k, 200k, 300k and 500k.",
+    "the_unlabelled_term": "THE FINDING WORTH TEACHING, AND IT IS WHY THIS PIPELINE USES THE MEASURED FORMULA RATHER THAN THE PUBLISHED INPUTS. The tool exposes four cost inputs that together account for 0.20 + 0.08 of hard cost plus $50,000 flat. Its actual output is 0.48 of hard cost plus $50,000. There is a 20%-of-hard-cost term the tool never shows the user, equal in size to the largest one it does show. It is probably general contractor overhead and profit. It is not labelled anywhere in the interface, and it was found by moving one slider at a time.",
+    "published_inputs": {
+      "design_survey_permitting_share": 0.2,
+      "contingency_share": 0.08,
+      "site_prep": 20000,
+      "utility_hookup": 30000
+    },
+    "operating": {
+      "upkeep_share": 0.2,
+      "management_share": 0.04,
+      "insurance_monthly": 200,
+      "turnover_rate": 0.15
+    },
+    "financing_note": "HPD IS RUNNING TWO DIFFERENT FINANCINGS FOR THE SAME BUILDING. The budgeting tool assumes a 7.5%, 20-year market loan; Plus One is 5% over 15 years, extendable to 30. Both are HPD, on the same website. This sandbox models Plus One, because Plus One is the programme it is about, and the operating figures above are taken from the budgeting tool because Plus One's term sheet does not carry any."
+  },
+  "plan_library": {
+    "source": "HPD Pre-Approved Plan Library, housing.hpd.nyc.gov/adu/library",
+    "read": "2026-09-01",
+    "note": "Index page re-read 2026-09-01; every sqft, cost range, type and designer matches. Plan detail page 1007 spot-checked for dimensions. Plan IDs seen on the site are 1007, 1018, 1019, 1028, 1029, 1031, 1038, 1040, 1042, 1043, 1044; only 1007 has been mapped to a plan, the rest are null until each detail page is opened. Where a plan's prose description disagrees with its structured square-footage field, the structured field is used and the disagreement recorded in prose_sqft_conflict. HPD states these estimates exclude 'costs associated with establishing site connections or any anticipated site specific costs'.",
+    "cost_per_sf_median": 603.0,
+    "cost_per_sf_min": 248,
+    "cost_per_sf_max": 1500,
+    "sqft_median": 406.0,
+    "sqft_min": 280,
+    "sqft_max": 785,
+    "narrowest_detached_ft": 14,
+    "depth_to_width_ratio": 0.7,
+    "depth_to_width_note": "Median short:long side ratio of the nine published DETACHED designs. Range 0.48-0.80."
   },
   "rent_ami_monthly": 3181.25,
   "rent_ami_note": "The programme's 100%-AMI rent cap, for a 1-bedroom at 1.5 persons. ONE NUMBER FOR THE WHOLE OF QUEENS, and indeed for eight counties: HUD publishes income limits only for the New York, NY HUD Metro FMR Area (Bronx, Kings, New York, Putnam, Queens, Richmond, Rockland, Westchester), so the AMI that sets this cap is computed partly from Westchester and Rockland incomes. It is a scalar here rather than a column because it genuinely does not vary. Market rent does.",
@@ -88,8 +182,11 @@
     "safmr": "HUD Small Area Fair Market Rents FY2026, 1-bedroom, by ZIP. Small Area rather than county on purpose - the county figure is one number for the whole metro and would not vary.",
     "income_limits": "HUD FY2026 Income Limits, New York, NY HUD Metro FMR Area - EIGHT COUNTIES, not Queens. No smaller geography is published.",
     "acs": "Census ACS 5-year 2023, B19013_001E and B25003, tracts in state 36 county 081.",
-    "flood": "NYC Open Data 27ya-gqtm (Future Floodplain 2050s) and ek8y-fsqz (Sea Level Rise Maps, 2080s 100-year), downloaded 2026-08-31, rasterised to a 2048-cell grid over Queens (about 20m). NOTE: these are the published floodplain layers, which are NOT identical to the Zoning Resolution's 'expanded flood area' that the City of Yes ADU rule actually names. They are used as the closest available approximation and the card says so.",
-    "eligibility": "DERIVED BY US from DCP's City of Yes for Housing Opportunity ADU guide. NYC Open Data publishes no ADU eligibility layer - the catalogue was searched on 2026-08-31 and there is none. These flags are our reading of a published rule, not a city determination."
+    "flood": "APPROXIMATED, AND THE APPROXIMATION IS NAMED. ZR 12-10 bars a backyard ADU in DEP's 10-year rainfall flood risk area and coastal flood risk area, both designated on the DEP Interim Flood Risk Area Map (nyc.gov/dep/floodriskmap, established under Admin Code 24-809 and 15 RCNY 66-01). THAT MAP IS NOT PUBLISHED IN A FORM WE COULD DOWNLOAD - as of 2026-09-01 the rule adopting it was proposed in June 2025 and adoption was not confirmed. So these two flags are built from NYC Open Data 27ya-gqtm (Future Floodplain 2050s) and ek8y-fsqz (Sea Level Rise Maps, 2080s 100-year), downloaded 2026-08-31 and rasterised to a 2048-cell grid over Queens (about 20m). Those two layers are the INGREDIENTS of the DEP areas - the coastal area is built on FEMA's 100-year coastal floodplain plus NPCC 2080 at the 90th percentile, the rainfall area on NPCC 2050 with a 50-foot buffer - not the areas themselves. Separately, FIRM07_FLA from MapPLUTO IS the ZR's high-risk flood zone exactly, and it is flagged but excluded from the eligibility test because that rule is an elevation requirement and not a ban. NYC's Stormwater Flood Maps (NYC Open Data 9i7c-xyvv) are the stormwater modelling behind the rainfall half and were NOT substituted here: they are published as intensities, not return periods, and whether the 'moderate' 2.13 in/hr layer is the 10-year storm is unverified.",
+    "zoning": "ZR 12-10 (definition of ancillary dwelling unit), ZR 23-341(b)(4) (permitted obstructions in required rear yards), ZR 23-342 (required rear yard depth) and ZR 64-11 (flood zone definitions), read from zoningresolution.planning.nyc.gov on 2026-09-01 and quoted in the constants at the top of this pipeline.",
+    "plan_library": "HPD Pre-Approved Plan Library, housing.hpd.nyc.gov/adu/library, eleven designs read 2026-09-01. Shipped as plans.json.",
+    "budgeting_tool": "HPD ADU Budgeting Tool, housing.hpd.nyc.gov/adu/budget. Defaults read off the controls, behaviour measured by varying one control at a time, 2026-09-01.",
+    "eligibility": "DERIVED BY US from the Zoning Resolution itself, with DCP's City of Yes ADU guide and HPD's guidebook for the plain-language framing. NYC Open Data publishes no ADU eligibility layer - the catalogue was searched on 2026-08-31 and there is none. These flags are our reading of a published rule, not a city determination. AND ONE OF THEM IS AN APPROXIMATION OF A LAYER WE COULD NOT OBTAIN - see sources.flood."
   },
   "joins": {
     "queens_lots": 324150,
@@ -102,9 +199,13 @@
     "lots_with_more_than_one_building": 114057,
     "lots_joined_to_a_tract": 246921,
     "lots_with_no_safmr_for_their_zip": 3,
-    "eligible_attached": 244301,
-    "eligible_detached": 165956,
-    "note": "Total every join against a published figure before believing it. BldgClass A*/B* and LandUse 01 are independent tests of the same thing and they are reported separately above so a disagreement between them is visible rather than averaged away."
+    "usable_dimensions": 246705,
+    "eligible_building_type": 205134,
+    "clears_the_setbacks": 175419,
+    "fits_an_adu": 38589,
+    "eligible_backyard": 167742,
+    "eligible_and_in_the_high_risk_flood_zone": 40,
+    "note": "Total every join against a published figure before believing it. BldgClass A*/B* and LandUse 01 are independent tests of the same thing and they are reported separately above so a disagreement between them is visible rather than averaged away. ProxCode and the LotFront-BldgFront gap are a second such pair; see building_type.cross_check."
   },
   "why_this_shape": "Precompute the INPUTS to the pro-forma, never its answers. Every control changes the arithmetic rather than the data, and the parameter space is continuous and six-dimensional, so there is no set of results to precompute. The browser recomputes every lot on every slider move in one pass over these arrays."
 }

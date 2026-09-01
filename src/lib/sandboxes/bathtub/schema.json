@@ -2,11 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/bathtub.json",
   "title": "Bathtub parameters",
-  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach, this sandbox's own _example submission among them. x-step draws the control; minimum and maximum do the validating. Property ORDER is the panel order and is deliberate: pick a future, get a water height, add what sits on top of it, then choose how the model tests it, then how it is drawn. x-group starts a new labelled section; x-disabled-when greys a control out while another control is making its decision for it.",
+  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach, this sandbox's own _example submission among them. x-step draws the control; minimum and maximum do the validating. Property ORDER is the panel order and is deliberate: pick a future, get a water height, add what sits on top of it, then choose how the model tests it, then how it is drawn. x-group starts a new labelled section; x-disabled-when greys a control out while another control is making its decision for it, and its value may be a LIST, meaning any one of these takes the control over.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "slr_m",
+    "aep",
     "surge_m",
     "tide",
     "percentile",
@@ -17,7 +18,9 @@
       "type": "integer",
       "title": "How far ahead",
       "x-group": "the scenario",
-      "x-disabled-when": { "link_year": false },
+      "x-disabled-when": {
+        "link_year": false
+      },
       "x-disabled-note": "not driving the water",
       "enum": [
         2030,
@@ -40,7 +43,9 @@
       "type": "integer",
       "title": "Which projection",
       "x-group": "the scenario",
-      "x-disabled-when": { "link_year": false },
+      "x-disabled-when": {
+        "link_year": false
+      },
       "x-disabled-note": "not driving the water",
       "enum": [
         10,
@@ -74,25 +79,67 @@
       "x-step": 0.1,
       "default": 0.8,
       "x-unit": "m",
-      "x-disabled-when": { "link_year": true },
+      "x-disabled-when": {
+        "link_year": true
+      },
       "x-disabled-note": "set by the projection",
       "description": "How much higher the average sea sits than it does now. Everything below adds onto this one number, and there is no map of it - the model raises the whole harbour by the same amount at once."
     },
+    "aep": {
+      "type": "string",
+      "title": "Storm, by how often",
+      "x-group": "the water",
+      "enum": [
+        "none",
+        "99",
+        "50",
+        "10",
+        "1"
+      ],
+      "x-enum-labels": [
+        "No storm",
+        "99% · 1 yr",
+        "50% · 2 yr",
+        "10% · 10 yr",
+        "1% · 100 yr"
+      ],
+      "default": "none",
+      "x-emphasis": true,
+      "description": "Pick a storm by how often it happens rather than by how high it is. These are NOAA's exceedance probability levels for the gauge at the Battery: the 1% level is the one with a 1-in-100 chance of being reached in any given year, and it is 2.40m above NAVD88. Two things about them are worth knowing before you trust the map. They are fitted to the highest water level of each year, and the highest water level of a year happens at high tide - so the tide is already inside the number, which is why choosing one here takes the tide control over instead of adding to it. And they are still-water levels: no waves. The 1% is about 7.9 feet; Sandy reached about 11.3 feet at this same gauge. If you pick \"100-year\" and see less water than you remember, you are looking at two definitions, not at a bug."
+    },
     "surge_m": {
       "type": "number",
-      "title": "Storm surge",
+      "title": "Storm surge, by hand",
       "x-group": "the water",
+      "x-disabled-when": {
+        "aep": [
+          "99",
+          "50",
+          "10",
+          "1"
+        ]
+      },
+      "x-disabled-note": "set by the probability",
       "minimum": 0,
       "maximum": 4,
       "x-step": 0.25,
       "default": 0,
       "x-unit": "m",
-      "description": "A storm pushes water up against the coast on top of whatever the tide is doing. Here it just gets added to the water height, instantly and everywhere at once. A real surge arrives over hours, peaks, drains, and is higher in some places than others."
+      "description": "The override. Set a height yourself and read off, from the control above, roughly how often the water gets that high. Whichever way you set it, it just gets added to the water height, instantly and everywhere at once. A real surge arrives over hours, peaks, drains, and is higher in some places than others."
     },
     "tide": {
       "type": "string",
       "title": "Tide state",
       "x-group": "the water",
+      "x-disabled-when": {
+        "aep": [
+          "99",
+          "50",
+          "10",
+          "1"
+        ]
+      },
+      "x-disabled-note": "inside the storm level",
       "enum": [
         "mllw",
         "msl",
@@ -104,7 +151,7 @@
         "High tide"
       ],
       "default": "mhhw",
-      "description": "The sea is not at one height. At the Battery it swings about a metre and a half between low and high. Pick which moment of that swing the map is showing. Published flood maps usually use the average daily high tide, which is the cautious choice - it's the default here. These three numbers come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place."
+      "description": "The sea is not at one height. At the Battery it swings about a metre and a half between low and high. Pick which moment of that swing the map is showing. Published flood maps usually use the average daily high tide, which is the cautious choice - it's the default here. These three numbers come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Pick a storm probability and this control goes quiet, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.70m above the average daily high tide, and that is the same 2.40m written the other way round."
     },
     "connectivity": {
       "type": "boolean",

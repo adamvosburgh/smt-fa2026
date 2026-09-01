@@ -34,7 +34,7 @@ you think a reading is wrong you can go and look at the place on the map.
 
 ## The data
 
-Four things, all published, all downloadable.
+Five things, all published, all downloadable.
 
 - **The ground.** USGS 3DEP elevation, 1/3 arc-second - about one height
   measurement every 10 metres - clipped to New York. Heights are metres above
@@ -45,6 +45,12 @@ Four things, all published, all downloadable.
 - **Where the tide is.** Three tidal datums from NOAA's gauge at the Battery,
   station 8518750, on the 1983-2001 epoch, given relative to NAVD88 so they can
   be added to the ground heights directly.
+- **How often the water gets high.** Four exceedance probability levels from the
+  same gauge, read on 1 September 2026 from NOAA's *Tidal Datums and Exceedance
+  Probability Levels* diagram. NOAA publishes exactly four - 99%, 50%, 10% and
+  1% - and the sandbox offers those four and no others. That is worth a note:
+  the "500-year flood" you have read about is a FEMA quantity, arrived at by a
+  different method, and it is not in this product to be offered.
 - **What is standing on the ground.** NYC Building Footprints for the buildings
   themselves, MapPLUTO for how many homes are in them, and 2020 Census tract
   population for how many people live in the area.
@@ -55,6 +61,14 @@ Everything is measured against the same vertical reference, NAVD88, which is
 what makes the comparison legal in the first place. Sea level rise, storm surge
 and the tide offset are added together into one waterline. A cell of ground is
 flooded if its height is below that line.
+
+Choosing a storm by its probability changes that sum, and the reason is the one
+thing about these levels worth understanding. NOAA fits them to the highest
+water level of each year, and the highest water level of a year happens at high
+tide - so the tide is already inside the published number. The 1% level of 2.40m
+above NAVD88 is the same statement as NOAA's own "1.70m above mean higher high
+water". Adding a tide offset on top of it would count the tide twice, so
+picking a probability takes the tide control over rather than adding to it.
 
 The connectivity switch changes the test. With it on, a cell floods only if
 there is a path of low ground joining it to open water. Working that out for
@@ -83,6 +97,21 @@ cannot quietly disagree.
   one does.
 - **A storm is just a higher number.** Surge is added everywhere at once. There
   is no arrival, no peak, no drain, and no wind.
+- **A probability is a still-water level.** The exceedance levels are a curve
+  fitted to annual maxima at one gauge, with the long-term rise taken out. No
+  waves are in them, which is the main reason they are lower than the numbers
+  you may be carrying around: the 1% level is about 7.9 feet above NAVD88, and
+  Sandy reached about 11.3 feet at this same gauge. FEMA's base flood elevation
+  is a different quantity, computed a different way, and adds wave effects.
+  Choosing "100-year" here and seeing less water than you remember is two
+  definitions disagreeing, not the model failing.
+- **The probability and the projection come from different agencies.** The
+  storm levels are NOAA's, the sea level rise is the NPCC's, and the sandbox
+  adds one to the other. NOAA publishes its own version of that addition - the
+  same four levels raised onto its linear trend, which for 2026 puts every one
+  of them 0.10m higher - and it is shipped in the manifest as a cross-check but
+  never added, because adding it to an NPCC projection would raise the sea
+  twice. Two agencies, one harbour, two answers, and the sandbox has to pick.
 - **Connectivity is a property of the terrain.** Precomputing that connection
   height asserts that "can water get here" has one answer, decided once. On a
   real coastline it doesn't: culverts, tide gates, pumps and surge barriers

@@ -23,7 +23,15 @@ const BASE = args.base || 'http://localhost:3000';
 const TIMEOUT = 30000;
 
 async function capture(browser, url, out) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2 });
+  // 1600x1000, not 1280x900, and the reason is the layout rather than taste.
+  // The sandbox route is a three-column frame - card, map, controls - with the
+  // two docks at a fixed 320px and the map taking what is left. At 1280 the map
+  // gets under 600px and the cover comes out a portrait sliver of a thing that
+  // is meant to be read wide; under 1200 the frame drops to its narrow
+  // breakpoint and the cover stops being a picture of the real layout at all.
+  // The map is also no longer pinned to 4:3, so the cover's shape is now the
+  // window's shape and this is where it is decided.
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
 
   const problems = { consoleErrors: [], failedRequests: [], exceptions: [] };

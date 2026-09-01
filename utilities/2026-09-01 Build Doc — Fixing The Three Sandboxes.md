@@ -395,15 +395,17 @@ The pro-forma keeps its shape. Every constant in it now has a source.
 
 ## 6. Flood: return periods, not horizons
 
-The complaint is correct and the fix is a reframing rather than a new dataset.
+*Rewritten 2026-09-01 after the sources were run down. See
+`2026-09-01 Sources — The Unfetched Datasets.md` for the evidence behind every
+figure and quotation here. The complaint that opened this item is still correct.
+Most of what this item proposed as the fix was not.*
 
-The NPCC 2050s and 2080s layers are not return periods. They are the **same
-1%-annual-chance line**, projected forward under sea level rise scenarios. Two
+The NPCC 2050s and 2080s layers are not return periods. They are the same
+1%-annual-chance line, projected forward under sea level rise scenarios. Two
 independent axes were collapsed into one control:
 
-- **Annual exceedance probability** - how rare a flood. 10%, 2%, 1%, 0.2% per year,
-  which is what "10-year, 50-year, 100-year, 500-year" names. A statistical
-  statement about a distribution, not a place.
+- **Annual exceedance probability** - how rare a flood. A statistical statement
+  about a distribution, not a place.
 - **Projection horizon** - which decade's sea level the line is drawn on top of.
 
 Show both, separately. That is what makes the line's construction visible.
@@ -412,43 +414,135 @@ Show both, separately. That is what makes the line's construction visible.
 
 `surge_m`, a metres slider with a default of 0, is the wrong control. Storm surge
 height *is* a return-period quantity, and treating it as a free parameter hides
-exactly the step the sandbox exists to expose.
-
-Replace it with an annual-exceedance-probability control, mapped to a water height
-through a published curve.
+exactly the step the sandbox exists to expose. Replace it with an annual
+exceedance probability control.
 
 Source: **NOAA Tides & Currents, Extreme Water Levels, station 8518750, The
-Battery** (`tidesandcurrents.noaa.gov/est/est_station.shtml?stnid=8518750`).
-**Verified 2026-09-01 that the product exists and publishes 1%, 10%, 50% and 99%
-annual exceedance probability levels** relative to MHHW, MLLW or MSL. The values
-themselves are not yet fetched. Fetch them, record the datum, and convert to
-NAVD88 the same way the tidal datums already are.
+Battery.** **Verified 2026-09-01**, values read off the stick diagram at
+`tidesandcurrents.noaa.gov/est/stickdiagram.shtml?stnid=8518750` and cross-checked
+against the station datums page.
+
+| AEP | Return period | m above MSL (1983-2001) | **m above NAVD88** |
+| --- | --- | --- | --- |
+| 99% | 1 year | 1.26 | **1.20** |
+| 50% | 2 years | 1.50 | **1.44** |
+| 10% | 10 years | 1.84 | **1.78** |
+| 1% | 100 years | 2.46 | **2.40** |
+
+NAVD88 sits 0.063 m above the 1983-2001 MSL at this station, which is the
+conversion applied. The station's own prose gives the 1% level as 1.7 m above
+MHHW; MHHW is 0.758 m above MSL, and 2.46 − 0.758 = 1.70, so the reading checks.
+
+**The probability values in this item were wrong.** It proposed 10%, 2%, 1% and
+0.2%. NOAA publishes **99%, 50%, 10% and 1%** and nothing else. There is no 2% and
+no 0.2% in this product. The control gets the four that exist. A 0.2% level is a
+FEMA quantity from a different method, and putting it on the same slider would mix
+two methods in one control, which is the thing this sandbox is against.
+
+**The horizon axis is published by the same table.** The stick diagram's right-hand
+column gives the same four levels for a chosen year - the linear sea level trend
+for any year from 1992 to 2030, or one of the five 2022 Interagency Sea Level
+Report scenarios for a future decade. Read for 2026, every level is 0.10 m higher:
+1.36 / 1.60 / 1.94 / 2.56 above MSL. So both controls come from one source, and
+the sandbox can show that the probability and the horizon are separate knobs
+without leaving NOAA.
+
+**Say this on the face of the sandbox.** These are still-water levels from a GEV
+fit to annual maxima at one tide gauge, with the mean sea level trend removed.
+They are not FEMA base flood elevations, which add wave effects and come out
+higher. The 1% level is 2.40 m NAVD88, about 7.9 feet. Sandy peaked near 11.3 feet
+NAVD88 at this gauge. A student who sets the slider to "100-year" and sees less
+water than they remember is looking at the difference between two definitions, not
+at a bug.
+
+**The source moves on 30 September 2026.** Every page on this product carries a
+banner: it is replaced by the integrated *Sea Level Trends and Extremes* site with
+a new URL and new APIs. Record the read date, and re-point the citation before the
+December freeze.
 
 Keep the metres slider as a manual override behind `link_year`'s existing pattern,
-so a student can still set a height by hand and see what probability it corresponds
-to. The point is the mapping, not the removal of the number.
+so a student can still set a height by hand and see what probability it
+corresponds to. The point is the mapping, not the removal of the number.
 
 `surge_m` is in `schema.json`, so this changes submitted params. Old example
 submissions need regenerating.
 
 ### Pencil
 
-The flood exclusion is currently dropped: the 2050s and 2080s layers were never
-downloaded into `data/original/` and the pipeline prints that the exclusion is not
-applied. So there is nothing to correct in the code yet, only in what gets built.
+**This item's Pencil section had the wrong rule.** It asked for `27ya-gqtm` and
+`ek8y-fsqz` plus a FEMA FIRM layer, and for flags named `in_1pct_current`,
+`in_1pct_2050s`, `in_1pct_2080s`. None of that is what the Zoning Resolution says.
 
-Download `27ya-gqtm` (2050s) and `ek8y-fsqz` (2080s), and add the **FEMA effective
-and preliminary FIRM 1%-annual-chance layer** alongside them. Then the eligibility
-flag names the probability and the horizon separately: `in_1pct_current`,
-`in_1pct_2050s`, `in_1pct_2080s`.
+**"Expanded flood area" is not a term in the Zoning Resolution.** It was searched
+for on 2026-09-01 and it is not in ZR 12-10 and not in ZR 64-11. The phrase came
+from a secondary source and has been carried forward through two build docs and a
+memory note. Stop using it.
 
-**Still unverified, and it matters:** the Zoning Resolution's "expanded flood area"
-is a defined term and none of these three layers is it. Find the adopted definition
-before the flag claims to implement the rule. If it can't be found, the card says
-the flag is our approximation of a rule we could not locate as a layer, which is
-what the last build already said and is still true.
+**ZR 12-10, definition of *ancillary dwelling unit*** - verified 2026-09-01. An
+additional dwelling unit on the same zoning lot as a single- or two-family
+residence, not exceeding 800 square feet of floor area, one per residence. Then
+the limitations, and there are **three separate flood restrictions, not one**:
 
----
+1. **In the *high-risk flood zone*** (ZR 64-11): no ADU below the *flood-resistant
+   construction elevation*. **This is not a ban.** It is an elevation requirement,
+   and modelling it as an eligibility exclusion misreads it. It belongs on the
+   cost side, if anywhere.
+2. **In the DEP-designated *10-year rainfall flood risk area* and *coastal flood
+   risk area*: no basement or cellar unit, and no backyard unit.** This is the ban,
+   and it is the only one that matters for Pencil, which models backyard ADUs and
+   nothing else.
+3. Unrelated to flooding, and previously known: no backyard unit in R1-2A, R2A or
+   R3A outside the Greater Transit Zone, none in an LPC historic district, and a
+   backyard unit needs direct access through a side yard or open area at least five
+   feet wide. At first occupancy the lot must be the owner's primary residence.
+
+**ZR 64-11** - verified 2026-09-01. The *high-risk flood zone* is "the area, as
+indicated on the *flood maps*, that has a one percent chance of flooding in a
+given year". The *moderate-risk flood zone* is the 0.2 percent area outside it.
+And *flood maps* is defined as "the most recent map or map data used as the basis
+for *flood-resistant construction standards*" - the Resolution never names a
+dataset, it points at whatever the Building Code is currently using. That is worth
+saying in the card: the rule is written to move.
+
+**The layer Pencil needs is the DEP Interim Flood Risk Area Map**, published at
+`nyc.gov/dep/floodriskmap`. Traced 2026-09-01 through the DOB proposed ADU rule,
+which defines both DEP terms as set out in the map established under Administrative
+Code §24-809 and 15 RCNY §66-01, to the DEP proposed rule creating 15 RCNY Chapter
+66:
+
+- *10-year rainfall flood risk area*: "locations in the city where there is a 10
+  percent chance or greater of rainfall-induced flooding in any year", built on
+  NPCC 2050 sea level rise with a 50-foot perimeter buffer for uncertainty.
+- *coastal flood risk area*: "locations in the city where there is a 1 percent
+  chance or greater of flooding in any year", built on FEMA's 100-year coastal
+  floodplain and NPCC 2080 sea level rise, 90th percentile.
+
+So the two files already in `data/original/` are the **ingredients** of the coastal
+flood risk area, not the area itself. Keep them. Relabel them. Do not cite them as
+the rule.
+
+**The flags become two, not three:** `in_10yr_rainfall_frra` and
+`in_coastal_frra`, both from the DEP map, both barring a backyard ADU outright.
+The high-risk flood zone is a third and separate thing and does not belong in the
+eligibility test.
+
+**Still open, and it blocks the download:** whether 15 RCNY 66-01 has been adopted
+in final form, and what file format the interim map is published in. The rule was
+proposed June 2025; the CHPC comment on it is dated 30 July 2025; adoption was not
+confirmed on 2026-09-01. Check `nyc.gov/dep/floodriskmap` for a download before
+assuming a shapefile exists. If there is no downloadable layer, the card says the
+flag is our approximation of an adopted map we could not obtain, and names the two
+NPCC layers it is built from instead - which is a much more specific admission
+than the one this document started with.
+
+**Adjacent and downloadable:** NYC Stormwater Flood Maps, NYC Open Data
+`9i7c-xyvv`, DEP, updated 17 October 2024, one zip with four citywide layers
+(extreme 3.66 in/hr with 2080 SLR; moderate 2.13 in/hr with 2050 SLR; moderate
+with current sea levels; limited 1.77 in/hr with current). This is the stormwater
+modelling behind the rainfall half of the DEP map. It is not the adopted map and
+must not be substituted for it. Whether "moderate, 2.13 in/hr" is the 10-year storm
+is **not verified** - do not assert it without checking the Stormwater Resiliency
+Plan.
 
 ## 7. Layout
 
@@ -555,15 +649,15 @@ Three things belong in the same pass, all of them cheap:
 | --- | --- | --- |
 | ZR 23-341(b)(4) | ADU size, setbacks, height, eligible building types | **Verified 2026-09-01**, quoted |
 | ZR 23-342 | Required rear yard depth by type and width, shallow-lot reduction | **Verified 2026-09-01**, quoted |
-| HPD Pre-Approved Plan Library, 11 plans | Real ADU dimensions and published cost ranges | **Verified 2026-09-01**, full table above |
+| HPD Pre-Approved Plan Library, 11 plans | Real ADU dimensions and published cost ranges | **Verified 2026-09-01**, full table above, and **re-verified against the live index the same day**. Shipped as `data/original/hpd_papl_plans.json`. |
 | HPD ADU Budgeting Tool | Soft cost formula, financing and operating defaults | **Verified 2026-09-01** by driving the controls |
 | HPD ADU Homeowner Guidebook | 800sf cap, 250-300sf practical minimum, plain-language framing | **Verified 2026-09-01** from the PDF |
 | Gensler, "What we learned assessing office-to-residential conversions" | The 25% share, as a calibration target | **Verified 2026-09-01**, quoted |
-| NYC Comptroller, *Spotlight: NYC's Office Market* | Office asking rent by class | Report verified to exist; **figures not yet taken** |
-| NOAA Extreme Water Levels, station 8518750 | Annual exceedance probability to water height | Product verified to exist and to publish 1/10/50/99% levels; **values not yet fetched** |
-| LEHD LODES `ny_wac_S000_JT00_2023` | Jobs by census block | Confirmed downloadable last build; **not yet fetched** |
-| NHTS 2022 or CTPP departure times | The agent layer's time dimension | **Unverified. Nothing is built until a specific table is in hand.** |
-| ZR "expanded flood area" as a published layer | Pencil's flood exclusion | **Unverified, and previously assumed. Find it or say it wasn't found.** |
+| NYC Comptroller, *Spotlight: NYC's Office Market* | Office asking rent by class | **Figure in hand 2026-09-01.** $54/sf asking, Class B and C combined, Manhattan, CoStar, current as of 30 Apr 2024, published 14 May 2024. No separate B, no separate C. No effective-rent series found. |
+| NOAA Extreme Water Levels, station 8518750 | Annual exceedance probability to water height | **Values in hand 2026-09-01**, converted to NAVD88, plus a published horizon column. Site retires 30 Sept 2026. |
+| LEHD LODES `ny_wac_S000_JT00_2023` | Jobs by census block | **Located 2026-09-01**, 2.6 MB, posted 2025-12-03, LODES8 on 2020 blocks. Still needs downloading - `data/scripts/fetch-sources.sh`. |
+| NHTS 2022 or CTPP departure times | The agent layer's time dimension | **Table in hand 2026-09-01**: NHTS *Summary of Travel Trends* Table 8-1, p.53. National, six bands, and the evening is one six-hour bin. **ACS B08302** is better - half-hour bands, tract level, same Census API the pipeline already uses - but it is departures *to* work only. Neither describes a Manhattan evening. |
+| ~~ZR "expanded flood area"~~ | Pencil's flood exclusion | **The term does not exist in the ZR.** Corrected in item 6. The rule is ZR 12-10 and the layer is the **DEP Interim Flood Risk Area Map**, `nyc.gov/dep/floodriskmap`. Adoption status and file format unconfirmed. |
 
 ---
 
@@ -604,8 +698,25 @@ Stop after each and check.
    check on the proxy and worth running.
 3. **The Comptroller's report is a PDF that gets reissued.** Pin the edition and the
    date in the manifest, because the office rent figure will move and the sandbox
-   should say which one it is quoting.
-4. **Does Pencil's time model survive?** Release is ranked by ROE at
+   should say which one it is quoting. **Partly closed 2026-09-01:** the edition is
+   14 May 2024, figures as of 30 April 2024, and it publishes only two class
+   figures - roughly $100/sf for 5-star and $54/sf for Class B and C combined. The
+   November 2025 successor report drops rent by class entirely. So the figure is
+   28 months old at course start and cannot be refreshed from this source.
+4. **Has 15 RCNY 66-01 been adopted, and is the map downloadable?** The DEP
+   Interim Flood Risk Area Map is the layer the ADU rule points at. The rule
+   creating it was proposed in June 2025 and adoption was not confirmed on
+   2026-09-01. Until a downloadable layer is found, Pencil's flood exclusion has
+   no dataset, and the two NPCC layers on disk are an approximation that has to be
+   labelled as one.
+
+5. **Is DEP's "moderate" stormwater scenario the 10-year storm?** The Stormwater
+   Flood Maps are published as intensities - 1.77, 2.13 and 3.66 inches per hour -
+   not as return periods, and the ZR's term is a 10-year rainfall area. Do not
+   assume the moderate layer is the 10-year event without checking the Stormwater
+   Resiliency Plan.
+
+6. **Does Pencil's time model survive?** Release is ranked by ROE at
    `permits_per_year`. With only 44,677 lots clearing the size test, and 8,000 units
    by 2035 at the default rate, the queue may no longer be the binding constraint
    the card claims it is. Re-read that claim against the new numbers.

@@ -162,6 +162,72 @@ ENCODE_OFFSET = 1000  # decimetres, so -100.0m is the lowest representable value
 WATER_SURFACE_M = 0.3
 
 
+# Published constants the sandbox needs alongside the derived grid. They are
+# not derived from anything in data/original - they are numbers somebody
+# else published, and they carry their citation here rather than in a
+# comment in the front end.
+#
+# NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. Metres above the
+# NPCC4 baseline, converted from the published inches. Note what is absent:
+# NPCC4 reports the 10th, 25th, 75th and 90th percentiles and NO median, so
+# there is no single number to put on a map and every published sea level
+# map has quietly chosen one of these four.
+PUBLISHED = {
+    "years": [2030, 2050, 2080, 2100, 2150],
+    "projections": {
+        "10": [0.152, 0.305, 0.533, 0.635, 0.965],
+        "25": [0.178, 0.356, 0.635, 0.762, 1.194],
+        "75": [0.279, 0.483, 0.991, 1.270, 2.261],
+        "90": [0.330, 0.584, 1.143, 1.651, 4.496],
+    },
+    # Tidal datums at The Battery (NOAA CO-OPS station 8518750, 1983-2001
+    # epoch), as metres relative to NAVD88: the published value in feet
+    # minus the station's NAVD88 value (6.06 ft), times 0.3048.
+    #   MHHW 8.34 -> +2.28 ft -> +0.695 m
+    #   MSL  5.86 -> -0.20 ft -> -0.061 m
+    #   MLLW 3.29 -> -2.77 ft -> -0.844 m
+    # One station applied across the whole grid. NOAA's own mapping uses a
+    # spatially varying tidal surface instead; that gap goes in the model card.
+    "tideOffsetsM": {"mllw": -0.844, "msl": -0.061, "mhhw": 0.695},
+
+    # NOAA Extreme Water Levels, same station, read 2026-09-01 from the Tidal
+    # Datums and Exceedance Probability Levels stick diagram
+    # (tidesandcurrents.noaa.gov/est/stickdiagram.shtml?stnid=8518750).
+    #
+    # THE SITE RETIRES 30 SEPTEMBER 2026 for the integrated Sea Level Trends
+    # and Extremes site. Re-point this citation before the December freeze.
+    #
+    # These are annual exceedance probabilities: the chance that the water goes
+    # at least this high in any given year. NOAA publishes exactly four, and
+    # these are they - there is no 2% and no 0.2% in this product. Published as
+    # metres above the 1983-2001 MSL; NAVD88 sits 0.063m above that MSL at this
+    # station (datums page: NAVD88 0.846, MSL 0.783, both above MLLW), so the
+    # NAVD88 figure is the published one minus 0.063:
+    #     99% (1yr)    1.26 -> 1.20      10% (10yr)   1.84 -> 1.78
+    #     50% (2yr)    1.50 -> 1.44       1% (100yr)  2.46 -> 2.40
+    # Cross-check: the station states the 1% as "1.7 meters above MHHW", and
+    # MHHW is 0.758m above MSL, so 2.46 - 0.758 = 1.70. Agrees.
+    #
+    # WHAT THESE ARE, which decides how the front end may use them. They are
+    # still-water levels fitted to ANNUAL MAXIMA, with the mean sea level trend
+    # removed. An annual maximum happens at high tide, so the tide is already
+    # inside the number - which is why the sandbox substitutes an AEP level for
+    # the tide offset rather than adding one to the other. They are also not
+    # FEMA base flood elevations: no wave effects, so they come out lower.
+    "exceedanceM": {"99": 1.20, "50": 1.44, "10": 1.78, "1": 2.40},
+
+    # The same four levels from the same diagram's projected column, read for
+    # 2026 on the station's linear sea level trend: 1.36 / 1.60 / 1.94 / 2.56
+    # above the 1983-2001 MSL, i.e. every level 0.10m higher, less the same
+    # 0.063 conversion. NOT ADDED TO ANYTHING. It is NOAA doing the same
+    # arithmetic the sandbox does with NPCC - raising the storm distribution
+    # onto a higher sea - by a different method, so it is shipped as the
+    # cross-check it is. Adding it to an NPCC projection would count the rise
+    # twice. The card says so.
+    "exceedance2026M": {"99": 1.30, "50": 1.54, "10": 1.88, "1": 2.50},
+}
+
+
 # --------------------------------------------------------------------------
 # step 1 - the ground, and the spill elevation derived from it
 # --------------------------------------------------------------------------
@@ -781,37 +847,9 @@ def main():
             manifest = json.loads(existing.read_text())
         except ValueError:
             manifest = {}
-    # Published constants the sandbox needs alongside the derived grid. They are
-    # not derived from anything in data/original - they are numbers somebody
-    # else published, and they carry their citation here rather than in a
-    # comment in the front end.
-    #
-    # NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. Metres above the
-    # NPCC4 baseline, converted from the published inches. Note what is absent:
-    # NPCC4 reports the 10th, 25th, 75th and 90th percentiles and NO median, so
-    # there is no single number to put on a map and every published sea level
-    # map has quietly chosen one of these four.
-    sea_level = {
-        "years": [2030, 2050, 2080, 2100, 2150],
-        "projections": {
-            "10": [0.152, 0.305, 0.533, 0.635, 0.965],
-            "25": [0.178, 0.356, 0.635, 0.762, 1.194],
-            "75": [0.279, 0.483, 0.991, 1.270, 2.261],
-            "90": [0.330, 0.584, 1.143, 1.651, 4.496],
-        },
-        # Tidal datums at The Battery (NOAA CO-OPS station 8518750, 1983-2001
-        # epoch), as metres relative to NAVD88: the published value in feet
-        # minus the station's NAVD88 value (6.06 ft), times 0.3048.
-        #   MHHW 8.34 -> +2.28 ft -> +0.695 m
-        #   MSL  5.86 -> -0.20 ft -> -0.061 m
-        #   MLLW 3.29 -> -2.77 ft -> -0.844 m
-        # One station applied across the whole grid. NOAA's own mapping uses a
-        # spatially varying tidal surface instead; that gap goes in the model card.
-        "tideOffsetsM": {"mllw": -0.844, "msl": -0.061, "mhhw": 0.695},
-    }
 
     manifest.update({
-        **sea_level,
+        **PUBLISHED,
         "sandbox": "bathtub",
         "scope": args.scope,
         "downsample": args.downsample,

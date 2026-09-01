@@ -35,23 +35,46 @@
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
 
+  // The chosen NOAA exceedance level, in metres NAVD88, or null for no storm.
+  // These are still-water levels fitted to ANNUAL MAXIMA, and an annual maximum
+  // happens at high tide - so the level already contains a high tide, and it
+  // REPLACES the tide offset rather than being added to it. Adding the two
+  // would count the tide twice: NOAA states the 1% as 1.70m above MHHW, and
+  // MHHW here is +0.695, which is the same 2.40 the table gives.
+  // Return periods as the labels say them, for the legend. 1/0.99 is 1.01
+  // years, 1/0.50 is 2, 1/0.10 is 10, 1/0.01 is 100.
+  const AEP_RETURN = { '99': '1-year', '50': '2-year', '10': '10-year', '1': '100-year' };
+
+  const aepM = $derived(
+    manifest && params.aep && params.aep !== 'none'
+      ? (manifest.exceedanceM?.[params.aep] ?? null)
+      : null
+  );
+
   // Water height in metres NAVD88, the same datum the DEM is in - which is what
   // makes the comparison legal in the first place.
   const waterline = $derived.by(() => {
     if (!manifest) return 0;
-    const tide = manifest.tideOffsetsM?.[params.tide] ?? 0;
     let slr = params.slr_m;
     if (params.link_year) {
       const yi = manifest.years?.indexOf(params.year) ?? -1;
       const curve = manifest.projections?.[String(params.percentile)];
       if (yi >= 0 && curve) slr = curve[yi];
     }
-    return slr + params.surge_m + tide;
+    if (aepM !== null) return slr + aepM;
+    return slr + params.surge_m + (manifest.tideOffsetsM?.[params.tide] ?? 0);
   });
 
   // Today's water, at the same tidal datum but with no rise and no surge.
-  // Everything the sandbox reports is measured against this.
-  const baseline = $derived(manifest ? (manifest.tideOffsetsM?.[params.tide] ?? 0) : 0);
+  // Everything the sandbox reports is measured against this. Under an
+  // exceedance level the tide control is not driving the waterline, so the
+  // comparison is made against today's average daily high tide - the tide the
+  // level itself was measured at.
+  const baseline = $derived.by(() => {
+    if (!manifest) return 0;
+    const t = aepM !== null ? 'mhhw' : params.tide;
+    return manifest.tideOffsetsM?.[t] ?? 0;
+  });
 
   async function boot() {
     try {
@@ -151,7 +174,7 @@
   });
 
   $effect(() => {
-    void [params.slr_m, params.surge_m, params.tide, params.percentile,
+    void [params.slr_m, params.aep, params.surge_m, params.tide, params.percentile,
           params.year, params.link_year, params.connectivity, params.basemap,
           params.flood_line, manifest];
     if (map && deck) render();
@@ -182,6 +205,10 @@
       {/if}
       {#if params.flood_line !== false}
         <span><i class="sw line"></i>the flood line, found by the model</span>
+      {/if}
+      {#if aepM !== null}
+        <span class="note">the {AEP_RETURN[params.aep]} storm level, {aepM.toFixed(2)}m
+          NAVD88 - still water, no waves. Sandy reached about 3.4m at this gauge.</span>
       {/if}
       {#if basemapFailed}
         <span class="warn">no basemap - the flood model still works</span>
@@ -214,4 +241,5 @@
   .unreachable { background: rgba(209,69,61,0.6); }
   .line { background: #0d1729; height: 2px; }
   .warn { color: #a00; font-weight: 700; }
+  .note { color: #222; }
 </style>

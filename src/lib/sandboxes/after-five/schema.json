@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/after-five.json",
   "title": "After Five parameters",
-  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema. Property order is the panel's reading order: the clock, then the deal, then the two gates that decide everything, then how it is drawn. THE TIME OF DAY IS DELIBERATELY ABSENT: it would be serialised into every submission and it is not a choice anyone is making.",
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema. Property order is the panel's reading order: the clock, then the deal, then the score you are building, then the two gates that test it, then how it is drawn. THE TIME OF DAY IS DELIBERATELY ABSENT: it would be serialised into every submission and it is not a choice anyone is making. THE OFFICE RENT BASE IS DELIBERATELY NOT A CONTROL: it is $54/sf asking for Manhattan class B and C, it is published, and it lives once in the manifest's economics block. What is a control is the discount between asking and effective, because THAT is the part nobody published.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -10,7 +10,14 @@
     "convertibility_threshold",
     "year",
     "residential_rent",
-    "district"
+    "district",
+    "office_rent_discount",
+    "cap_rate",
+    "opex_share",
+    "w_depth",
+    "w_f2f",
+    "w_area",
+    "w_age"
   ],
   "properties": {
     "district": {
@@ -85,6 +92,76 @@
       "default": -0.01,
       "description": "How office rent drifts each year from its base. THIS IS THE ONLY THING THAT MAKES TIME PASS IN THIS MODEL. A building converts at the first date the residential deal beats the office income it gives up, so a falling office market is what opens the gate and a rising one holds it shut. The default is a mild decline, which is an assumption and a consequential one - set it to zero and the map stops changing with the year at all, which tells you how much of this story is the office market rather than anything about housing."
     },
+    "office_rent_discount": {
+      "type": "number",
+      "title": "Asking to effective",
+      "x-group": "the deal",
+      "minimum": 0,
+      "maximum": 0.5,
+      "x-step": 0.05,
+      "default": 0,
+      "description": "The office rent above is an ASKING rent: $54 a square foot a year for Manhattan class B and C offices, from the Comptroller's May 2024 spotlight. What a landlord actually collects is less, because of free months, fit-out money and other concessions, and in this market the gap is large. NO PUBLISHED EFFECTIVE-RENT SERIES WAS FOUND, so this sandbox subtracts nothing by default and makes you choose the discount yourself. That is not squeamishness. The version of this file before 2026-09-01 had a 39% haircut already applied, in a code comment, to a figure that was not published either - and the map it drew looked completely normal."
+    },
+    "cap_rate": {
+      "type": "number",
+      "title": "Capitalisation rate",
+      "x-group": "the deal",
+      "minimum": 0.03,
+      "maximum": 0.1,
+      "x-step": 0.005,
+      "default": 0.055,
+      "description": "How a yearly income becomes a price: divide the income by this. A MARKET CONVENTION AND NOT A MEASUREMENT - no published New York office cap-rate series was verified for this build. Move it and notice how little happens: the same rate is applied to the office income and to the housing income, so it scales both sides of the comparison at once and very nearly cancels. That is the bug in it. Office and residential do not trade at the same yield, and the gap between them is a large part of why anyone converts anything."
+    },
+    "opex_share": {
+      "type": "number",
+      "title": "Operating cost",
+      "x-group": "the deal",
+      "minimum": 0.15,
+      "maximum": 0.55,
+      "x-step": 0.05,
+      "default": 0.35,
+      "description": "The share of gross rent that goes on running the building before any of it counts as income. Ours, and applied identically to an office tower and to the apartments it becomes, which is convenient rather than true."
+    },
+    "w_depth": {
+      "type": "number",
+      "title": "Weight: floorplate depth",
+      "x-group": "the score",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.35,
+      "description": "How much the depth from core to window counts. It is the heaviest weight here, and that is a judgement we made, not one anybody published. The proxy is MapPLUTO's BldgDepth halved, which assumes a centred core and a rectangular plate."
+    },
+    "w_f2f": {
+      "type": "number",
+      "title": "Weight: floor-to-floor",
+      "x-group": "the score",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.25,
+      "description": "How much ceiling height counts - the room to run new services under a floor and still have a room. The proxy is modelled height divided by storeys, which averages the lobby and the mechanical floors in with the rest."
+    },
+    "w_area": {
+      "type": "number",
+      "title": "Weight: floorplate area",
+      "x-group": "the score",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.2,
+      "description": "How much a small floor counts. The proxy is floor area over storeys."
+    },
+    "w_age": {
+      "type": "number",
+      "title": "Weight: age",
+      "x-group": "the score",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.2,
+      "description": "How much being old counts, standing in for the kind of facade a building has. It used to stand in for structural bay as well, which it does not measure at all; that is now named as a third missing criterion rather than quietly carried here."
+    },
     "convertibility_threshold": {
       "type": "number",
       "title": "Convertibility threshold",
@@ -94,7 +171,7 @@
       "x-step": 0.05,
       "default": 0.5,
       "x-emphasis": true,
-      "description": "How convertible a building has to be before anyone tries. The score behind it is OURS, not a consultancy's: it is a weighted sum of four proxies for Gensler's published criteria - floorplate depth, floor-to-floor height, floorplate area and age - and two of their criteria are dropped outright because nothing available measures them. So this slider is a number we chose, standing in for a judgement somebody else sells, applied to proxies for the things they actually look at. Move it and watch how much of downtown that judgement decides."
+      "description": "How convertible a building has to be before anyone tries. The score behind it is OURS, not a consultancy's: the weighted sum of the four proxies above, and three of Gensler's published criteria are dropped outright because nothing available measures them. The weights are relative - they are divided by their own total - so what matters is which one you make heaviest. The legend on the map marks where this slider would have to sit for our score to call a quarter of the district convertible, which is the share Gensler published. It is the only place our judgement and theirs can be held up beside each other, and it moves when you move the weights."
     },
     "incentive_467m": {
       "type": "boolean",

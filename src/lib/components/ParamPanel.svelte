@@ -29,13 +29,18 @@
   // that take it over; x-disabled-note says so in place of the readout, because
   // a greyed slider on its own reads as broken rather than as overridden.
   //
+  // A value may be an array, meaning any one of these takes the control over -
+  // bathtub's `aep` has four storm levels and one "no storm", and it is the
+  // four that override the manual surge and the tide.
+  //
   // The value is NOT written back while a control is disabled. The sandbox
   // derives the real number itself, and having the panel race it to the same
   // state is how you get a reactive loop.
   function overridden(prop) {
     const when = prop['x-disabled-when'];
     if (!when) return false;
-    return Object.entries(when).every(([k, v]) => params[k] === v);
+    return Object.entries(when).every(([k, v]) =>
+      Array.isArray(v) ? v.includes(params[k]) : params[k] === v);
   }
 
   // x-group starts a labelled section. The heading is drawn when the group

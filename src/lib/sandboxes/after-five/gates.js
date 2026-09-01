@@ -9,20 +9,31 @@
 //
 // Neither gate is a prediction. Together they are a statement of what a
 // conversion argument contains once it is written down.
+//
+// WHERE THE NUMBERS COME FROM. This file used to carry its own copy of the
+// economic constants, and one of them disagreed with the manifest: here
+// officeRentBase was 38, in the manifest office_rent_base_psf_yr was 62. A
+// constant that lives in two places has two values. They now live in the
+// manifest's `economics` block, with their sources, and this file reads them.
 
 // Column offsets into buildings.bin. Must match manifest.columns.
+//
+// The score used to be ONE baked float at index 9. It is now the four
+// sub-scores it was made of, so the weights are controls rather than something
+// welded into a binary file. That is the whole reason the stride is 18.
 const LON = 0, LAT = 1, HEIGHT = 2, FLOORS = 3, BLDG_AREA = 4, OFFICE_AREA = 5,
-      RES_AREA = 6, COM_AREA = 7, YEAR_BUILT = 8, CONVERTIBILITY = 9,
-      UNITS_CREATED = 10, FLOORS_ADDED = 11, CONVERTED_YEAR = 12,
-      FOOTPRINT_AREA = 13, DISTRICT = 14;
-export const STRIDE = 15;
+      RES_AREA = 6, COM_AREA = 7, YEAR_BUILT = 8,
+      S_DEPTH = 9, S_F2F = 10, S_AREA = 11, S_AGE = 12,
+      UNITS_CREATED = 13, FLOORS_ADDED = 14, CONVERTED_YEAR = 15,
+      FOOTPRINT_AREA = 16, DISTRICT = 17;
+export const STRIDE = 18;
 
-// Assumptions that are ours. Each is named in the manifest and the card.
+// Fallbacks only. The live values are read off the manifest - see `econ()` -
+// and these exist so a component that renders before the fetch lands does not
+// produce NaN. Keep them equal to the manifest's.
 export const ASSUME = {
-  capRate: 0.055,          // how an income stream becomes a value
-  opexShare: 0.35,         // operating cost as a share of gross rent
-  officeRentBase: 38,      // $/sf/yr EFFECTIVE rent on the older, deeper stock
-  sfPerUnit: 900,          // floor area per apartment, for the unit count
+  officeRentBase: 54,      // $/sf/yr ASKING, Manhattan class B and C combined
+  sfPerUnit: 1152,         // measured from DOB conversion filings
   baseYear: 2025,
   // How much harder a badly-shaped building is to convert, as a multiplier on
   // the cost slider. A building scoring 1 costs what the slider says; one
@@ -37,9 +48,56 @@ export const ASSUME = {
   costPenalty: 1.0
 };
 
+/**
+ * Square feet of office floor area per office-using job, per district, indexed
+ * the way buildings.bin's district column is.
+ *
+ * Measured, not assumed: LODES counts the jobs at each census block and
+ * MapPLUTO gives the office floor area on the same blocks. It comes out at one
+ * job per 490 square feet in Lower Manhattan and per 324 in Midtown South,
+ * both well above the 150-250 quoted for a fitted-out floor - the difference is
+ * vacancy, plus the fact that OfficeArea is gross and LODES counts primary jobs
+ * only. Using the measured ratio means a converted building displaces the jobs
+ * that were really recorded on that floor area rather than the ones a rule of
+ * thumb would put there.
+ */
+function jobDensity(manifest) {
+  const d = manifest?.presence?.districts;
+  if (!d) return null;
+  return (manifest.districts ?? []).map((k) => d[k]?.sq_ft_per_office_job ?? 0);
+}
+
+function econ(manifest) {
+  const e = manifest?.economics ?? {};
+  return {
+    officeRentBase: e.office_rent_base_psf_yr ?? ASSUME.officeRentBase,
+    sfPerUnit: e.sf_per_unit ?? ASSUME.sfPerUnit,
+    baseYear: e.base_year ?? ASSUME.baseYear,
+    costPenalty: e.cost_penalty ?? ASSUME.costPenalty
+  };
+}
+
+/**
+ * The convertibility score: our weighted sum of four proxies for Gensler's
+ * published criteria.
+ *
+ * The weights are NORMALISED by their own sum, so they are relative rather than
+ * absolute and moving one does not silently move the threshold's meaning as
+ * well. All four at zero scores everything zero, which is the honest answer to
+ * a question with nothing in it.
+ */
+export function scoreOf(buildings, base, w) {
+  const sum = w.w_depth + w.w_f2f + w.w_area + w.w_age;
+  if (sum <= 0) return 0;
+  return (w.w_depth * buildings[base + S_DEPTH]
+        + w.w_f2f * buildings[base + S_F2F]
+        + w.w_area * buildings[base + S_AREA]
+        + w.w_age * buildings[base + S_AGE]) / sum;
+}
+
 /** Present value of a rent stream, in dollars per square foot. */
-function value(rentPerSf) {
-  return (rentPerSf * (1 - ASSUME.opexShare)) / ASSUME.capRate;
+function value(rentPerSf, p) {
+  return (rentPerSf * (1 - p.opex_share)) / p.cap_rate;
 }
 
 /**
@@ -70,9 +128,11 @@ export const DISTRICT_INDEX = { mn01: 0, mn05: 1 };
 export function compute(buildings, manifest, p) {
   const n = buildings.length / STRIDE;
   const years = manifest.snapshot_years;
+  const A = econ(manifest);
   const convertedIn = new Int16Array(n).fill(-1);
   const state = new Uint8Array(n);   // 0 not office, 1 never converts, 2 converted
   const unitsOf = new Float32Array(n);
+  const score = new Float32Array(n);
 
   let officeBuildings = 0;
   let converted = 0;
@@ -81,6 +141,15 @@ export function compute(buildings, manifest, p) {
   let residentsAdded = 0;
 
   const householdSize = manifest.household_size ?? 1.9;
+  // Asking is not effective. No published effective-rent series was found for
+  // Manhattan B and C stock, so the discount is a control and its default is
+  // zero: the shipped model values office space at the published ASKING rent
+  // and is therefore valuing it high. Nothing is subtracted behind your back.
+  const officeRent = A.officeRentBase * (1 - (p.office_rent_discount ?? 0));
+  const officeScores = [];
+  const sfPerJob = jobDensity(manifest);
+  let officeJobsHere = 0;      // office-using jobs in the district today
+  let officeJobsRemoved = 0;   // and the ones the conversions take with them
 
   for (let i = 0; i < n; i++) {
     const base = i * STRIDE;
@@ -91,25 +160,26 @@ export function compute(buildings, manifest, p) {
       state[i] = 3;   // out of the selected district
       continue;
     }
+    score[i] = scoreOf(buildings, base, p);
     const office = buildings[base + OFFICE_AREA];
     if (office <= 0) { state[i] = 0; continue; }
     officeBuildings += 1;
+    officeScores.push(score[i]);
     state[i] = 1;
 
-    if (buildings[base + CONVERTIBILITY] < p.convertibility_threshold) continue;
+    if (score[i] < p.convertibility_threshold) continue;
 
-    const unitsMade = Math.floor(office / ASSUME.sfPerUnit);
+    const unitsMade = Math.floor(office / A.sfPerUnit);
     if (p.incentive_467m && !qualifies467m(buildings, base, unitsMade)) continue;
 
     // The deal, tested at each snapshot year. Office rent drifts; residential
     // rent does not, which is itself an assumption and a strong one.
-    const resValue = value(p.residential_rent);
-    const score = buildings[base + CONVERTIBILITY];
-    const costSf = p.conversion_cost_sf * (1 + ASSUME.costPenalty * (1 - score));
+    const resValue = value(p.residential_rent, p);
+    const costSf = p.conversion_cost_sf * (1 + A.costPenalty * (1 - score[i]));
     for (let y = 0; y < years.length; y++) {
       const yr = years[y];
-      const drift = Math.pow(1 + p.office_rent_trend, yr - ASSUME.baseYear);
-      const officeValue = value(ASSUME.officeRentBase * drift);
+      const drift = Math.pow(1 + p.office_rent_trend, yr - A.baseYear);
+      const officeValue = value(officeRent * drift, p);
       if (resValue - costSf > officeValue) {
         convertedIn[i] = yr;
         unitsOf[i] = unitsMade;
@@ -126,12 +196,37 @@ export function compute(buildings, manifest, p) {
     unitsTotal += unitsOf[i];
     officeRemoved += buildings[base + OFFICE_AREA];
     residentsAdded += unitsOf[i] * householdSize;
+    const per = sfPerJob?.[buildings[base + DISTRICT]];
+    if (per > 0) officeJobsRemoved += buildings[base + OFFICE_AREA] / per;
   }
 
+  // The district's own job count, from LODES. Not derived from the buildings -
+  // it is the whole district, including the office floor area that never
+  // appears in the massing.
+  let residentsHere = 0;
+  if (manifest.presence?.districts) {
+    (manifest.districts ?? []).forEach((k, i) => {
+      if (p.district !== 'both' && DISTRICT_INDEX[p.district] !== i) return;
+      officeJobsHere += manifest.presence.districts[k]?.office_using_jobs ?? 0;
+      residentsHere += manifest.presence.districts[k]?.residents_2020 ?? 0;
+    });
+  }
+
+  // Gensler's published result - about a quarter of the buildings they scored
+  // came out suitable - is the ONE number our score and theirs can be held up
+  // beside each other, because their scoring is closed. This is where our
+  // threshold would have to sit to agree with them, and it is recomputed here
+  // rather than read off the manifest because it MOVES when the weights move.
+  // A mark that stays put while the score changes underneath it is a lie.
+  officeScores.sort((a, b) => b - a);
+  const k = Math.round(0.25 * officeScores.length);
+  const gensler = officeScores.length ? officeScores[Math.max(0, k - 1)] : null;
+
   return {
-    convertedIn, state, unitsOf,
+    convertedIn, state, unitsOf, score, gensler,
     metrics: {
       officeBuildings, converted, unitsTotal, officeRemoved, residentsAdded,
+      officeJobsHere, officeJobsRemoved, residentsHere,
       shareConverted: officeBuildings > 0 ? converted / officeBuildings : 0
     }
   };
@@ -151,7 +246,7 @@ export function colours(result, buildings, p) {
     }
 
     if (p.colour_by === 'convertibility') {
-      const v = Math.max(0, Math.min(1, buildings[base + CONVERTIBILITY]));
+      const v = Math.max(0, Math.min(1, result.score[i]));
       r = Math.round(238 - 200 * v); g = Math.round(233 - 150 * v); b = Math.round(222 - 60 * v);
     } else if (p.colour_by === 'year_converted') {
       const y = result.convertedIn[i];
@@ -172,5 +267,5 @@ export function colours(result, buildings, p) {
 }
 
 export { LON, LAT, HEIGHT, FLOORS, BLDG_AREA, OFFICE_AREA, RES_AREA, COM_AREA,
-         YEAR_BUILT, CONVERTIBILITY, UNITS_CREATED, FLOORS_ADDED, CONVERTED_YEAR,
-         FOOTPRINT_AREA, DISTRICT };
+         YEAR_BUILT, S_DEPTH, S_F2F, S_AREA, S_AGE, UNITS_CREATED, FLOORS_ADDED,
+         CONVERTED_YEAR, FOOTPRINT_AREA, DISTRICT };

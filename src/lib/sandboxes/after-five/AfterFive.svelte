@@ -10,12 +10,25 @@
   //   never    : this component does not touch window.__metrics or
   //              data-cover-ready. It reports; the frame publishes.
   //
-  // WHAT IS NOT HERE. The sandbox is named for the street at nine in the
-  // evening, and there are no agents in it. Building the moving crowd needs a
-  // citable published schedule for who is where and when, and none was settled;
-  // the number of residents present is computed from published data instead,
-  // and nothing is animated. Drawing movement from a schedule nobody published
-  // is precisely the failure this course exists to name, so it is not drawn.
+  // WHAT IS NOT HERE, AND WHY IT IS THE POINT. The sandbox is named for the
+  // street at nine in the evening, and there are no agents in it.
+  //
+  // The two POPULATIONS are counted, and the panel over the map shows them:
+  // office-using jobs at work in the district from LODES, residents from the
+  // 2020 census, and what the conversions do to each. Those are joined by ID
+  // and their totals land on published figures.
+  //
+  // THE HOURS ARE NOT PUBLISHED. NHTS table 8-1 is national, six bands wide,
+  // and its finest statement about the evening is that 28% of trips begin
+  // somewhere between six and midnight. ACS B08302 is half-hour bands at tract
+  // level, but its universe is departures TO work - it describes the morning
+  // only. Nothing published says when people leave a Manhattan office.
+  //
+  // So no curve is drawn through the two counts and no trip is animated. It is
+  // not only the schedule that is missing: which building a trip starts at
+  // would be an assumption doing as much work as the schedule is. An animation
+  // built on both would look far more specific than anything behind it, which
+  // is the failure this course exists to name.
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
@@ -33,11 +46,47 @@
   let tileFailures = $state(0);
 
   let map, overlay, detachRedraw, PolygonLayer;
-  let buildings, footprints, result;
+  let buildings, footprints;
+  // $state, not a plain let: the legend reads the district's Gensler
+  // calibration and whether anything converted out of this, so it has to be
+  // reactive. The rest of the render path is imperative deck.gl and does not.
+  let result = $state(null);
   let ready = false;
   let pending = 0;
 
   const FT_TO_M = 0.3048;
+
+  /**
+   * The presence panel. Two counted populations and what the conversions do to
+   * each, on one shared scale so the comparison is the graphic rather than
+   * something the reader has to do in their head.
+   *
+   * The scale is the larger of the two standing populations, so the two deltas
+   * come out as the slivers they are - which is the honest shape of this. A
+   * conversion programme that reads as enormous in units is small against the
+   * number of people who are already here in the daytime.
+   */
+  const bars = $derived.by(() => {
+    const m = result?.metrics;
+    if (!m) return [];
+    const jobs = m.officeJobsHere ?? 0;
+    const res = m.residentsHere ?? 0;
+    const top = Math.max(jobs, res, 1);
+    const n = (v) => Math.round(v).toLocaleString();
+    // No sign on a zero: "-0" reads as a rounding artefact rather than as
+    // "nothing converted", which at the shipped defaults is the actual answer.
+    const d = (v, sign) => (Math.round(v) === 0 ? '0' : sign + n(v));
+    return [
+      { label: 'at work in offices, in the day', n: n(jobs), pct: 100 * jobs / top },
+      { label: 'living here', n: n(res), pct: 100 * res / top },
+      { label: 'office jobs the conversions take away', delta: true,
+        n: d(m.officeJobsRemoved ?? 0, '\u2212'),
+        pct: 100 * (m.officeJobsRemoved ?? 0) / top },
+      { label: 'residents the conversions add', delta: true,
+        n: d(m.residentsAdded ?? 0, '+'),
+        pct: 100 * (m.residentsAdded ?? 0) / top }
+    ];
+  });
 
   /** Frame the district being looked at, not the union of both. */
   function boundsFor(m, district) {
@@ -144,6 +193,7 @@
       'office floor area removed': `${(mt.officeRemoved / 1e6).toFixed(1)}M sf`,
       'buildings converted': `${mt.converted.toLocaleString()} of ${mt.officeBuildings.toLocaleString()} office buildings`,
       'residents living here afterwards': Math.round(mt.residentsAdded).toLocaleString(),
+      'office jobs displaced': Math.round(mt.officeJobsRemoved).toLocaleString(),
       'share of office buildings converted': `${(mt.shareConverted * 100).toFixed(1)}%`
     });
 
@@ -165,7 +215,9 @@
 
   $effect(() => {
     void [params.year, params.conversion_cost_sf, params.residential_rent,
-          params.office_rent_trend, params.incentive_467m,
+          params.office_rent_trend, params.office_rent_discount, params.cap_rate,
+          params.opex_share, params.incentive_467m,
+          params.w_depth, params.w_f2f, params.w_area, params.w_age,
           params.convertibility_threshold, params.colour_by, params.added_floors,
           params.district];
     schedule();
@@ -198,6 +250,26 @@
     <p class="loading">{loading}</p>
   {/if}
 
+  {#if manifest && !error && result && manifest.presence?.districts}
+    <!-- The two populations, counted. Deliberately NOT a curve: there is no
+         published table of when either of them is on the street. -->
+    <div class="presence">
+      <h4>who is here</h4>
+      {#each bars as b}
+        <div class="row" class:delta={b.delta}>
+          <span class="bar" style="width:{b.pct}%"></span>
+          <span class="n">{b.n}</span>
+          <span class="l">{b.label}</span>
+        </div>
+      {/each}
+      <p class="gap">Counted, both of them. <b>When</b> either is on the street is
+        not published anywhere - the national travel survey says only that 28% of
+        trips begin between six and midnight, and the census asks when people
+        leave <i>for</i> work. So there are two numbers here and no curve
+        between them.</p>
+    </div>
+  {/if}
+
   {#if manifest && !error}
     <div class="key">
       {#if params.colour_by === 'convertibility'}
@@ -209,6 +281,20 @@
         <span><i class="sw office"></i>still office</span>
         <span><i class="sw conv"></i>converted to housing</span>
         <span><i class="sw other"></i>neither</span>
+      {/if}
+      <!-- An empty map has to read as an ANSWER, not as a broken sandbox. At
+           the published office rent nothing clears the deal, and a reader who
+           is not told that will assume the data failed to load. -->
+      {#if result && result.metrics.converted === 0}
+        <span class="none">Nothing clears the deal at these numbers. That is the
+          model's answer, not a failure to load - the office rent it is competing
+          against is the published asking rent, undiscounted.</span>
+      {/if}
+      {#if result?.gensler != null}
+        <span class="note">Gensler found about a quarter of the buildings they
+          scored convertible. Our score passes a quarter of this district at a
+          threshold of {result.gensler.toFixed(2)} - it moves when the weights
+          move.</span>
       {/if}
       <span class="note">No agents. The street at nine is a count, not a picture.</span>
       {#if basemapFailed}
@@ -244,5 +330,28 @@
   .early { background: rgb(40,110,160); }
   .late { background: rgb(240,70,70); }
   .note { color: #999; }
+  .none { color: #222; }
+  .presence {
+    position: absolute; right: 0.6rem; top: 0.6rem; width: 15rem;
+    background: rgba(255,255,255,0.9); padding: 0.5rem 0.6rem 0.45rem;
+    font-size: 0.62rem; line-height: 1.35; color: #444; pointer-events: none;
+  }
+  .presence h4 {
+    margin: 0 0 0.4rem; font-size: 0.62rem; font-weight: 400; color: #999;
+    text-transform: lowercase; letter-spacing: 0.06em;
+    border-bottom: 1px solid #eee; padding-bottom: 0.3rem;
+  }
+  .presence .row { margin-bottom: 0.35rem; }
+  .presence .bar {
+    display: block; height: 5px; background: #3c5c8a; min-width: 1px;
+    margin-bottom: 0.12rem;
+  }
+  .presence .delta .bar { background: #cd4a3c; }
+  .presence .n { font-variant-numeric: tabular-nums; font-weight: 700; color: #222; }
+  .presence .l { color: #666; }
+  .presence .gap {
+    margin: 0.5rem 0 0; padding-top: 0.4rem; border-top: 1px solid #eee;
+    color: #666; font-size: 0.6rem;
+  }
   .warn { color: #a00; font-weight: 700; }
 </style>

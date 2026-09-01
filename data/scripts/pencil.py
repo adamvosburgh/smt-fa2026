@@ -132,6 +132,7 @@ Run from the repo root.
 import argparse
 import json
 import math
+import re
 import struct
 import sys
 import urllib.request
@@ -163,29 +164,141 @@ PROGRAMME = {
     "cushion": 200,              # "at least $200 monthly cash flow available"
 }
 
-# --- City of Yes for Housing Opportunity, ADU rules ------------------------
-# nyc.gov/assets/planning/downloads/pdf/our-work/plans/citywide/
-#   city-of-yes-housing-opportunity/housing-opportunity-guide-adus.pdf
-MAX_ADU_SF = 800
+# --- the ADU rules, from the Zoning Resolution itself -----------------------
+# ZR 23-341(b)(4) and ZR 23-342, verified 2026-09-01 from
+# zoningresolution.planning.nyc.gov. The previous version of this pipeline took
+# its sizing from a secondary reading and applied the one-third fraction to the
+# WHOLE open area of the lot. The rule applies it to the REQUIRED REAR YARD,
+# which is a much smaller and district-dependent thing - which is why the old
+# median came out at 707sf with 109,032 lots pinned to the 800sf cap, and the
+# corrected median is about 230sf with the cap never binding at all.
+MAX_ADU_SF = 800                    # ZR 12-10, "not exceeding 800 square feet"
 DETACHED_EXCLUDED_DISTRICTS = ("R1-2A", "R2A", "R3A")
 
-# --- assumptions that are ours, not anybody's ------------------------------
+# ZR 23-341(b)(4), permitted obstructions in required rear yards:
+#   "the size shall be limited to an area not exceeding one-third of the rear
+#    yard or rear yard equivalent"
+#   "where such building is free-standing ... it shall not be closer than five
+#    feet to a rear lot line or side lot line"
+# The section names DETACHED, ZERO LOT LINE and SEMI-DETACHED buildings.
+# ATTACHED buildings are not in it, so an attached house cannot have a backyard
+# ADU at all. The last build's "detached only" reading was wrong in both
+# directions: it excluded semi-detached, which the rule allows, and it reasoned
+# about attached, which the rule excludes.
+REAR_YARD_FRACTION = 1.0 / 3.0
+SIDE_SETBACK_FT = 5.0
+
+# ZR 23-342, required rear yard depth, in feet.
+REAR_YARD_DEPTH = {
+    "detached": 20.0,               # and zero lot line. 30 above 75ft of height,
+                                    # which no one-to-two-family house reaches.
+    "semi_narrow": 30.0,            # semi-detached / attached, lot width < 40ft
+    "semi_wide": 20.0,              # semi-detached / attached, lot width >= 40ft
+}
+# Shallow interior lots - under 95 feet deep, existing since 1961-12-15 - reduce
+# the required depth by six inches per foot of deficiency, with a floor of ten
+# feet. The 1961 vintage test is not checkable from MapPLUTO and is treated as
+# satisfied; that is named in the manifest.
+SHALLOW_LOT_DEPTH_FT = 95.0
+SHALLOW_LOT_REDUCTION_PER_FT = 0.5
+SHALLOW_LOT_FLOOR_FT = 10.0
+
+# THE NARROW SEMI-DETACHED CASE GETTING A DEEPER REQUIRED YARD IS NOT A MISREAD.
+# It means the one-third allowance is larger on exactly the narrow lots you would
+# expect to be worst off, and there is a cliff at 40 feet of lot width where it
+# drops back. HPD's guidebook gives a flat "20 feet" for everything, which is the
+# detached case only - the ZR is used here and the guidebook is cited for the
+# plain-language framing.
+
+# The practical floor. HPD's ADU Homeowner Guidebook states that combining the
+# habitability minimums - a 70sf habitable room at 7ft minimum dimension, a
+# kitchen, a bathroom and a code-compliant egress - puts "the practical minimum
+# size for most ADUs" at 250 to 300 square feet. Take 300. Below it the lot
+# produces no unit.
+MIN_ADU_SF = 300
+
+# --- building type: DOF's own field, not our threshold ---------------------
+# MapPLUTO carries ProxCode, the Department of Finance proximity code:
+#   1 detached   2 semi-attached   3 attached   0 not available
+# It is populated on 246,640 of the 246,921 Queens one-to-two-family lots.
+#
+# The build doc classified type from the LotFront - BldgFront gap with cutoffs
+# at 2 and 10 feet, on the belief that MapPLUTO had no building-type field. It
+# does. The gap proxy is still computed, but only as a CROSS-CHECK reported in
+# the manifest - the same way BldgClass A*/B* and LandUse 01 are two independent
+# tests of the same thing, reported separately so a disagreement is visible
+# rather than averaged away.
+#
+# One interpretation is being made and it belongs in the card: DOF says
+# "semi-attached" and the Zoning Resolution says "semi-detached", and they are
+# being treated as the same category.
+PROX_CODE = {"1": "detached", "2": "semi_detached", "3": "attached"}
+GAP_SEMI_FT = 2.0        # LotFront - BldgFront below this reads as attached
+GAP_DETACHED_FT = 10.0   # and above this as detached
+
+# --- HPD's own numbers, recovered from HPD's own tools ---------------------
+# Not assumptions. Each was read off a published HPD product on 2026-09-01.
+HPD_BUDGET = {
+    "source": "HPD ADU Budgeting Tool, housing.hpd.nyc.gov/adu/budget. The "
+              "defaults were read off the controls and the behaviour was "
+              "measured by varying one control at a time at a $500,000 hard "
+              "cost, on 2026-09-01.",
+    "soft_cost_flat": 50000,
+    "soft_cost_share_of_hard": 0.48,
+    "soft_cost_formula": "soft cost = $50,000 + 0.48 x hard cost. Exact, checked "
+                         "at hard costs of 100k, 200k, 300k and 500k.",
+    "the_unlabelled_term": (
+        "THE FINDING WORTH TEACHING, AND IT IS WHY THIS PIPELINE USES THE "
+        "MEASURED FORMULA RATHER THAN THE PUBLISHED INPUTS. The tool exposes "
+        "four cost inputs that together account for 0.20 + 0.08 of hard cost "
+        "plus $50,000 flat. Its actual output is 0.48 of hard cost plus $50,000. "
+        "There is a 20%-of-hard-cost term the tool never shows the user, equal "
+        "in size to the largest one it does show. It is probably general "
+        "contractor overhead and profit. It is not labelled anywhere in the "
+        "interface, and it was found by moving one slider at a time."),
+    "published_inputs": {
+        "design_survey_permitting_share": 0.20,   # published range 0.10-0.25
+        "contingency_share": 0.08,                # published range 0.05-0.10
+        "site_prep": 20000,                       # published range 0-40,000
+        "utility_hookup": 30000,                  # published range 10,000-50,000
+    },
+    "operating": {
+        "upkeep_share": 0.20,        # published range 0.10-0.30
+        "management_share": 0.04,    # published range 0-0.08
+        "insurance_monthly": 200,    # published range 0-300
+        "turnover_rate": 0.15,       # published range 0.05-0.25
+    },
+    "financing_note": (
+        "HPD IS RUNNING TWO DIFFERENT FINANCINGS FOR THE SAME BUILDING. The "
+        "budgeting tool assumes a 7.5%, 20-year market loan; Plus One is 5% over "
+        "15 years, extendable to 30. Both are HPD, on the same website. This "
+        "sandbox models Plus One, because Plus One is the programme it is about, "
+        "and the operating figures above are taken from the budgeting tool "
+        "because Plus One's term sheet does not carry any."),
+}
+
+# --- the Pre-Approved Plan Library -----------------------------------------
+# housing.hpd.nyc.gov/adu/library. Eleven designs, each publishing dimensions,
+# square footage and a cost range. Transcribed to data/original/hpd_papl_plans.json
+# on 2026-09-01 and re-verified against the live index the same day.
+PAPL_FILE = "hpd_papl_plans.json"
+# The city's building footprints, used only to work out which way the back of a
+# lot is. 962MB, streamed and regex-filtered - see read_building_centroids.
+BUILDINGS_FILE = "BUILDING_20260830.geojson"
+# The narrowest DETACHED design in the library, in feet. SITU ADU at 14ft.
+# The library's narrowest design overall is 12ft, but that one is attached, and
+# an attached ADU is not what this pipeline sizes.
+NARROWEST_DETACHED_PLAN_FT = 14.0
+
+# --- assumptions that are still ours, not anybody's ------------------------
 # Each of these is a number with no published source that we could find. They
 # are named here, carried into the manifest, and stated in the model card. A
 # figure that looks sourced and is not is the failure this course is about.
+#
+# THIS LIST USED TO BE LONGER. soft_cost, opex_share and cost_per_sf_default
+# have all moved out of it and into HPD_BUDGET and the plan library, because
+# they now have sources. That migration is the point of this build.
 ASSUMPTIONS = {
-    "soft_cost": {
-        "value": 30000,
-        "note": "Design, filing, permits and survey, as a flat sum per project. "
-                "No published figure was found for New York ADUs. This is an "
-                "assumption and the sandbox says so.",
-    },
-    "opex_share": {
-        "value": 0.25,
-        "note": "Operating cost - insurance, maintenance, water - as a share of "
-                "effective rent. A conventional small-landlord rule of thumb, "
-                "not a measured figure for ADUs.",
-    },
     "property_tax": {
         "value": 0,
         "note": "THE MODEL IGNORES PROPERTY TAX. MapPLUTO carries AssessTot for "
@@ -200,25 +313,338 @@ ASSUMPTIONS = {
                 "1.5 persons per bedroom, which is the convention HUD's own "
                 "rent schedules use.",
     },
-    "cost_per_sf_default": {
-        "value": 500,
-        "note": "Default construction cost. HPD's 'ADU for You' cost figures "
-                "could not be verified to exist, so this is an assumption and "
-                "the schema description says so. It is a control - move it.",
+    "shallow_lot_vintage": {
+        "value": True,
+        "note": "ZR 23-342's shallow-lot reduction applies to interior lots "
+                "'existing on December 15, 1961'. MapPLUTO cannot say whether a "
+                "lot line existed on that date, so every shallow lot is treated "
+                "as qualifying. This makes the model slightly GENEROUS on the "
+                "13.9% of lots the reduction touches.",
+    },
+    "adu_sits_in_the_required_rear_yard": {
+        "value": True,
+        "note": "OPEN QUESTION, AND IT IS THE ONE THAT WOULD MOVE THE ANSWER "
+                "MOST. ZR 23-341 permits an ADU in the required rear yard, as an "
+                "obstruction. A lot whose open area runs deeper than the required "
+                "yard has space between the house and that yard which is not a "
+                "required yard at all, and is governed by lot coverage and FAR "
+                "instead. If an ADU may sit there, the one-third rule is not the "
+                "binding cap on deep lots and this map is too harsh. HPD's "
+                "guidebook and its eligibility tool both present the one-third "
+                "rule as THE size cap, so modelling it as the cap is defensible - "
+                "but it has not been checked against the lot coverage rules.",
     },
 }
 
 # --- flags.bin bitfield ----------------------------------------------------
+# Eight bits, and all eight are spoken for.
+#
+# `eligible_attached` IS GONE. It named an attached ADU - an extension of the
+# house - which this pipeline never measured and never priced: the unit is sized
+# from the rear yard, which is what a backyard cottage occupies. The front end
+# had `wantDetached = true` hardcoded, so the flag decided nothing. A flag that
+# decides nothing is worse than a missing one, for the same reason the
+# owner-occupancy control was cut in the last build.
+#
+# THE TWO FLOOD FLAGS ARE NEW AND THE OLD PAIR WERE NAMING THE WRONG RULE.
+# See the flood section of main() for what the Zoning Resolution actually says.
 FLAGS = {
     "two_family": 1 << 0,
-    "eligible_attached": 1 << 1,
-    "eligible_detached": 1 << 2,
-    "in_flood_2050": 1 << 3,
-    "in_flood_2080": 1 << 4,
+    "eligible_backyard": 1 << 1,
+    "in_10yr_rainfall_frra": 1 << 2,
+    "in_coastal_frra": 1 << 3,
+    "in_high_risk_flood_zone": 1 << 4,
     "in_historic_district": 1 << 5,
     "excluded_district": 1 << 6,
     "city_owned": 1 << 7,
 }
+
+# lots.bin column 7. Kept out of the bitfield because it is a category, not a
+# predicate, and it needs three values plus "unknown".
+BLDG_TYPE = {"attached": 0, "semi_detached": 1, "detached": 2, "unknown": 3}
+
+
+# --------------------------------------------------------------------------
+# Siting: where on the lot the unit would actually go
+# --------------------------------------------------------------------------
+#
+# THIS IS THE ONLY PART OF THE PIPELINE THAT OPENS THE .shp, and it is worth
+# saying why it had to. Every other question this sandbox asks is answered by
+# the DBF - how big, how much, who is allowed. "Where on the lot" is not, and
+# for a long time the sandbox dodged it by drawing each unit at the lot
+# centroid. Zoomed in, that put every proposed backyard cottage on the roof of
+# the house it belongs to. A drawing that is wrong in a way a reader can see is
+# worse than no drawing.
+#
+# The rule the ZR states is positional: the unit goes in the REQUIRED REAR YARD,
+# no closer than five feet to a rear or side lot line. So the sandbox either
+# sites it or stops pretending to draw it.
+#
+# WHAT IS RECORDED AND WHAT IS INFERRED. Recorded: the lot's outline, from
+# MapPLUTO's shapefile, and the footprints of the buildings on it, from the
+# city's building layer. Inferred: which end of the lot is the back. Nothing in
+# either dataset says where the street is. What is used instead is the house:
+# the back of the lot is taken to be the direction away from the building that
+# is already on it. That is a good rule for the ordinary case - a house set
+# toward the street with a yard behind it - and it is wrong for a corner lot, a
+# through lot, and a house set at the back of its own parcel. It is an
+# INFERENCE, it is named as one in the card, and it is the reason the unit is
+# drawn as a plain square rather than as a building.
+
+
+def read_shape_index(base):
+    """Byte offsets of every record in the .shp, from its .shx sidecar.
+
+    A shapefile is a flat sequence of records with a fixed-length header, and
+    the .shx is nothing but an offset table - so any single lot's outline can be
+    seek-read without walking the 135MB .shp. Record i of the .shp is record i
+    of the .dbf, which is what lets the two be joined by position.
+    """
+    with open(str(base) + ".shx", "rb") as f:
+        head = f.read(100)
+        count = (struct.unpack(">i", head[24:28])[0] * 2 - 100) // 8
+        return np.frombuffer(f.read(count * 8), dtype=">i4").reshape(count, 2)
+
+
+def read_outer_ring(handle, index, i):
+    """The outer ring of lot i, as an (n, 2) array of State Plane feet.
+
+    EPSG:2263, so the units are FEET - the same units ZR 23-341 and 23-342 are
+    written in. No projection is needed to measure a setback.
+
+    Inner rings (holes) and secondary parts are dropped. A lot with a hole in it
+    is rare enough, and the ray cast below only needs the boundary it will hit
+    first.
+    """
+    handle.seek(int(index[i, 0]) * 2 + 8)
+    body = handle.read(int(index[i, 1]) * 2)
+    if len(body) < 44 or struct.unpack("<i", body[0:4])[0] != 5:
+        return None
+    n_parts, n_pts = struct.unpack("<2i", body[36:44])
+    if n_parts < 1 or n_pts < 4:
+        return None
+    parts = np.frombuffer(body[44:44 + 4 * n_parts], dtype="<i4")
+    off = 44 + 4 * n_parts
+    pts = np.frombuffer(body[off:off + 16 * n_pts], dtype="<f8").reshape(n_pts, 2)
+    end = int(parts[1]) if n_parts > 1 else n_pts
+    return pts[int(parts[0]):end]
+
+
+def convex_hull(points):
+    """Andrew's monotone chain. Returns the hull in counter-clockwise order.
+
+    Here to answer one question cheaply: how far does the house reach towards
+    the back of the lot? That is a maximum of a dot product over the footprint,
+    and a maximum of a dot product over a polygon is always attained at a vertex
+    of its convex hull - so the hull is all that has to be kept per lot, which
+    is a handful of points instead of the whole outline of every building in
+    Queens.
+    """
+    pts = sorted(set(map(tuple, points)))
+    if len(pts) <= 2:
+        return np.array(pts, dtype=np.float64)
+
+    def half(seq):
+        out = []
+        for pt in seq:
+            while len(out) >= 2:
+                (ax, ay), (bx, by) = out[-2], out[-1]
+                if (bx - ax) * (pt[1] - ay) - (by - ay) * (pt[0] - ax) > 0:
+                    break
+                out.pop()
+            out.append(pt)
+        return out[:-1]
+
+    return np.array(half(pts) + half(reversed(pts)), dtype=np.float64)
+
+
+def read_building_shapes(path, boro_digit="4"):
+    """Per BBL: a representative point, and the convex hull of the footprints.
+
+    The file is 962MB of GeoJSON, one feature per line, so it is filtered with a
+    regex before anything is parsed - the borough digit of base_bbl rules out
+    four fifths of the city before json.loads is ever called.
+
+    Several buildings can share a lot, and they are pooled: the point is the
+    average of all their vertices, and the hull wraps all of them together. For
+    a house with a detached garage behind it that is the right answer twice
+    over - the back of the lot is away from BOTH, and the new unit has to clear
+    BOTH.
+    """
+    pattern = re.compile(rf'"base_bbl":"({boro_digit}\d{{9}})"')
+    acc = {}
+    features = 0
+    with open(path) as f:
+        f.readline()                      # the FeatureCollection opener
+        for line in f:
+            m = pattern.search(line)
+            if not m:
+                continue
+            try:
+                geom = json.loads(line.rstrip(",\n")).get("geometry")
+            except ValueError:
+                continue
+            if not geom:
+                continue
+            polys = ([geom["coordinates"]] if geom["type"] == "Polygon"
+                     else geom["coordinates"])
+            sx = sy = sn = 0.0
+            for poly in polys:
+                for x, y in poly[0]:
+                    sx += x; sy += y; sn += 1
+            if not sn:
+                continue
+            features += 1
+            bbl = int(m.group(1))
+            verts = [tuple(v) for poly in polys for v in poly[0]]
+            a = acc.get(bbl)
+            if a is None:
+                acc[bbl] = [sx, sy, sn, verts]
+            else:
+                a[0] += sx; a[1] += sy; a[2] += sn; a[3].extend(verts)
+    print(f"site: {features:,} building footprints on {len(acc):,} lots")
+    return {k: (v[0] / v[2], v[1] / v[2], convex_hull(v[3]))
+            for k, v in acc.items()}
+
+
+# Feet per degree of latitude, near enough at this latitude for offsets of a few
+# tens of feet. Longitude is scaled by cos(latitude).
+FT_PER_DEG_LAT = 364000.0
+
+
+def _ray_reach(p1, edge, ox, oy, dx, dy):
+    """Distance from (ox, oy) along (dx, dy) to the first edge it crosses."""
+    den = dx * edge[:, 1] - dy * edge[:, 0]
+    live = np.abs(den) > 1e-12
+    safe = np.where(live, den, 1.0)
+    qx, qy = p1[:, 0] - ox, p1[:, 1] - oy
+    t = np.where(live, (qx * edge[:, 1] - qy * edge[:, 0]) / safe, -1.0)
+    u = np.where(live, (qx * dy - qy * dx) / safe, -1.0)
+    hit = live & (t > 0) & (u >= 0) & (u <= 1)
+    return float(t[hit].min()) if hit.any() else None
+
+
+def rear_yard_box(ring, cx, cy, lat, lon, bx_deg, by_deg, hull_deg):
+    """The open rectangle behind the house, in feet from the lot centroid.
+
+    Returns (centre_x, centre_y, depth, width), where depth runs away from the
+    house and width runs across it. The unit is placed inside this box by the
+    browser, which is what lets the setback stay a control.
+
+    A BOX RATHER THAN A DISTANCE, and the reason is the shape of the thing being
+    placed. Measuring only how far the lot runs on before its boundary answers
+    the wrong question: an ancillary unit is a rectangle, wider than it is deep,
+    and on a narrow lot it is the SIDE lot lines that stop it, not the rear one.
+    Casting a single ray missed that and put corners over the line; spreading
+    the rays into a fan overcorrected, because a ray twenty degrees off the axis
+    hits the side line almost immediately on a twenty-foot lot and made the rear
+    yard look half its real depth. So both dimensions get measured, separately.
+
+    Returns None when it cannot be worked out: no building on the lot, a
+    building centred on it, a centroid outside its own polygon (an L-shaped or
+    flag lot), or a house that already reaches the rear lot line.
+    """
+    ft_per_deg_lon = FT_PER_DEG_LAT * math.cos(math.radians(lat))
+    bx = (bx_deg - lon) * ft_per_deg_lon
+    by = (by_deg - lat) * FT_PER_DEG_LAT
+    span = math.hypot(bx, by)
+    if span < 1e-6:
+        return None
+    dx, dy = -bx / span, -by / span            # away from the house
+    px, py = -dy, dx                           # across the lot
+
+    # The polygon, in a frame centred on the lot centroid.
+    #
+    # One approximation is buried here and it is worth naming: the direction is
+    # derived from longitude and latitude, so it is measured against true north,
+    # while the polygon is State Plane, measured against grid north. The two
+    # differ by about a third of a degree over New York City, which over a
+    # fifty-foot lot is about three inches.
+    poly = ring - np.array([cx, cy])
+    p1, edge = poly[:-1], poly[1:] - poly[:-1]
+
+    reach = _ray_reach(p1, edge, 0.0, 0.0, dx, dy)
+    if reach is None:
+        return None
+
+    # How far the buildings already reach the same way. The maximum of a dot
+    # product over a footprint is attained at a hull vertex, which is why only
+    # the hull was kept.
+    hx = (hull_deg[:, 0] - lon) * ft_per_deg_lon
+    hy = (hull_deg[:, 1] - lat) * FT_PER_DEG_LAT
+    house = max(float(np.max(hx * dx + hy * dy)) if len(hull_deg) else 0.0, 0.0)
+
+    depth = reach - house
+    if depth <= 0:
+        return None                            # the house is already at the back
+
+    # Width, measured across the middle of that strip.
+    mid = house + depth / 2.0
+    mx, my = dx * mid, dy * mid
+    left = _ray_reach(p1, edge, mx, my, px, py)
+    right = _ray_reach(p1, edge, mx, my, -px, -py)
+    if left is None or right is None:
+        return None
+
+    # The centre of the box: halfway back, and halfway across.
+    off = (left - right) / 2.0
+    return (mx + px * off, my + py * off, depth, left + right)
+
+
+# --------------------------------------------------------------------------
+# The Pre-Approved Plan Library
+# --------------------------------------------------------------------------
+
+def read_papl(path):
+    """The eleven published designs, and the two numbers they settle.
+
+    HPD reviewed all eleven for the same purpose through the same process and
+    published a cost range for each. THE MIDPOINTS RUN FROM $248 TO $1,500 PER
+    SQUARE FOOT - a six-fold spread. Cost per square foot is not a property of
+    ADUs, and the default this pipeline ships is a median of a wide
+    distribution rather than a figure anyone would call typical.
+
+    HPD also states the estimates exclude "costs associated with establishing
+    site connections or any anticipated site specific costs", which is where the
+    budgeting tool's site prep and utility hookup pick up.
+    """
+    data = json.loads(Path(path).read_text())
+    plans = data["plans"]
+    mids = sorted(p["cost_per_sf_mid"] for p in plans)
+    sqfts = sorted(p["sqft"] for p in plans)
+    detached = [p for p in plans if p["adu_type"].startswith("Detached")]
+    narrowest = min(p["width_ft"] for p in detached)
+    # The shape of a real one. Every published design is a rectangle, and the
+    # ratio of its short side to its long one is remarkably consistent - 0.48 to
+    # 0.80 across the nine detached plans, median 0.70. The sandbox draws units
+    # at that proportion rather than as squares, and stands them with the long
+    # side along the rear fence, which is how a backyard cottage actually goes
+    # in. It is not cosmetic: a square needs more of the yard's DEPTH than a
+    # rectangle of the same area, and depth is the scarce dimension here.
+    ratios = sorted(min(p["width_ft"], p["length_ft"])
+                    / max(p["width_ft"], p["length_ft"]) for p in detached)
+    print(f"papl: {len(plans)} published designs; cost midpoints "
+          f"${mids[0]:,}-${mids[-1]:,}/sf, median ${float(np.median(mids)):,.0f}; "
+          f"floor areas {sqfts[0]:g}-{sqfts[-1]:g}sf, median {float(np.median(sqfts)):g}")
+    print(f"papl: narrowest detached design is {narrowest:g}ft wide; "
+          f"median short:long ratio {float(np.median(ratios)):.2f} "
+          f"({ratios[0]:.2f}-{ratios[-1]:.2f})")
+    return {
+        "plans": plans,
+        "source": data.get("_source"),
+        "read": data.get("_read"),
+        "note": data.get("_note"),
+        "cost_per_sf_median": float(np.median(mids)),
+        "cost_per_sf_min": mids[0],
+        "cost_per_sf_max": mids[-1],
+        "sqft_median": float(np.median(sqfts)),
+        "sqft_min": sqfts[0],
+        "sqft_max": sqfts[-1],
+        "narrowest_detached_ft": narrowest,
+        "depth_to_width_ratio": round(float(np.median(ratios)), 3),
+        "depth_to_width_note": "Median short:long side ratio of the nine "
+                               "published DETACHED designs. Range 0.48-0.80.",
+    }
 
 
 # --------------------------------------------------------------------------
@@ -405,13 +831,21 @@ def main():
     cols = ["BBL", "BoroCode", "BldgClass", "LandUse", "UnitsRes", "NumBldgs",
             "LotArea", "BldgFront", "BldgDepth", "ZoneDist1", "TrnstZone",
             "HistDist", "ZipCode", "BCT2020", "OwnerType", "Latitude",
-            "Longitude", "YearBuilt"]
+            "Longitude", "YearBuilt", "XCoord", "YCoord",
+            # Added for the ZR 23-341/23-342 rebuild. LotFront and LotDepth
+            # size the required rear yard; ProxCode is DOF's building type;
+            # FIRM07_FLA is FEMA's effective 1%-annual-chance area, which is
+            # the Zoning Resolution's "high-risk flood zone".
+            "LotFront", "LotDepth", "ProxCode", "FIRM07_FLA", "PFIRM15_FL"]
     print(f"pluto: reading {dbf.name}")
 
     lots = []
     counts = {"queens": 0, "ab": 0, "landuse01": 0, "disagree": 0,
               "no_coords": 0, "bad_units": 0, "multi_building": 0}
-    for rec in read_dbf(dbf, cols):
+    # THE RECORD INDEX IS THE JOIN TO THE SHAPEFILE. Record i of the .dbf is
+    # record i of the .shp; there is no key field to match on and none is
+    # needed. Kept per lot so the siting step can seek straight to the outline.
+    for row, rec in enumerate(read_dbf(dbf, cols)):
         if rec["borocode"] != QUEENS_BORO:
             continue
         counts["queens"] += 1
@@ -457,11 +891,23 @@ def main():
         if nb > 1:
             counts["multi_building"] += 1
 
+        def g(k):
+            try:
+                return float(rec[k] or 0)
+            except ValueError:
+                return 0.0
+
         lots.append({
+            "row": row,
             "bbl": int(float(rec["bbl"])) if rec["bbl"] else 0,
             "lon": lon, "lat": lat,
+            "x": g("xcoord"), "y": g("ycoord"),
             "lot_area": f("lotarea"),
             "bldg_front": f("bldgfront"), "bldg_depth": f("bldgdepth"),
+            "lot_front": f("lotfront"), "lot_depth": f("lotdepth"),
+            "prox": rec["proxcode"].strip(),
+            "firm07": rec["firm07_fla"].strip() == "1",
+            "pfirm15": rec["pfirm15_fl"].strip() == "1",
             "units": units, "numbldgs": nb,
             "zone": rec["zonedist1"], "trnst": rec["trnstzone"],
             "hist": rec["histdist"], "zip": rec["zipcode"].zfill(5)[:5],
@@ -477,8 +923,16 @@ def main():
     print(f"pluto: {counts['multi_building']:,} of the {n:,} kept have more than "
           f"one building on the lot")
 
+    # ---- 1b. the plan library --------------------------------------------
+    papl = read_papl(original / PAPL_FILE)
+
     # ---- 2. HUD ----------------------------------------------------------
+    # The two HUD files were once in a fmr+incomelimit/ subdirectory and are now
+    # loose in data/original/. Look in both rather than making the layout a
+    # requirement - data/original is a download folder, not a schema.
     hud = original / "fmr+incomelimit"
+    if not (hud / "summary_county_3608199999.csv").exists():
+        hud = original
     limits, mfi = read_income_limits(hud / "summary_county_3608199999.csv")
     rent_cap, income_100, persons = ami_rent_cap(limits, ASSUMPTIONS["adu_bedrooms"]["value"])
     zips = {l["zip"] for l in lots if l["zip"].isdigit()}
@@ -501,10 +955,64 @@ def main():
     print(f"acs: {matched:,} of {n:,} lots joined to a tract "
           f"({matched / n * 100:.1f}%)")
 
-    # ---- 4. floodplains --------------------------------------------------
+    # ---- 4. the flood rule, which this pipeline had wrong -----------------
+    #
+    # "EXPANDED FLOOD AREA" IS NOT A TERM IN THE ZONING RESOLUTION. It was
+    # searched for on 2026-09-01 and it is in neither ZR 12-10 nor ZR 64-11.
+    # The phrase came from a secondary source and was carried through two build
+    # docs, a memory note and the previous version of this file. Stop using it.
+    #
+    # ZR 12-10's definition of an ANCILLARY DWELLING UNIT carries THREE separate
+    # flood restrictions, not one, and they do different things:
+    #
+    #   1. In the HIGH-RISK FLOOD ZONE (ZR 64-11: "the area, as indicated on the
+    #      flood maps, that has a one percent chance of flooding in a given
+    #      year") - no ADU below the flood-resistant construction elevation.
+    #      THIS IS NOT A BAN ON THE LOT. It is an elevation requirement, and
+    #      modelling it as an eligibility exclusion misreads it. It is flagged
+    #      here and deliberately kept OUT of the eligibility test.
+    #
+    #   2. In DEP's 10-YEAR RAINFALL FLOOD RISK AREA and COASTAL FLOOD RISK
+    #      AREA - no basement or cellar unit, and no backyard unit. THIS is the
+    #      ban, and it is the only one that matters here, because this pipeline
+    #      models backyard ADUs and nothing else.
+    #
+    #   3. Not about flooding: R1-2A/R2A/R3A outside the Greater Transit Zone,
+    #      LPC historic districts, and a five-foot access route. Below.
+    #
+    # ZR 64-11 defines "flood maps" as "the most recent map or map data used as
+    # the basis for flood-resistant construction standards" - the Resolution
+    # never names a dataset, it points at whatever the Building Code is
+    # currently using. The rule is written to move. That goes in the card.
+    #
+    # THE LAYER THE RULE ACTUALLY POINTS AT is the DEP Interim Flood Risk Area
+    # Map (nyc.gov/dep/floodriskmap), established under Administrative Code
+    # 24-809 and 15 RCNY 66-01. IT IS NOT ON DISK. As of 2026-09-01 the rule
+    # adopting it was proposed (June 2025) and adoption was not confirmed, and
+    # no download format is known.
+    #
+    # So the two flags below are built from the two NPCC layers we do have,
+    # which are the INGREDIENTS of the DEP areas and not the areas themselves:
+    # the coastal flood risk area is built on FEMA's 100-year coastal floodplain
+    # and NPCC 2080 sea level rise at the 90th percentile, and the 10-year
+    # rainfall area on NPCC 2050 with a 50-foot perimeter buffer. That is a
+    # defensible approximation and a bad citation, and the card says which it is.
     lon = np.array([l["lon"] for l in lots], dtype=np.float64)
     lat = np.array([l["lat"] for l in lots], dtype=np.float64)
     bounds = [lon.min(), lat.min(), lon.max(), lat.max()]
+
+    # FEMA's effective 1%-annual-chance area, per lot, straight out of MapPLUTO.
+    # This IS the ZR's high-risk flood zone and it needs no download and no
+    # rasterising. PFIRM15_FL is the 2015 preliminary FIRM, carried for
+    # comparison only - the effective map is the one the Building Code uses.
+    in_high_risk = np.array([l["firm07"] for l in lots], dtype=bool)
+    in_preliminary = np.array([l["pfirm15"] for l in lots], dtype=bool)
+    print(f"flood: {in_high_risk.sum():,} lots in FEMA's effective "
+          f"1%-annual-chance area (MapPLUTO FIRM07_FLA), "
+          f"{in_preliminary.sum():,} in the 2015 preliminary map "
+          f"(PFIRM15_FL). This is the ZR's high-risk flood zone: an ELEVATION "
+          f"requirement, not a ban, and it is not in the eligibility test.")
+
     flood_paths = (sorted(original.glob("future_floodplain_2050s*.geojson"))
                    + sorted(original.glob("sea_level_rise_2080s*.geojson")))
     if len(flood_paths) == 2:
@@ -512,45 +1020,212 @@ def main():
         grids = rasterise_floodplain(flood_paths, bounds, SIZE)
         gx = np.clip(((lon - bounds[0]) / (bounds[2] - bounds[0]) * SIZE).astype(int), 0, SIZE - 1)
         gy = np.clip(((bounds[3] - lat) / (bounds[3] - bounds[1]) * SIZE).astype(int), 0, SIZE - 1)
-        in_2050 = grids[0][gy, gx]
-        in_2080 = grids[1][gy, gx]
-        print(f"flood: {in_2050.sum():,} lots in the 2050s floodplain, "
-              f"{in_2080.sum():,} in the 2080s")
-        flood_note = ("NYC Open Data 27ya-gqtm (Future Floodplain 2050s) and "
-                      "ek8y-fsqz (Sea Level Rise Maps, 2080s 100-year), "
-                      "downloaded 2026-08-31, rasterised to a 2048-cell grid "
-                      "over Queens (about 20m). NOTE: these are the published "
-                      "floodplain layers, which are NOT identical to the Zoning "
-                      "Resolution's 'expanded flood area' that the City of Yes "
-                      "ADU rule actually names. They are used as the closest "
-                      "available approximation and the card says so.")
+        # NPCC 2050 stands in for the 10-year rainfall area, NPCC 2080 100-year
+        # for the coastal area. Both are the published ingredient, not the
+        # adopted product.
+        in_rainfall_frra = grids[0][gy, gx]
+        in_coastal_frra = grids[1][gy, gx]
+        print(f"flood: {in_rainfall_frra.sum():,} lots approximate the 10-year "
+              f"rainfall flood risk area, {in_coastal_frra.sum():,} the coastal "
+              f"flood risk area. BOTH ARE APPROXIMATIONS OF AN ADOPTED MAP WE "
+              f"COULD NOT OBTAIN.")
+        flood_note = (
+            "APPROXIMATED, AND THE APPROXIMATION IS NAMED. ZR 12-10 bars a "
+            "backyard ADU in DEP's 10-year rainfall flood risk area and coastal "
+            "flood risk area, both designated on the DEP Interim Flood Risk Area "
+            "Map (nyc.gov/dep/floodriskmap, established under Admin Code 24-809 "
+            "and 15 RCNY 66-01). THAT MAP IS NOT PUBLISHED IN A FORM WE COULD "
+            "DOWNLOAD - as of 2026-09-01 the rule adopting it was proposed in "
+            "June 2025 and adoption was not confirmed. So these two flags are "
+            "built from NYC Open Data 27ya-gqtm (Future Floodplain 2050s) and "
+            "ek8y-fsqz (Sea Level Rise Maps, 2080s 100-year), downloaded "
+            "2026-08-31 and rasterised to a 2048-cell grid over Queens (about "
+            "20m). Those two layers are the INGREDIENTS of the DEP areas - the "
+            "coastal area is built on FEMA's 100-year coastal floodplain plus "
+            "NPCC 2080 at the 90th percentile, the rainfall area on NPCC 2050 "
+            "with a 50-foot buffer - not the areas themselves. Separately, "
+            "FIRM07_FLA from MapPLUTO IS the ZR's high-risk flood zone exactly, "
+            "and it is flagged but excluded from the eligibility test because "
+            "that rule is an elevation requirement and not a ban. NYC's "
+            "Stormwater Flood Maps (NYC Open Data 9i7c-xyvv) are the stormwater "
+            "modelling behind the rainfall half and were NOT substituted here: "
+            "they are published as intensities, not return periods, and whether "
+            "the 'moderate' 2.13 in/hr layer is the 10-year storm is unverified.")
     else:
-        in_2050 = np.zeros(n, dtype=bool)
-        in_2080 = np.zeros(n, dtype=bool)
-        flood_note = "NOT APPLIED - floodplain files were not found in data/original."
+        in_rainfall_frra = np.zeros(n, dtype=bool)
+        in_coastal_frra = np.zeros(n, dtype=bool)
+        flood_note = ("NOT APPLIED - the NPCC layers were not found in "
+                      "data/original, and the DEP map the rule actually names "
+                      "has never been downloadable.")
         print("flood: layers not found - the flood exclusion is DROPPED")
 
-    # ---- 5. size the ADU -------------------------------------------------
-    # THE WEAKEST STEP IN THIS PIPELINE, and it is worth saying so here rather
-    # than only in the card. There is no lot geometry in the DBF: no shape, no
-    # orientation, no setbacks, no existing yard. LotArea minus the building's
-    # own footprint is all there is, and it treats an L-shaped lot, a corner lot
-    # and a flag lot identically. The 800sf cap is the rule; everything before
-    # the cap is an estimate.
+    # ---- 5. size the ADU, from ZR 23-341(b)(4) and ZR 23-342 -------------
+    #
+    # THIS STEP USED TO BE THE WEAKEST THING IN THE PIPELINE. It applied a
+    # one-third fraction to the whole open area of the lot - LotArea minus the
+    # building footprint - which is not what the rule says. The rule applies the
+    # fraction to the REQUIRED REAR YARD, which is smaller, and which depends on
+    # building type and lot width. The old version put the median at 707sf and
+    # pinned 109,032 lots to the 800sf statutory cap; it looked precise and
+    # resolved to a constant for nearly half the borough.
+    #
+    # What is still an estimate: MapPLUTO has no lot geometry, so the rear yard
+    # is taken as LotFront x required_depth - a rectangle across the full width
+    # of the lot. An L-shaped lot, a corner lot and a flag lot are still treated
+    # identically. What is no longer an estimate is the DEPTH of that rectangle
+    # and the fraction of it that may be built on. Both are quoted from the ZR.
+    lot_front = np.array([l["lot_front"] for l in lots], dtype=np.float64)
+    lot_depth = np.array([l["lot_depth"] for l in lots], dtype=np.float64)
+    bldg_front = np.array([l["bldg_front"] for l in lots], dtype=np.float64)
     lot_area = np.array([l["lot_area"] for l in lots], dtype=np.float64)
-    footprint = np.array([l["bldg_front"] * l["bldg_depth"] for l in lots], dtype=np.float64)
-    rear_yard = np.maximum(lot_area - footprint, 0.0)
-    # Only part of a rear yard is buildable - the rest is setback, access and
-    # the yard the rule requires to remain. A third is a guess, and it is named
-    # as one in the manifest.
-    BUILDABLE_SHARE = 0.33
-    adu_sf = np.minimum(rear_yard * BUILDABLE_SHARE, MAX_ADU_SF)
-    adu_sf[adu_sf < 200] = 0.0     # below this nothing habitable is being built
-    print(f"size: {int((adu_sf > 0).sum()):,} lots fit an ADU of at least 200sf; "
-          f"median {np.median(adu_sf[adu_sf > 0]):,.0f}sf; "
-          f"{int((adu_sf >= MAX_ADU_SF).sum()):,} hit the {MAX_ADU_SF}sf cap")
+
+    # --- building type. DOF's ProxCode, with the gap proxy as a cross-check.
+    prox = np.array([l["prox"] for l in lots])
+    gap = lot_front - bldg_front
+    gap_type = np.where(gap < GAP_SEMI_FT, "attached",
+                np.where(gap < GAP_DETACHED_FT, "semi_detached", "detached"))
+    prox_type = np.where(prox == "1", "detached",
+                 np.where(prox == "2", "semi_detached",
+                  np.where(prox == "3", "attached", "")))
+    # ProxCode 0 or blank means DOF did not record one. Those lots fall back to
+    # the gap proxy rather than being dropped, and the count is in the manifest.
+    prox_missing = prox_type == ""
+    bldg_type = np.where(prox_missing, gap_type, prox_type)
+
+    # The two classifications are INDEPENDENT TESTS OF THE SAME THING and they
+    # are totalled against each other here, the way BldgClass A*/B* and
+    # LandUse 01 already are. They disagree a great deal - the gap proxy calls
+    # 30,000 more lots semi-detached than DOF does - and that disagreement is
+    # exactly the reason to prefer the recorded field over our two thresholds.
+    usable_dims = (lot_front > 0) & (lot_depth > 0) & (bldg_front > 0)
+    type_agree = int(((prox_type == gap_type) & ~prox_missing & usable_dims).sum())
+    type_counts = {t: int((bldg_type == t).sum()) for t in
+                   ("detached", "semi_detached", "attached")}
+    print(f"type: ProxCode {type_counts} "
+          f"({int(prox_missing.sum()):,} lots had no ProxCode and fell back to "
+          f"the gap proxy)")
+    print(f"type: the gap proxy agrees with ProxCode on {type_agree:,} of "
+          f"{int((~prox_missing & usable_dims).sum()):,} lots that have both "
+          f"({type_agree / max(1, int((~prox_missing & usable_dims).sum())) * 100:.1f}%)")
+
+    # --- required rear yard depth, ZR 23-342.
+    required_depth = np.where(
+        bldg_type == "detached", REAR_YARD_DEPTH["detached"],
+        np.where(lot_front < 40.0, REAR_YARD_DEPTH["semi_narrow"],
+                 REAR_YARD_DEPTH["semi_wide"]))
+    # Shallow interior lots: six inches off the requirement per foot of
+    # deficiency below 95 feet, floored at ten feet.
+    deficiency = np.maximum(SHALLOW_LOT_DEPTH_FT - lot_depth, 0.0)
+    shallow = (lot_depth > 0) & (deficiency > 0)
+    required_depth = np.maximum(
+        required_depth - SHALLOW_LOT_REDUCTION_PER_FT * deficiency,
+        SHALLOW_LOT_FLOOR_FT)
+    print(f"size: the shallow-lot reduction bites on {int(shallow.sum()):,} lots "
+          f"({shallow.mean() * 100:.1f}%)")
+
+    # --- the one-third rule.
+    rear_yard_area = lot_front * required_depth
+    adu_sf = np.minimum(rear_yard_area * REAR_YARD_FRACTION, MAX_ADU_SF)
+
+    # --- the two screens that are not about area.
+    #
+    # ATTACHED BUILDINGS CANNOT HAVE ONE AT ALL. ZR 23-341(b)(4) names detached,
+    # zero lot line and semi-detached. Attached is simply not in the section.
+    type_ok = bldg_type != "attached"
+
+    # Five feet of side setback on each side, from the same section. What is
+    # left has to be wide enough for a real design: the narrowest detached plan
+    # in HPD's own Pre-Approved Plan Library is 14 feet wide.
+    #
+    # SAY OUT LOUD THAT THIS TEST DOES NO WORK. At the 300sf floor below it
+    # removes no lot the floor has not already removed. It is kept because it is
+    # the rule and because a student changing side_setback_ft should see it
+    # start to bite - not because it is deciding anything at the defaults.
+    buildable_width = lot_front - 2 * SIDE_SETBACK_FT
+    width_ok = buildable_width >= NARROWEST_DETACHED_PLAN_FT
+
+    # --- the habitability floor.
+    #
+    # Everything from here to the end of this step is REPORTING, not shipping.
+    # adu_sf is computed at the default rule numbers so the run can be checked
+    # against the published figures and the plan library; the browser recomputes
+    # it from lot_front, required_depth and the two rule controls.
+    adu_sf = np.where(type_ok & width_ok & usable_dims, adu_sf, 0.0)
+    below_floor = (adu_sf > 0) & (adu_sf < MIN_ADU_SF)
+    adu_sf[adu_sf < MIN_ADU_SF] = 0.0
+
+    fits = adu_sf > 0
+    print(f"size: {int(type_ok.sum()):,} lots are an eligible building type "
+          f"({type_ok.mean() * 100:.1f}%); "
+          f"{int((type_ok & width_ok & usable_dims).sum()):,} also clear the "
+          f"setbacks and have usable dimensions")
+    print(f"size: the one-third cap has median "
+          f"{np.median((rear_yard_area * REAR_YARD_FRACTION)[usable_dims]):,.0f}sf "
+          f"across all lots with usable dimensions; "
+          f"{int(below_floor.sum()):,} lots fall below the {MIN_ADU_SF}sf "
+          f"habitability floor and produce no unit")
+    print(f"size: {int(fits.sum()):,} lots fit an ADU "
+          f"({fits.mean() * 100:.1f}%), median {np.median(adu_sf[fits]):,.0f}sf, "
+          f"{int((adu_sf >= MAX_ADU_SF).sum()):,} at the {MAX_ADU_SF}sf statutory cap")
+
+    # How little the statutory cap binds is the headline of this rebuild, and it
+    # is MEASURED here rather than asserted, because the claim in the card
+    # depends on it and a future MapPLUTO could move it.
+    at_cap = int((adu_sf >= MAX_ADU_SF).sum())
+    print(f"size: the {MAX_ADU_SF}sf statutory cap binds on {at_cap:,} lots - "
+          f"{at_cap / max(1, int(fits.sum())) * 100:.1f}% of those that fit one, "
+          f"against 109,032 under the old sizing. The one-third rule and the "
+          f"setbacks are what decide this map.")
+
+    # ---- 5b. site the unit on the lot ------------------------------------
+    #
+    # The map used to draw every proposed unit at the lot centroid, which is
+    # where the house is. Zoomed in - which is exactly what the volumes control
+    # tells you to do - each cottage sat on the roof of the building it was
+    # meant to stand behind.
+    shp_base = dbf.with_suffix("")
+    rear_x = np.zeros(n, dtype=np.float64)
+    rear_y = np.zeros(n, dtype=np.float64)
+    rear_depth = np.zeros(n, dtype=np.float64)
+    rear_width = np.zeros(n, dtype=np.float64)
+    sited = 0
+    if (shp_base.with_suffix(".shp").exists()
+            and (original / BUILDINGS_FILE).exists()):
+        shapes = read_building_shapes(original / BUILDINGS_FILE, QUEENS_BORO)
+        shx = read_shape_index(shp_base)
+        with open(str(shp_base) + ".shp", "rb") as handle:
+            for i, l in enumerate(lots):
+                b = shapes.get(l["bbl"])
+                if not b or l["x"] == 0:
+                    continue
+                ring = read_outer_ring(handle, shx, l["row"])
+                if ring is None:
+                    continue
+                v = rear_yard_box(ring, l["x"], l["y"], l["lat"], l["lon"],
+                                  b[0], b[1], b[2])
+                if v is None:
+                    continue
+                rear_x[i], rear_y[i], rear_depth[i], rear_width[i] = v
+                sited += 1
+        ok = rear_depth > 0
+        print(f"site: {sited:,} of {n:,} lots sited ({sited / n * 100:.1f}%); "
+              f"the open ground behind the house is a median "
+              f"{np.median(rear_depth[ok]):.0f}ft deep by "
+              f"{np.median(rear_width[ok]):.0f}ft wide")
+        print(f"site: {int((fits & ~ok).sum()):,} lots that fit a unit could not "
+              f"be sited and will not be drawn as volumes")
+    else:
+        print("site: MapPLUTO.shp or the building footprints are missing - "
+              "units cannot be sited and no volumes will be drawn")
 
     # ---- 6. eligibility flags (OURS, derived from the published rules) ----
+    #
+    # ONE ELIGIBILITY FLAG NOW, NOT TWO. The old pair named an attached ADU and a
+    # detached one, but the front end had the detached case hardcoded, so the
+    # attached flag decided nothing - and the sizing step only ever measured a
+    # backyard cottage anyway. A control or a flag that changes nothing is worse
+    # than a missing one, because it implies the model knows something it does
+    # not. Same reasoning that cut the owner-occupancy switch last build.
     flags = np.zeros(n, dtype=np.uint8)
     for i, l in enumerate(lots):
         b = 0
@@ -565,41 +1240,50 @@ def main():
         if zone in DETACHED_EXCLUDED_DISTRICTS and beyond_transit:
             b |= FLAGS["excluded_district"]
         flags[i] = b
-    flags |= (in_2050.astype(np.uint8) * FLAGS["in_flood_2050"])
-    flags |= (in_2080.astype(np.uint8) * FLAGS["in_flood_2080"])
+    flags |= (in_rainfall_frra.astype(np.uint8) * FLAGS["in_10yr_rainfall_frra"])
+    flags |= (in_coastal_frra.astype(np.uint8) * FLAGS["in_coastal_frra"])
+    flags |= (in_high_risk.astype(np.uint8) * FLAGS["in_high_risk_flood_zone"])
 
-    has_room = adu_sf > 0
     not_city = (flags & FLAGS["city_owned"]) == 0
 
-    # The published rule distinguishes the two, and so does this.
+    # A BACKYARD ADU, which is the only kind this pipeline sizes. Barred in the
+    # two DEP flood risk areas, in historic districts, and in R1-2A / R2A / R3A
+    # outside the Greater Transit Zone. The building-type and setback screens
+    # are already folded into adu_sf, which is zero where they fail.
     #
-    # ATTACHED: an extension of the house. Not barred by the flood rule - that
-    # rule names basement and DETACHED units - so the only screens are that
-    # there is room and that the city does not own the lot.
-    attached_ok = has_room & not_city
-
-    # DETACHED: a backyard cottage. Barred in the expanded flood area, in
-    # historic districts, and in R1-2A / R2A / R3A outside the Greater Transit
-    # Zone.
+    # in_high_risk IS DELIBERATELY ABSENT FROM THIS LINE. The high-risk flood
+    # zone requires the unit to sit above the flood-resistant construction
+    # elevation; it does not forbid it. Putting it here would have been the same
+    # category error the old "expanded flood area" flag made.
     #
-    # THE SANDBOX PRICES THE DETACHED CASE, and that follows from the sizing
-    # step rather than from a preference: the ADU is sized from the rear yard,
-    # which is what a detached cottage occupies. An attached extension is a
-    # different building on a different part of the lot and this pipeline has
-    # no measurement of it. The card says so.
-    detached_ok = (attached_ok
-                   & ~in_2050 & ~in_2080
+    # NOTE WHAT IS NOT IN THIS TEST: whether the lot has ROOM. It used to be,
+    # and it cannot be any more, because rear_yard_fraction and side_setback_ft
+    # are controls now and the size they produce changes as they move. The room
+    # test is applied in the browser, against columns this pipeline ships. That
+    # is the same rule the rest of this file follows - precompute the INPUTS to
+    # the answer, never the answer.
+    backyard_ok = (not_city
+                   & ~in_rainfall_frra & ~in_coastal_frra
                    & ((flags & FLAGS["in_historic_district"]) == 0)
                    & ((flags & FLAGS["excluded_district"]) == 0))
-    flags |= attached_ok.astype(np.uint8) * FLAGS["eligible_attached"]
-    flags |= detached_ok.astype(np.uint8) * FLAGS["eligible_detached"]
-    print(f"rules: {int(attached_ok.sum()):,} lots pass the attached-ADU rules, "
-          f"{int(detached_ok.sum()):,} pass the detached rules "
-          f"(of {n:,} one-to-two-family lots)")
-    print(f"rules: excluded - {int((flags & FLAGS['in_historic_district'] > 0).sum()):,} "
-          f"historic, {int((flags & FLAGS['excluded_district'] > 0).sum()):,} "
-          f"low-density beyond the transit zone, "
-          f"{int(in_2050.sum()):,} in the 2050s floodplain")
+    flags |= backyard_ok.astype(np.uint8) * FLAGS["eligible_backyard"]
+    print(f"rules: {int(backyard_ok.sum()):,} of {n:,} one-to-two-family lots "
+          f"clear the LEGAL screens for a backyard ADU "
+          f"({backyard_ok.mean() * 100:.1f}%); at the default rule numbers "
+          f"{int((backyard_ok & fits).sum()):,} of those also have room")
+    print(f"rules: excluded - "
+          f"{int((~fits).sum()):,} have no room at the DEFAULT ZR 23-341/23-342 "
+          f"numbers (a browser-side test now - the two rule sliders move it), "
+          f"{int(((flags & FLAGS['in_historic_district']) > 0).sum()):,} historic, "
+          f"{int(((flags & FLAGS['excluded_district']) > 0).sum()):,} low-density "
+          f"beyond the transit zone, "
+          f"{int((in_rainfall_frra | in_coastal_frra).sum()):,} in a DEP flood "
+          f"risk area (approximated), "
+          f"{int((~not_city).sum()):,} city-owned")
+    print(f"rules: {int((backyard_ok & in_high_risk).sum()):,} eligible lots are "
+          f"ALSO in the high-risk flood zone - they may build, but not below the "
+          f"flood-resistant construction elevation, and this model does not "
+          f"price that")
 
     # ---- 7. per-lot rent and tract income --------------------------------
     rent_fmr = np.array([safmr.get(l["zip"], median_safmr) for l in lots], dtype=np.float64)
@@ -624,15 +1308,40 @@ def main():
     print(f"write: tracts.json {len(tract_rows):,} tracts "
           f"({int((tract_idx < 0).sum()):,} lots with no tract)")
 
-    arr = np.empty((n, 7), dtype=np.float32)
+    # Building type ships as a column rather than a flag: it is a category with
+    # four values, and the bitfield's eight bits are all spoken for.
+    type_col = np.array([BLDG_TYPE.get(t, BLDG_TYPE["unknown"]) for t in bldg_type],
+                        dtype=np.float32)
+
+    # LOT_FRONT AND REQUIRED_DEPTH, NOT ADU_SF. The unit's floor area is no
+    # longer shipped, because rear_yard_fraction and side_setback_ft are
+    # controls and the browser has to be able to recompute it. What ships is
+    # what the rule needs: the width of the lot, the depth of the rear yard the
+    # ZR requires on it, and what kind of building is standing there.
+    arr = np.empty((n, 13), dtype=np.float32)
     arr[:, 0] = lon
     arr[:, 1] = lat
-    arr[:, 2] = adu_sf
-    arr[:, 3] = lot_area
-    arr[:, 4] = rent_fmr
-    arr[:, 5] = tract_income
-    arr[:, 6] = tract_idx
+    arr[:, 2] = lot_front
+    arr[:, 3] = required_depth
+    arr[:, 4] = lot_area
+    arr[:, 5] = rent_fmr
+    arr[:, 6] = tract_income
+    arr[:, 7] = tract_idx
+    arr[:, 8] = type_col
+    # The rear-yard vector, in feet from the lot centroid. Its LENGTH is the
+    # reach to the lot line, not the position of the unit - the setback is a
+    # control, so the browser finishes the sum. (0, 0) means "could not site",
+    # and those lots are drawn flat rather than guessed at.
+    arr[:, 9] = rear_x
+    arr[:, 10] = rear_y
+    arr[:, 11] = rear_depth
+    arr[:, 12] = rear_width
     (out / "lots.bin").write_bytes(arr.tobytes())
+
+    # The plan library ships alongside, for the control's description and the
+    # card. It is small and it is the evidence for the cost default.
+    (out / "plans.json").write_text(json.dumps(papl, indent=2))
+    print(f"write: plans.json {len(papl['plans'])} published designs")
     (out / "flags.bin").write_bytes(flags.tobytes())
     lots_bytes = (out / "lots.bin").stat().st_size
     print(f"write: lots.bin {lots_bytes / 1e6:.1f}MB, "
@@ -642,7 +1351,7 @@ def main():
 
     manifest = {
         "sandbox": "pencil",
-        "generated": "2026-08-31",
+        "generated": "2026-09-01",
         "borough": "Queens (BoroCode 4)",
         "lots": n,
         "start_year": 2027,
@@ -650,25 +1359,145 @@ def main():
                            "A choice, not a finding - the programme has no start "
                            "date in it.",
         "bounds": [float(b) for b in bounds],
-        "columns": ["lon", "lat", "adu_sf", "lot_area", "rent_fmr",
-                    "tract_income", "tract_idx"],
-        "column_units": ["degrees", "degrees", "square feet", "square feet",
+        "columns": ["lon", "lat", "lot_front", "required_rear_yard_depth",
+                    "lot_area", "rent_fmr", "tract_income", "tract_idx",
+                    "bldg_type", "rear_box_x_ft", "rear_box_y_ft",
+                    "rear_box_depth_ft", "rear_box_width_ft"],
+        "column_units": ["degrees", "degrees", "feet", "feet", "square feet",
                          "dollars per month", "dollars per year",
-                         "index into tracts.json, -1 for none"],
+                         "index into tracts.json, -1 for none",
+                         "0 attached, 1 semi-detached, 2 detached, 3 unknown",
+                         "feet east of the lot centroid, to the centre of the "
+                         "open ground behind the house",
+                         "feet north of the same",
+                         "feet, its depth away from the house",
+                         "feet, its width across the lot"],
+        "columns_note": "adu_sf IS NOT SHIPPED. It was, and it could not stay: "
+                        "rear_yard_fraction and side_setback_ft are controls, so "
+                        "the unit's floor area moves when they move and the "
+                        "browser computes it from these columns. Precompute the "
+                        "inputs to the answer, never the answer - the same rule "
+                        "the rest of this pipeline follows.",
         "flags": {k: int(v) for k, v in FLAGS.items()},
         "programme": PROGRAMME,
         "assumptions": ASSUMPTIONS,
         "adu_sizing": {
-            "method": "min(0.33 * (LotArea - BldgFront * BldgDepth), 800), "
-                      "zeroed below 200sf",
-            "buildable_share": BUILDABLE_SHARE,
+            "method": "adu_sf = min(LotFront * required_rear_yard_depth / 3, 800), "
+                      "zeroed below 300sf, and zero for attached buildings and "
+                      "for lots too narrow to hold a published design between "
+                      "two five-foot side setbacks.",
+            "source": "ZR 23-341(b)(4) and ZR 23-342, zoningresolution.planning."
+                      "nyc.gov, verified 2026-09-01. HPD's ADU Homeowner "
+                      "Guidebook is cited for the plain-language framing and for "
+                      "the 250-300sf practical minimum, but its flat '20 feet' "
+                      "rear yard is the DETACHED case only and the ZR is used "
+                      "instead.",
+            "rear_yard_fraction": REAR_YARD_FRACTION,
+            "side_setback_ft": SIDE_SETBACK_FT,
+            "required_rear_yard_depth_ft": REAR_YARD_DEPTH,
+            "shallow_lot": {
+                "under_depth_ft": SHALLOW_LOT_DEPTH_FT,
+                "reduction_ft_per_ft": SHALLOW_LOT_REDUCTION_PER_FT,
+                "floor_ft": SHALLOW_LOT_FLOOR_FT,
+                "lots_affected": int(shallow.sum()),
+            },
+            "min_sf": MIN_ADU_SF,
             "max_sf": MAX_ADU_SF,
-            "note": "The weakest step in the pipeline. The DBF has no lot "
-                    "geometry - no shape, no orientation, no setbacks - so an "
-                    "L-shaped lot, a corner lot and a flag lot are treated "
-                    "identically. The 800sf cap is the published rule; "
-                    "everything before it is an estimate.",
+            "narrowest_detached_plan_ft": NARROWEST_DETACHED_PLAN_FT,
+            "eligible_building_types": ["detached", "zero lot line",
+                                        "semi-detached"],
+            "median_cap_sf": float(np.median(
+                (rear_yard_area * REAR_YARD_FRACTION)[usable_dims])),
+            "median_adu_sf_where_it_fits": float(np.median(adu_sf[fits])) if fits.any() else 0.0,
+            "lots_at_the_statutory_cap": int((adu_sf >= MAX_ADU_SF).sum()),
+            "lots_below_the_habitability_floor": int(below_floor.sum()),
+            "note": "THE 800sf STATUTORY CAP ALMOST NEVER BINDS. It is reached "
+                    "on about 1% of the lots that fit a unit at all, against "
+                    "109,032 under the old sizing. The one-third rule and the "
+                    "five-foot setbacks are what decide this map. The "
+                    "previous version of this pipeline applied the one-third "
+                    "fraction to the whole open area of the lot rather than to "
+                    "the required rear yard, which put the median at 707sf and "
+                    "pinned 109,032 lots to the cap - a step that looked precise "
+                    "and resolved to a constant for nearly half the borough. "
+                    "What remains an estimate: MapPLUTO has no lot geometry, so "
+                    "the rear yard is a rectangle LotFront wide, and an L-shaped "
+                    "lot, a corner lot and a flag lot are still treated "
+                    "identically. What is no longer an estimate is the depth of "
+                    "that rectangle and the fraction of it that may be built on.",
         },
+        "building_type": {
+            "source": "MapPLUTO ProxCode, the Department of Finance proximity "
+                      "code: 1 detached, 2 semi-attached, 3 attached, 0 not "
+                      "available.",
+            "counts": type_counts,
+            "no_proxcode": int(prox_missing.sum()),
+            "fallback": "Lots with no ProxCode take the LotFront - BldgFront gap "
+                        "proxy instead, with cutoffs at 2 and 10 feet.",
+            "cross_check": {
+                "method": "LotFront - BldgFront, cutoffs at 2ft and 10ft. OURS.",
+                "agrees_with_proxcode": type_agree,
+                "of_lots_with_both": int((~prox_missing & usable_dims).sum()),
+                "note": "Two independent tests of the same thing, totalled "
+                        "against each other the way BldgClass A*/B* and LandUse "
+                        "01 are. They disagree a great deal, and that "
+                        "disagreement is the reason to prefer the field DOF "
+                        "recorded over two cutoffs we chose. The build doc that "
+                        "specified this rebuild believed MapPLUTO had no "
+                        "building-type field; it has one.",
+            },
+            "interpretation": "DOF says 'semi-attached' and the Zoning "
+                              "Resolution says 'semi-detached'. They are treated "
+                              "here as the same category. That is a reading, not "
+                              "a fact.",
+        },
+        "siting": {
+            "sited": int(sited),
+            "of_lots": n,
+            "method": "The unit is placed on the ray that leaves the lot "
+                      "centroid heading directly away from the buildings already "
+                      "on the lot: pushed back to the rear lot line, pulled "
+                      "forward by the setback plus half its own depth, and "
+                      "required to clear the far edge of the existing buildings. "
+                      "rear_x_ft and rear_y_ft give the direction and the "
+                      "distance to the lot line, house_reach_ft how far the "
+                      "buildings already extend that way; the browser finishes "
+                      "the sum, because the setback is a control.",
+            "when_it_does_not_fit": "A unit whose square will not sit between "
+                                    "the back of the house and the setback off "
+                                    "the rear lot line is NOT DRAWN, and the "
+                                    "legend counts it. It still counts as "
+                                    "eligible and it still pencils, because the "
+                                    "rule the programme applies is about the "
+                                    "AREA of the required rear yard and not "
+                                    "about whether a square fits behind the "
+                                    "house. That gap between an area test and a "
+                                    "plan is worth seeing rather than papering "
+                                    "over.",
+            "recorded": "The lot outline, from MapPLUTO's shapefile (EPSG:2263, "
+                        "feet). The footprints of the buildings on it, from the "
+                        "city's building layer, joined on base_bbl.",
+            "inferred": "WHICH END OF THE LOT IS THE BACK. Neither dataset says "
+                        "where the street is, so the back of the lot is taken to "
+                        "be the direction away from the existing house. That is "
+                        "right for an ordinary house set toward the street and "
+                        "WRONG for a corner lot, a through lot, and a house "
+                        "built at the back of its own parcel. The unit is drawn "
+                        "as a plain square rather than as a building because the "
+                        "position is this good and no better.",
+            "not_sited": "Lots with no building footprint on record, a building "
+                         "centred exactly on the lot, or a centroid lying "
+                         "outside its own polygon - which is what an L-shaped or "
+                         "flag lot does. They are drawn flat and no volume is "
+                         "guessed for them.",
+            "grid_convergence_note": "The direction is measured against true "
+                                     "north and the polygon against State Plane "
+                                     "grid north. Over New York City those differ "
+                                     "by about a third of a degree, which across "
+                                     "a fifty-foot lot is about three inches.",
+        },
+        "hpd_budget": HPD_BUDGET,
+        "plan_library": {k: v for k, v in papl.items() if k != "plans"},
         "rent_ami_monthly": round(rent_cap, 2),
         "rent_ami_note": (
             f"The programme's 100%-AMI rent cap, for a "
@@ -693,11 +1522,27 @@ def main():
             "acs": "Census ACS 5-year 2023, B19013_001E and B25003, tracts in "
                    "state 36 county 081.",
             "flood": flood_note,
-            "eligibility": "DERIVED BY US from DCP's City of Yes for Housing "
-                           "Opportunity ADU guide. NYC Open Data publishes no ADU "
-                           "eligibility layer - the catalogue was searched on "
-                           "2026-08-31 and there is none. These flags are our "
-                           "reading of a published rule, not a city determination.",
+            "zoning": "ZR 12-10 (definition of ancillary dwelling unit), "
+                      "ZR 23-341(b)(4) (permitted obstructions in required rear "
+                      "yards), ZR 23-342 (required rear yard depth) and ZR 64-11 "
+                      "(flood zone definitions), read from "
+                      "zoningresolution.planning.nyc.gov on 2026-09-01 and quoted "
+                      "in the constants at the top of this pipeline.",
+            "plan_library": "HPD Pre-Approved Plan Library, "
+                            "housing.hpd.nyc.gov/adu/library, eleven designs read "
+                            "2026-09-01. Shipped as plans.json.",
+            "budgeting_tool": "HPD ADU Budgeting Tool, "
+                              "housing.hpd.nyc.gov/adu/budget. Defaults read off "
+                              "the controls, behaviour measured by varying one "
+                              "control at a time, 2026-09-01.",
+            "eligibility": "DERIVED BY US from the Zoning Resolution itself, "
+                           "with DCP's City of Yes ADU guide and HPD's guidebook "
+                           "for the plain-language framing. NYC Open Data "
+                           "publishes no ADU eligibility layer - the catalogue "
+                           "was searched on 2026-08-31 and there is none. These "
+                           "flags are our reading of a published rule, not a city "
+                           "determination. AND ONE OF THEM IS AN APPROXIMATION OF "
+                           "A LAYER WE COULD NOT OBTAIN - see sources.flood.",
         },
         "joins": {
             "queens_lots": counts["queens"],
@@ -710,13 +1555,19 @@ def main():
             "lots_with_more_than_one_building": counts["multi_building"],
             "lots_joined_to_a_tract": matched,
             "lots_with_no_safmr_for_their_zip": missing_zip,
-            "eligible_attached": int(attached_ok.sum()),
-            "eligible_detached": int(detached_ok.sum()),
+            "usable_dimensions": int(usable_dims.sum()),
+            "eligible_building_type": int(type_ok.sum()),
+            "clears_the_setbacks": int((type_ok & width_ok & usable_dims).sum()),
+            "fits_an_adu": int(fits.sum()),
+            "eligible_backyard": int(backyard_ok.sum()),
+            "eligible_and_in_the_high_risk_flood_zone":
+                int((backyard_ok & in_high_risk).sum()),
             "note": "Total every join against a published figure before believing "
                     "it. BldgClass A*/B* and LandUse 01 are independent tests of "
                     "the same thing and they are reported separately above so a "
                     "disagreement between them is visible rather than averaged "
-                    "away.",
+                    "away. ProxCode and the LotFront-BldgFront gap are a second "
+                    "such pair; see building_type.cross_check.",
         },
         "why_this_shape": (
             "Precompute the INPUTS to the pro-forma, never its answers. Every "

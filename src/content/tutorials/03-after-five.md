@@ -27,9 +27,23 @@ the honest gap here.
 The sandbox is named for the street at nine in the evening, and **there is no
 crowd in it.** The plan was two thousand agents walking a street network on a
 looping day, so you could scrub the year and watch the district stop going dark
-at night. Building that needs a published account of who is on the street when,
-and none was found that could be cited. So what ships is a *count* of the
-residents who would live there and no animation at all.
+at night.
+
+What ships instead is the panel over the map: the two populations, both counted.
+198,677 office-using jobs in Lower Manhattan, from the Census Bureau's LODES
+workplace file, joined to the district on the census block each lot sits in.
+85,841 residents, from the 2020 census. And what the conversions do to each —
+which, at a 25% concession discount, is about 5,450 office jobs out and 4,600
+residents in. Roughly one for one.
+
+**Between those two counts there is no curve, and that is where the crowd went.**
+To animate people leaving at nine you need a published account of when people
+leave. The National Household Travel Survey is national and six bands wide; the
+finest thing it says about the evening is that 28% of trips begin somewhere
+between six and midnight. ACS table B08302 has half-hour bands at tract level,
+which is exactly the resolution you want — but its universe is departures *to*
+work, so it describes the morning. Nothing published says when a Manhattan
+office empties.
 
 That is not a corner cut for time. Animating a schedule nobody published would
 produce a picture that looks like evidence and is a guess with a frame rate,
@@ -60,14 +74,34 @@ falsifiable.
 
 **And then the schedule could not be found.** Not a schedule — plenty of those
 exist — but one that could be cited, that covered both office and residential
-use, and that someone could check. Without it, playback loses the only advantage
-it had over simulation: the checkability. It becomes an animation of a number
-somebody made up.
+use, and that someone could check. Two came close and it is worth knowing
+exactly how each one falls short, because "no data" is almost never the real
+situation; "data at the wrong resolution, or about the wrong thing" almost
+always is.
+
+- **NHTS table 8-1** gives trip start times by purpose. It is *national*, and
+  its bands are six hours wide. Its entire statement about the evening is that
+  28% of trips begin between 6pm and midnight. You cannot get an hour out of
+  that, and you certainly cannot get Manhattan out of it.
+- **ACS table B08302** is the right shape — half-hour bands, tract level, and
+  the tracts are the ones this sandbox already uses. But read the universe line:
+  it is *time leaving home to go to work*. It is a morning table. There is no
+  evening counterpart, because the census never asks the question.
+
+Without one, playback loses the only advantage it had over simulation: the
+checkability. It becomes an animation of a number somebody made up. And the
+schedule is not even the whole of it — **which building a trip starts at is an
+assumption doing as much work as the schedule is**, and the animation would put
+both on screen at sixty frames a second, looking far more specific than either.
 
 At that point the choice is to ship it labelled as illustrative, or not to ship
 it. This sandbox does not ship it. You may disagree, and if you do, the argument
 you have to win is why a picture of people moving is worth having when nobody
 can check it.
+
+What *can* be checked is the count on either side, so that is what ships. When
+you hit this in your own work, the move is the same: find the largest true claim
+inside the one you wanted to make, and make that one instead.
 
 ## Producing the data
 
@@ -151,6 +185,36 @@ roughly 90 million.
 Same bug, same shape, as the one in the bathtub module. It will happen to you
 too. Total your joins.
 
+### And one that went right, which is worth reading too
+
+Three failures in a row makes it sound as though nothing joins. The last one in
+this pipeline is the counterexample, and it is worth looking at because of *why*
+it worked.
+
+The presence panel needs two numbers this pipeline did not have: how many people
+work in the district, and how many live there. Jobs come from LODES, the Census
+Bureau's workplace file, which is keyed by the census block a job is *in*.
+Population comes from the 2020 census, keyed by tract. Neither one knows what a
+community district is.
+
+The temptation is to draw the district boundary and ask which blocks fall inside
+it. Don't. **MapPLUTO already carries the answer**: every lot has `BCTCB2020`,
+its 2020 census block, and `BCT2020`, its tract. So the district's lots name
+their own blocks and tracts, and the join is ID to ID — the same discipline as
+the rest of this pipeline, and no geometry at all.
+
+Then total it against something published, the way you always should. Manhattan's
+tracts come to **1,694,251 people, which is the published 2020 count for New
+York County exactly.** That is when the join became believable, and not before.
+
+It caught a mistake on the way, too. The first version estimated residents as
+MapPLUTO's `UnitsRes` times the borough's average household size, which makes
+Lower Manhattan about 98,000 people. The census counted 85,841. The multiplier
+is wrong in a knowable direction — downtown households are smaller than the
+borough's and not every unit is occupied — and the point is that **nothing on
+screen would have looked wrong at 98,000.** A count beat a multiplier, and the
+only reason anyone found out was that both were computed and compared.
+
 ## Setting up the web environment
 
 The sandbox is one Svelte component taking `params`, `assets` and a `mode`, as
@@ -176,12 +240,42 @@ crowd later does not require migrating every submission.
 
 ## The parameters
 
-Here is the district at the published defaults, in 2035:
+Here is the district at the defaults, in 2035:
 
-<div data-sandbox="after-five" data-mode="view" data-params='{"year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent_discount":0,"cap_rate":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
 
-Blue is still office, red has become housing. About 29% of the office buildings
-have converted.
+Blue is still office, red has become housing, and **there is no red.** Nothing
+converts, in any year up to 2045, and three buildings in 2050.
+
+Do not skip past that. An earlier version of this sandbox converted 29% of the
+district at its defaults, and the difference between the two is one number
+getting a source.
+
+The office rent — what an owner gives up by converting — was in the model twice.
+The code said 38 dollars a square foot and called it *effective* rent, in a
+comment. The manifest said 62 and called it *asking*. Neither came from
+anywhere. So the front end was applying a 39% haircut to an unpublished figure,
+in a comment, and the resulting map looked completely normal. **A constant that
+lives in two places has two values, and the version the model actually uses is
+whichever one the code reached for.**
+
+Both are now one number in one place: $54 a square foot a year, asking rent for
+Manhattan class B and C offices, CoStar as of 30 April 2024, published in the
+Comptroller's *Spotlight* on the office market on 14 May 2024. And at $54, the
+deal never clears.
+
+Here is the same district with one control moved — the discount between what a
+landlord asks and what a landlord collects, set to 25%:
+
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent_discount":0.25,"cap_rate":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
+
+Sixty-seven buildings. Nothing about the buildings changed.
+
+That control exists, and defaults to subtracting nothing, because **asking rent
+is not effective rent** — free months and fit-out money sit between them, and in
+this market the gap is large — and because no published effective-rent series
+for this stock was found. The sandbox will not choose the number for you. It is
+the single most consequential value in the model and it is not in any table.
 
 **Start with the office rent trend, because it is the surprise.** Set it to zero
 and scrub the year: nothing happens. Not "less happens" — *nothing*. The map is
@@ -196,12 +290,22 @@ it.
 
 Then the two gates:
 
-- **The convertibility threshold.** The score behind it is ours — four proxies,
-  our weights, two of the published criteria dropped because nothing measures
-  them. Push it to 0.9 and almost nothing converts. The number that decides how
-  much of downtown is convertible is a number somebody chose, and in the public
-  conversation it is a number a consultancy chose and did not show you.
-- **467-m.** Turn it off and conversions roughly double. That is not the tax
+- **The convertibility threshold, and the four weights under it.** The score is
+  ours — four proxies, our weights, three of the published criteria dropped
+  because nothing measures them. The weights used to be baked into the data
+  file, which meant you could argue with the threshold but not with the
+  judgement it was testing. They are controls now. Put all the weight on
+  floorplate depth and watch which buildings change colour.
+
+  The legend carries the one check available. Gensler published that about a
+  quarter of the 1,300-plus buildings they scored came out suitable, and did not
+  publish the scoring. So the legend marks where *our* threshold would have to
+  sit to call a quarter of this district convertible — 0.77 at the default
+  weights — and that mark moves when you move a weight. It is not a validation.
+  It is the only place two judgements about the same buildings can be put beside
+  each other, and it is worth sitting with how little that is.
+- **467-m.** With the discount at 25% so there is something to count, turn it
+  off and conversions go from 67 buildings to 156 — better than double. That is not the tax
   break being worth money — the exemption schedule is not published, so it
   cannot be valued here at all. It is the *eligibility rules* excluding
   buildings: the 90%-non-residential test and the six-unit minimum. Switching it
@@ -220,6 +324,27 @@ know that the correlation was authored.
 **The score is ours and it does double duty.** It gates conversion and it drives
 cost. A score usually does one job; this one does two, so an error in it
 propagates twice.
+
+**Three of the criteria are missing, and one of them was hiding.** Window
+operability and elevator count were dropped openly — nothing available measures
+them. The third was found later: year built was standing in for facade type
+*and* structural bay, which is one proxy asked to do two jobs. A 1920s building
+may have been re-clad; a 1960s one may have a thirty-foot bay. Age at least
+correlates with facade, so it keeps that job and the bay is now named as
+missing. Look for this in your own work. A proxy quietly covering for a second
+thing is much harder to spot than a criterion you left out on purpose, because
+the table still has four rows in it.
+
+**Floor area per apartment is measured now, and the measurement has a choice in
+it.** It used to be 900 square feet, from nowhere. It is 1,152, from 149 DOB
+filings where a Manhattan building with no apartments became a residential one.
+But the filing records the floor area of the *whole building*, not of the part
+converted — so a job adding two apartments to a twenty-storey tower reports the
+whole tower against two units. Requiring ten units or more is what keeps that
+out, and that cut moves the answer by 40%: 1,366 with no cut, 907 at fifty units
+and up. The ladder is published in the manifest rather than just the rung we
+picked. The old 900 sits at the far end of it, which is a coincidence and not a
+vindication.
 
 **Conversion is instant.** The deal clears and the building is residential in
 the same tick. No construction period, no financing, no tenants to move out.

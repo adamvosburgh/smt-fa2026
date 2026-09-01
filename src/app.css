@@ -345,6 +345,10 @@ pre code {
     padding-top: 9rem;
   }
 
+  :root {
+    --chrome-top: 9rem;
+  }
+
   .page-title {
     font-size: 1.25rem;
   }
@@ -363,6 +367,10 @@ pre code {
 
   .site-main {
     padding-top: 10rem;
+  }
+
+  :root {
+    --chrome-top: 10rem;
   }
 }
 
@@ -598,6 +606,28 @@ pre code {
 /* Sandbox and gallery pages break out of the 800px prose column. */
 .site-main.wide {
   max-width: 1240px;
+}
+
+/* ...and the sandbox route breaks out altogether.
+   `wide: 'full'` in its load function, which is truthy, so it gets .wide as
+   well and this only has to undo the cap.
+
+   --chrome-top is the one number the full-width sandbox layout needs from the
+   page: the fixed header (1rem padding, a 1rem/1.6 title, 1rem padding) plus
+   the fixed nav that hangs off it at top: 4rem, plus room to breathe. It is
+   declared here rather than in the component so that moving the header moves
+   the map with it instead of silently overlapping it.
+
+   It clears the nav's BOX-SHADOW, not the nav. The pill throws a 30px blur at
+   30px spread, which reaches about 170px down the page - the reason every
+   reading page starts at 10rem. At 7rem the shadow washed a grey fog across
+   the top of the map and it read as haze in the data. */
+:root {
+  --chrome-top: 9rem;
+}
+.site-main.wide.full {
+  max-width: none;
+  padding: var(--chrome-top) 1.25rem 3rem;
 }
 
 /* Anchor links on headings. The build doctor points students at these, so they

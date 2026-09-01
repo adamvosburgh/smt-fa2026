@@ -14,6 +14,6 @@ export function load({ params }) {
     submissions: bySandbox(params.slug),
     title: meta.title,
     showTitle: false,
-    wide: true
+    wide: 'full'
   };
 }

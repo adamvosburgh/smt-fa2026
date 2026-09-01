@@ -6,6 +6,7 @@
   "description": "<p>Two states, differing by exactly one changed value. The value is named in the interface.</p>",
   "params": {
     "slr_m": 1.4,
+    "aep": "none",
     "surge_m": 1.5,
     "tide": "mhhw",
     "percentile": 90,
@@ -16,6 +17,7 @@
   },
   "cover": {
     "slr_m": 1.4,
+    "aep": "none",
     "surge_m": 1.5,
     "tide": "mhhw",
     "percentile": 90,

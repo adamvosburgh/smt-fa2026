@@ -14,7 +14,14 @@
 
 {#if Component}
   {#key data.meta.slug}
-    <SandboxFrame meta={data.meta} schema={data.meta.schema} {Component} mode="edit" bind:params />
+    <SandboxFrame
+      meta={data.meta}
+      schema={data.meta.schema}
+      {Component}
+      mode="edit"
+      layout="full"
+      bind:params
+    />
   {/key}
 {/if}
 
@@ -41,7 +48,7 @@
 {/if}
 
 <style>
-  .tut { font-size: 0.78rem; color: #666; margin-top: 1.5rem; }
+  .tut { font-size: 0.78rem; color: #666; margin-top: 1.5rem; max-width: 62ch; }
   .forks { margin-top: 3.5rem; border-top: 1px solid #000; padding-top: 1.25rem; }
   .forks h2 { font-size: 0.8rem; text-transform: lowercase; margin: 0 0 1rem; }
   .fork-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; }

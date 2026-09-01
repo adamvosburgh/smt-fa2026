@@ -109,20 +109,75 @@ depending on where you stand.
 
 ### The step that is a guess
 
-Sizing the unit is the weakest thing in this pipeline and you should treat it
-with suspicion.
+Sizing the unit is the weakest thing in this pipeline, and the way it was wrong
+is more instructive than the way it is now right.
 
-There is no lot geometry in the `.dbf`. No shape, no orientation, no setbacks,
-no record of what is already in the yard. What there is: lot area, and the
-building's frontage and depth. So the available rear yard is estimated as lot
-area minus the building's footprint, and a third of that is treated as
-buildable, capped at the 800 square feet the rule allows.
+The first version read the rule as "a third of the rear yard" and applied the
+third to *the whole open area of the lot* — lot area minus the building's
+footprint. That is not what the rule says. ZR 23-341(b)(4) applies the third to
+the **required rear yard**, which is a much smaller thing, and ZR 23-342 makes
+its depth depend on building type and lot width: twenty feet for a detached
+house, thirty for a semi-detached one on a lot under forty feet wide, with a
+reduction on shallow lots.
 
-An L-shaped lot, a corner lot and a flag lot are all treated identically. And
-109,032 of the lots hit the 800 foot cap, which means that for nearly half the
-borough this careful-looking estimate is not doing any work at all — the answer
-is just "the maximum". **Say that in your card.** A step that looks precise and
-resolves to a constant is worth naming.
+The difference is not a rounding detail. The median unit went from 707 square
+feet to 333, and the number of lots pinned to the 800 foot statutory cap went
+from 109,032 to 384.
+
+**That is the tell you should learn to recognise.** A step that looks precise
+and resolves to a constant for half your data is not doing any work. When
+109,032 lots all came out at exactly 800, the estimate had stopped estimating
+and the cap was answering every question. Watch for a distribution that piles up
+on a boundary.
+
+Two things are still estimated, and your card has to say so. MapPLUTO has no lot
+geometry, so the required rear yard is taken as a rectangle the full width of
+the lot, and an L-shaped lot, a corner lot and a flag lot are treated
+identically. And the shallow-lot reduction is supposed to apply only to lots
+that existed on 15 December 1961, which no field records, so it is applied to
+all of them.
+
+One more thing, and it is the reason two of the sliders exist. The one-third and
+the five feet are the numbers the rule turns on, so they are controls rather
+than constants — which means the unit's floor area cannot be baked into the data
+file. It is recomputed in the browser on every move. **Precompute the inputs to
+an answer, never the answer**, and which is which depends on what you made
+adjustable.
+
+### An area is not a plan
+
+Here is a mistake worth making once, deliberately.
+
+The pipeline computes how many square feet the rule allows. The map then drew
+each unit at the lot's centre point, because that is the one coordinate
+MapPLUTO gives you. Zoom in and every proposed backyard cottage is sitting on
+the roof of the house it is supposed to stand behind. Nothing was wrong with the
+arithmetic. The drawing was making a claim the data had never supported.
+
+Fixing it means answering a question the DBF cannot: **where on the lot?** That
+needs the lot's actual outline, which is in the shapefile next to the DBF, and
+the house's actual footprint, which is in the city's building layer. Both are
+recorded. With those you can measure the open ground behind the house — how deep
+it runs and how wide it is — and put a rectangle in it.
+
+But one thing stays inferred, and no amount of geometry fixes it: **which end of
+the lot is the back.** Neither dataset says where the street is. The sandbox
+assumes the back is the direction away from the house, which is right for an
+ordinary lot and wrong for a corner lot. That assumption is named on the card,
+and the unit is drawn as a plain rectangle rather than as a building because
+that is exactly how much the model knows.
+
+Then the payoff, which is the thing to take away. Once you can measure the back
+garden, you find that **only about a third of the lots that pass the area test
+have room for a real unit** — a rectangle at the proportions of the published
+designs, with the five-foot setbacks taken off. The rest satisfy the zoning
+calculation and have nowhere to put the building.
+
+That gap is not a bug and the sandbox does not close it. Those lots still count
+as eligible, because the rule the programme applies really is an area test. The
+sandbox counts them separately and says so. **When your drawing and your model
+disagree, do not quietly change one to match the other — find out which one is
+telling you something.**
 
 ## Setting up the web environment
 
@@ -215,6 +270,26 @@ That substitution is the whole subject of this course in one move. It is not
 cheating and it is not wrong; it is the only thing available, and the entire
 obligation is to say so out loud where anyone reading the map will see it. It is
 in the model card, it is in the schema, and it is here.
+
+**A published tool can hide an assumption in plain sight, and you can find it
+by moving one slider at a time.** HPD publishes an ADU budgeting tool. It exposes
+eleven inputs: design fees at 20% of hard cost, contingency at 8%, site prep at
+$20,000, utility hookup at $30,000, and seven more for financing and operations.
+Vary them one at a time against a fixed hard cost and the tool's arithmetic comes
+out exactly: soft cost is $50,000 plus **48%** of hard cost.
+
+Add up the four cost inputs it shows you. Twenty per cent plus eight per cent is
+twenty-eight, and the two flat sums are the $50,000. **There is a
+20%-of-hard-cost term the tool never displays** — the same size as the largest
+one it does. It is almost certainly general contractor overhead and profit, and
+it is not labelled anywhere in the interface.
+
+That is worth more than the number. A public tool that exposes eleven
+assumptions and conceals a twelfth as large as any of them is exactly what this
+course is about, and finding it took nothing but a browser and the discipline of
+changing one thing at a time. **Do that to every calculator you are asked to
+trust.** Vary one input, hold the rest, write down what came out. The gap between
+what a tool shows and what a tool does is where the argument lives.
 
 **Ranking is standing in for deciding.** The order in which units get built is
 return on equity, descending. Nobody in the model chooses anything. Thousands of
