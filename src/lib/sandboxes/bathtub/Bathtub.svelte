@@ -222,14 +222,16 @@
 <style>
   .wrap { position: absolute; inset: 0; }
   .map { position: absolute; inset: 0; }
+  /* Above the deck.gl canvas, which rides in MapLibre's control container at
+     z-index 2 - an overlay without its own z-index paints under the model. */
   .loading, .err {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     font-size: 0.75rem; color: #888; background: rgba(255,255,255,0.9);
-    padding: 0.4rem 0.7rem;
+    padding: 0.4rem 0.7rem; z-index: 5;
   }
   .err { color: #a00; max-width: 70%; text-align: center; }
   .key {
-    position: absolute; left: 0.6rem; bottom: 0.6rem;
+    position: absolute; left: 0.6rem; bottom: 0.6rem; z-index: 5;
     display: flex; flex-direction: column; gap: 0.2rem;
     background: rgba(255,255,255,0.88); padding: 0.4rem 0.55rem;
     font-size: 0.62rem; line-height: 1.4; color: #444; pointer-events: none;

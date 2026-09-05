@@ -1,8 +1,8 @@
 ---
-title: "Tutorial 3 — After Five"
+title: "Tutorial 2 — After Five"
 date: "2026-08-31"
 author: Adam Vosburgh
-sequence: 3
+sequence: 2
 cat: tutorial
 published: true
 ---
@@ -21,34 +21,19 @@ sections on those before you read the ones on the model.
 
 <div class="gap">
 
-**What the tutorial version won't have.** Neither will the sandbox, and that is
-the honest gap here.
+**What the tutorial version won't have.** The sandbox's crowd runs on a
+precomputed street graph, shortest-path routes shipped as predecessor arrays, a
+Web Worker building the day's timetable, and an occupancy curve cut from a
+half-gigabyte federal survey. The tutorial version stops at the flow curves —
+the counted arrivals and departures that drive everything — and a crowd that
+walks straight lines between one gateway and its buildings. That is the honest
+cut: the counting is the load-bearing part, and the routing is craft.
 
-The sandbox is named for the street at nine in the evening, and **there is no
-crowd in it.** The plan was two thousand agents walking a street network on a
-looping day, so you could scrub the year and watch the district stop going dark
-at night.
-
-What ships instead is the panel over the map: the two populations, both counted.
-198,677 office-using jobs in Lower Manhattan, from the Census Bureau's LODES
-workplace file, joined to the district on the census block each lot sits in.
-85,841 residents, from the 2020 census. And what the conversions do to each —
-which, at a 25% concession discount, is about 5,450 office jobs out and 4,600
-residents in. Roughly one for one.
-
-**Between those two counts there is no curve, and that is where the crowd went.**
-To animate people leaving at nine you need a published account of when people
-leave. The National Household Travel Survey is national and six bands wide; the
-finest thing it says about the evening is that 28% of trips begin somewhere
-between six and midnight. ACS table B08302 has half-hour bands at tract level,
-which is exactly the resolution you want — but its universe is departures *to*
-work, so it describes the morning. Nothing published says when a Manhattan
-office empties.
-
-That is not a corner cut for time. Animating a schedule nobody published would
-produce a picture that looks like evidence and is a guess with a frame rate,
-which is the exact failure this whole course exists to name. The absence is the
-point, and it is on the face of the sandbox rather than in a footnote.
+The sandbox also carries a register the tutorial version must carry too, at any
+size: three lines on the canvas, two marked **assumed** — which building a trip
+starts at (proportional to jobs), the route (shortest path, which nobody walks)
+— and one marked **measured** — the gateway shares, which are counted taps. The
+measured line is labelled precisely so the other two read as what they are.
 
 </div>
 
@@ -69,15 +54,15 @@ A schedule playback claims much less: it says "this many people, at this hour,
 because a survey counted them", and every one of its claims can be checked
 against the survey.
 
-So the plan here was playback, not simulation, precisely because playback is
+So the build here is playback, not simulation, precisely because playback is
 falsifiable.
 
-**And then the schedule could not be found.** Not a schedule — plenty of those
-exist — but one that could be cited, that covered both office and residential
-use, and that someone could check. Two came close and it is worth knowing
-exactly how each one falls short, because "no data" is almost never the real
-situation; "data at the wrong resolution, or about the wrong thing" almost
-always is.
+**An earlier version of this tutorial said the schedule could not be found, and
+shipped a paragraph explaining the absence. The schedule exists.** What had
+actually been checked were two *trip* tables, and both really do fall short —
+knowing exactly how is still worth your time, because "no data" is almost never
+the real situation; "data at the wrong resolution, or about the wrong thing"
+almost always is:
 
 - **NHTS table 8-1** gives trip start times by purpose. It is *national*, and
   its bands are six hours wide. Its entire statement about the evening is that
@@ -88,20 +73,33 @@ always is.
   it is *time leaving home to go to work*. It is a morning table. There is no
   evening counterpart, because the census never asks the question.
 
-Without one, playback loses the only advantage it had over simulation: the
-checkability. It becomes an animation of a number somebody made up. And the
-schedule is not even the whole of it — **which building a trip starts at is an
-assumption doing as much work as the schedule is**, and the animation would put
-both on screen at sixty frames a second, looking far more specific than either.
+What had not been checked was the transit agency that counts every tap. The
+**MTA Subway Origin-Destination Ridership Estimate** gives estimated ridership
+for every origin-complex to destination-complex pair, by year, month, day of
+week and hour of day — 116 million rows. Aggregate the destinations inside the
+district and you have the morning's arrival curve; aggregate the origins and
+you have the evening's departures, hour by hour, counted. The check that the
+fields mean what the dictionary says is the shape of the day itself: this is a
+jobs district, so people *enter* its stations to leave it, and the five-o'clock
+peak comes out at 2.5 times the eight-o'clock one. Reproduce that number before
+building on it; the pipeline does.
 
-At that point the choice is to ship it labelled as illustrative, or not to ship
-it. This sandbox does not ship it. You may disagree, and if you do, the argument
-you have to win is why a picture of people moving is worth having when nobody
-can check it.
+Two lessons, and the first is the uncomfortable one. **A claim of absence is a
+claim about your search**, and this one was published after evaluating two
+tables when the counting agency's own estimate was one catalogue away. The
+standing rule of this course — a sandbox that cannot complete a step is not
+thereby making a point about the limits of models — cuts against its author
+here, and it should.
 
-What *can* be checked is the count on either side, so that is what ships. When
-you hit this in your own work, the move is the same: find the largest true claim
-inside the one you wanted to make, and make that one instead.
+The second survives the correction: the schedule is not the whole of it.
+**Which building a trip starts at is an assumption doing as much work as the
+schedule**, and so is the route. The animation now ships because its counted
+part can be checked — against the MTA curves it runs on, and against a second,
+independent count, the ATUS time-use survey's at-workplace share, drawn under
+the panel. Its assumed parts are printed on the canvas next to the measured
+one. When you hit this in your own work, the move is the same: find the
+largest true claim inside the one you wanted to make, make that one, and label
+the rest as yours.
 
 ## Producing the data
 
@@ -215,6 +213,27 @@ borough's and not every unit is occupied — and the point is that **nothing on
 screen would have looked wrong at 98,000.** A count beat a multiplier, and the
 only reason anyone found out was that both were computed and compared.
 
+### The aggregate that must stay an aggregate
+
+The crowd's data has one rule that is worth carrying to every large table you
+ever query. The MTA's origin-destination estimate is 116,279,069 rows, and the
+crowd needs a few hundred of them: arrivals and departures per complex per
+hour. **Fetch that as a server-side aggregate — a `$group` query — and never as
+a row pull.** A row pull with a `$limit` would truncate silently, and the curve
+would be wrong in a way nothing downstream could catch, because a truncated sum
+still looks like a sum. The other habit is the same one the presence panel
+used: before building on the curve, reproduce a published number from it. The
+district's stations record 2.5 times as many exits at five in the afternoon as
+entries at eight in the morning; if your aggregate does not show that
+asymmetry, the field does not mean what you think it means.
+
+The rest of the crowd's inputs are ordinary by comparison: the entrances file
+(one row per stair, `borough` a single letter where the ridership tables spell
+it out — a join trap worth noticing), the street centerline clipped to the
+district and filtered to walkable segments, and the ATUS time-use files, where
+the multi-year weight is `TUFNWGTP` and codes 12–21 of `TEWHERE` are modes of
+travel, not places — a person commuting is neither at home nor at work.
+
 ## Setting up the web environment
 
 The sandbox is one Svelte component taking `params`, `assets` and a `mode`, as
@@ -240,9 +259,17 @@ crowd later does not require migrating every submission.
 
 ## The parameters
 
+Two clocks first, because they are the controls you will touch most. The
+**hour of day** plays by default and moves the crowd over the same timetable;
+the **year** steps the model through its six dates. Only one plays at a time —
+playing the year holds the hour at its value, and the panel says so on the held
+row. The crowd's own controls set how many agents stand in for the day and
+whether their schedule is the measured MTA curve or four bell curves whose
+defaults are read off it.
+
 Here is the district at the defaults, in 2035:
 
-<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent_discount":0,"cap_rate":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent":54,"cap_rate_office":0.055,"cap_rate_residential":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
 
 Blue is still office, red has become housing, and **there is no red.** Nothing
 converts, in any year up to 2045, and three buildings in 2050.
@@ -264,18 +291,22 @@ Manhattan class B and C offices, CoStar as of 30 April 2024, published in the
 Comptroller's *Spotlight* on the office market on 14 May 2024. And at $54, the
 deal never clears.
 
-Here is the same district with one control moved — the discount between what a
-landlord asks and what a landlord collects, set to 25%:
+Here is the same district with one control moved — the office rent stepped
+from the published $54 asking figure to $41, the stop standing for what a
+landlord actually collects after free months and fit-out money, a flat 25%
+discount:
 
-<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent_discount":0.25,"cap_rate":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","year":2035,"conversion_cost_sf":350,"residential_rent":75,"office_rent_trend":-0.01,"office_rent":41,"cap_rate_office":0.055,"cap_rate_residential":0.055,"opex_share":0.35,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"convertibility_threshold":0.5,"colour_by":"use","added_floors":true}'></div>
 
-Sixty-seven buildings. Nothing about the buildings changed.
+Fifty-nine buildings. Nothing about the buildings changed.
 
-That control exists, and defaults to subtracting nothing, because **asking rent
-is not effective rent** — free months and fit-out money sit between them, and in
-this market the gap is large — and because no published effective-rent series
-for this stock was found. The sandbox will not choose the number for you. It is
-the single most consequential value in the model and it is not in any table.
+That control is four named stops, and only the default has a source, because
+**asking rent is not effective rent** — free months and fit-out money sit
+between them, and in this market the gap is large — and because no published
+effective-rent series for this stock was found. The other three stops are ours,
+each carrying its justification on the control, and the sandbox names whose
+number you are using. It is the single most consequential value in the model
+and it is not in any table.
 
 **Start with the office rent trend, because it is the surprise.** Set it to zero
 and scrub the year: nothing happens. Not "less happens" — *nothing*. The map is
@@ -304,8 +335,8 @@ Then the two gates:
   weights — and that mark moves when you move a weight. It is not a validation.
   It is the only place two judgements about the same buildings can be put beside
   each other, and it is worth sitting with how little that is.
-- **467-m.** With the discount at 25% so there is something to count, turn it
-  off and conversions go from 67 buildings to 156 — better than double. That is not the tax
+- **467-m.** With the rent at the $41 stop so there is something to count, turn it
+  off and conversions go from 59 buildings to 142 — better than double. That is not the tax
   break being worth money — the exemption schedule is not published, so it
   cannot be valued here at all. It is the *eligibility rules* excluding
   buildings: the 90%-non-residential test and the six-unit minimum. Switching it
@@ -320,6 +351,13 @@ means the two controls are not independent, and a student comparing them should
 know that the correlation was authored.
 
 ## The assumptions
+
+**The crowd's roles are attributed, not counted.** The taps are not split by
+who is riding, so the model attributes before-noon arrivals and after-noon
+departures to workers, and the mirror to residents. The gateway shares are
+measured; the schedule window that splits them is ours, and the parametric
+schedule's four sliders default to values read off the measured curves so a
+reader who moves them starts from the data and leaves it knowingly.
 
 **The score is ours and it does double duty.** It gates conversion and it drives
 cost. A score usually does one job; this one does two, so an error in it
@@ -379,11 +417,13 @@ community district as an argument. Midtown South is the obvious comparison and
 the model is calibrated for a district like it; somewhere with almost no office
 stock will break it in an instructive way. Say what broke.
 
-**Or build the crowd, properly.** Find a citable published account of who is on
-a street and when — a travel survey's departure-time distribution, a time-use
-survey, an occupancy schedule with a real source — and add the layer this
-sandbox does not have. The hard part is not the animation. The hard part is
-defending the source, and the deliverable is the defence as much as the picture.
+**Or attack the crowd's weakest assumption.** The sandbox attributes morning
+arrivals to workers and evening arrivals to residents because the counted taps
+are not split by who is riding. Find a citable source that splits them — a
+travel survey's purpose field, a time-use diary, anything with a universe line
+you can defend — and rebuild the role assignment on it. The hard part is not
+the code. The hard part is defending the source, and the deliverable is the
+defence as much as the picture.
 
 ---
 

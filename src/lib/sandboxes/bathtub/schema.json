@@ -18,6 +18,9 @@
       "type": "integer",
       "title": "How far ahead",
       "x-group": "the scenario",
+      "x-timeline": "primary",
+      "x-play-rate": 1,
+      "x-play-loop": false,
       "x-disabled-when": {
         "link_year": false
       },
@@ -105,7 +108,7 @@
       ],
       "default": "none",
       "x-emphasis": true,
-      "description": "Pick a storm by how often it happens rather than by how high it is. These are NOAA's exceedance probability levels for the gauge at the Battery: the 1% level is the one with a 1-in-100 chance of being reached in any given year, and it is 2.40m above NAVD88. Two things about them are worth knowing before you trust the map. They are fitted to the highest water level of each year, and the highest water level of a year happens at high tide - so the tide is already inside the number, which is why choosing one here takes the tide control over instead of adding to it. And they are still-water levels: no waves. The 1% is about 7.9 feet; Sandy reached about 11.3 feet at this same gauge. If you pick \"100-year\" and see less water than you remember, you are looking at two definitions, not at a bug."
+      "description": "Pick a storm by how often it happens rather than by how high it is. These are NOAA's exceedance probability levels for the gauge at the Battery: the 1% level is the one with a 1-in-100 chance of being reached in any given year, and it is 2.51m above NAVD88, read for October 2025 - the levels ride the sea level trend, so they carry a date. Two things about them are worth knowing before you trust the map. They are fitted to the highest water level of each year, and the highest water level of a year happens at high tide - so the tide is already inside the number, which is why choosing one here takes the tide control over instead of adding to it. And they are still-water levels: no waves. The 1% is about 8.2 feet; Sandy reached about 11.3 feet at this same gauge. If you pick \"100-year\" and see less water than you remember, you are looking at two definitions, not at a bug."
     },
     "surge_m": {
       "type": "number",
@@ -151,7 +154,7 @@
         "High tide"
       ],
       "default": "mhhw",
-      "description": "The sea is not at one height. At the Battery it swings about a metre and a half between low and high. Pick which moment of that swing the map is showing. Published flood maps usually use the average daily high tide, which is the cautious choice - it's the default here. These three numbers come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Pick a storm probability and this control goes quiet, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.70m above the average daily high tide, and that is the same 2.40m written the other way round."
+      "description": "The sea is not at one height. At the Battery it swings about a metre and a half between low and high. Pick which moment of that swing the map is showing. Published flood maps usually use the average daily high tide, which is the cautious choice - it's the default here. These three numbers come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Pick a storm probability and this control goes quiet, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.82m above the average daily high tide, and that is the same 2.51m written the other way round."
     },
     "connectivity": {
       "type": "boolean",

@@ -95,9 +95,29 @@ export function scoreOf(buildings, base, w) {
         + w.w_age * buildings[base + S_AGE]) / sum;
 }
 
-/** Present value of a rent stream, in dollars per square foot. */
-function value(rentPerSf, p) {
-  return (rentPerSf * (1 - p.opex_share)) / p.cap_rate;
+/** Present value of a rent stream, in dollars per square foot.
+ *
+ * The cap rate is an argument now, not a field read off p, because office and
+ * residential no longer share one. A single 0.055 applied to both sides scaled
+ * both and very nearly cancelled - and the gap between office and residential
+ * yields is a large part of why anyone converts anything. The two controls
+ * default equal, so the change is provably neutral until a reader pulls them
+ * apart.
+ */
+function value(rentPerSf, capRate, p) {
+  return (rentPerSf * (1 - p.opex_share)) / capRate;
+}
+
+/**
+ * Floor area per apartment at the reader's chosen unit floor, off the measured
+ * ladder the pipeline ships. The cut is a judgement - 1,366 sf with no floor,
+ * 907 at fifty units - and exposing it as a control is the cheapest way to
+ * turn a buried judgement into a visible one. Only the six measured cuts are
+ * offered; interpolating between them would be inventing filings.
+ */
+function sfPerUnitAt(manifest, cut) {
+  const row = manifest?.economics?.sensitivity_to_the_unit_floor?.[String(cut)];
+  return row?.sf_per_unit ?? manifest?.economics?.sf_per_unit ?? ASSUME.sfPerUnit;
 }
 
 /**
@@ -141,11 +161,17 @@ export function compute(buildings, manifest, p) {
   let residentsAdded = 0;
 
   const householdSize = manifest.household_size ?? 1.9;
-  // Asking is not effective. No published effective-rent series was found for
-  // Manhattan B and C stock, so the discount is a control and its default is
-  // zero: the shipped model values office space at the published ASKING rent
-  // and is therefore valuing it high. Nothing is subtracted behind your back.
-  const officeRent = A.officeRentBase * (1 - (p.office_rent_discount ?? 0));
+  // The office rent is a control of four named scenario stops, one sourced
+  // (the $54 published asking figure) and three ours, each carrying its own
+  // justification in the schema. The default is the sourced stop, at which
+  // nothing converts - that empty map is the sandbox's finding, and the other
+  // stops are what it costs to disagree. The old office_rent_discount form is
+  // still honoured so an earlier submission replays unchanged.
+  const officeRent =
+    p.office_rent ?? A.officeRentBase * (1 - (p.office_rent_discount ?? 0));
+  const capOffice = p.cap_rate_office ?? p.cap_rate ?? 0.055;
+  const capResidential = p.cap_rate_residential ?? p.cap_rate ?? 0.055;
+  const sfPerUnit = sfPerUnitAt(manifest, p.min_units_for_conversion_sample ?? 10);
   const officeScores = [];
   const sfPerJob = jobDensity(manifest);
   let officeJobsHere = 0;      // office-using jobs in the district today
@@ -169,17 +195,17 @@ export function compute(buildings, manifest, p) {
 
     if (score[i] < p.convertibility_threshold) continue;
 
-    const unitsMade = Math.floor(office / A.sfPerUnit);
+    const unitsMade = Math.floor(office / sfPerUnit);
     if (p.incentive_467m && !qualifies467m(buildings, base, unitsMade)) continue;
 
     // The deal, tested at each snapshot year. Office rent drifts; residential
     // rent does not, which is itself an assumption and a strong one.
-    const resValue = value(p.residential_rent, p);
+    const resValue = value(p.residential_rent, capResidential, p);
     const costSf = p.conversion_cost_sf * (1 + A.costPenalty * (1 - score[i]));
     for (let y = 0; y < years.length; y++) {
       const yr = years[y];
       const drift = Math.pow(1 + p.office_rent_trend, yr - A.baseYear);
-      const officeValue = value(officeRent * drift, p);
+      const officeValue = value(officeRent * drift, capOffice, p);
       if (resValue - costSf > officeValue) {
         convertedIn[i] = yr;
         unitsOf[i] = unitsMade;

@@ -5,7 +5,6 @@
 // with card.md.
 export default {
   slug: 'coefficients',
-  number: 4,
   title: 'The Coefficients',
   subtitle:
     'A city simulation from 1989, opened up. Every internal layer drawn as it updates, and the constants that drive them turned into sliders.',
@@ -16,6 +15,8 @@ export default {
   blurb:
     "The engine plays as the game it is, and beside it the fifteen rasters it keeps about the city are drawn as they update - land value, crime, pollution, traffic, police cover, distance from the centre. Watching them being written is the point: the city stops looking like a world and starts looking like a stack of grids being blurred into each other on a fixed rotation. The rules driving all of it are about twenty named constants, and two of them carry a contested claim about cities each.",
   controls: [
+    'the simulation transport - run, pause, and single-step the sixteen phases one at a time',
+    'which internal layer washes over the city, tile for tile - or follow the rotation and watch each one being written',
     'the crime constant, and the weights on land value and police',
     'how fast land value falls with distance from the centre',
     'how far traffic will look for a destination',
@@ -41,6 +42,6 @@ export default {
     "Anyone. There are no people in it - only densities, rates, and a growth valve. It cannot represent a city whose centre is not its most valuable place, because land value is written as a number falling with distance from the centre and there is nowhere in the file format to put anything else. Nothing in it can be fitted to a real city, because every rule is a constant and there is no place to put data.",
   license:
     'GPLv3 with additional terms, plus the Micropolis Public Name License. This site is AGPL-3.0 and its repository is public, which satisfies GPLv3 section 13 and the source-availability obligation. Student submissions are modified GPL code redistributed here under the same licence. See NOTICE.md.',
-  tutorial: '/tutorials/04-coefficients/',
+  tutorial: '/tutorials/03-coefficients/',
   live: false
 };

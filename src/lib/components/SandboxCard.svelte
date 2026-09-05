@@ -69,7 +69,9 @@
     >
       <article class="card">
         <header>
-          <span class="num">{String(meta.number).padStart(2, '0')}</span>
+          {#if meta.number != null}
+            <span class="num">{String(meta.number).padStart(2, '0')}</span>
+          {/if}
           <h2>{meta.title}</h2>
           <button class="close" type="button" onclick={() => (expanded = false)}>close</button>
         </header>

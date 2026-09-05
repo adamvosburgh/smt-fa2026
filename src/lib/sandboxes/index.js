@@ -10,6 +10,7 @@ import bathtubSchema from './bathtub/schema.json';
 import coefficientsSchema from './coefficients/schema.json';
 import pencilSchema from './pencil/schema.json';
 import afterFiveSchema from './after-five/schema.json';
+import anthromesSchema from './anthromes/schema.json';
 
 // --- stubs. Each gets a meta.js + schema.json + component as it is built. ---
 import studioTwin from './studio-twin/meta.js';
@@ -33,11 +34,15 @@ const schemas = {
   bathtub: bathtubSchema,
   coefficients: coefficientsSchema,
   pencil: pencilSchema,
-  'after-five': afterFiveSchema
+  'after-five': afterFiveSchema,
+  anthromes: anthromesSchema
   // ...one per sandbox as it is built.
 };
 
-export const sandboxes = [
+// The full list, in registry order, including sandboxes hidden from the site.
+// The submission validator and the cover script use this so a hidden sandbox
+// keeps working at its URL rather than 404ing.
+export const allSandboxes = [
   studioTwin,
   pencil,
   afterFive,
@@ -47,7 +52,16 @@ export const sandboxes = [
   bathtub
 ].map((m) => ({ ...m, schema: schemas[m.slug] ?? null }));
 
-export const bySlug = Object.fromEntries(sandboxes.map((s) => [s.slug, s]));
+// What the site shows. `number` is assigned from position here, not read from
+// meta.js - unhiding a sandbox later renumbers the rest automatically.
+export const sandboxes = allSandboxes
+  .filter((s) => s.published !== false)
+  .map((s, i) => ({ ...s, number: i + 1 }));
+
+// Published entries come second so their numbered copies win.
+export const bySlug = Object.fromEntries(
+  [...allSandboxes, ...sandboxes].map((s) => [s.slug, s])
+);
 
 export function load(slug) {
   const l = loaders[slug];

@@ -228,12 +228,19 @@ picture moved.
   the whole tower against two units. Counting only conversions of ten units or
   more is what keeps that out, and moving that cut moves the answer by 40%:
   1,366 square feet per unit with no cut at all, 907 if only conversions of
-  fifty units and up count. The ladder is in the manifest. The old figure was
+  fifty units and up count. That cut is a control now - six measured stops off
+  the ladder, defaulting to ten - so the judgement is the reader's to move
+  rather than ours to bury. The ladder is in the manifest. The old figure was
   900, which came from nowhere and happens to sit at the far end of it.
-- **The office rent is an asking rent** and the discount between asking and
-  effective is a control that defaults to subtracting nothing. There is no
-  published effective-rent series for this stock, so the model values office
-  space high and says so rather than quietly correcting it.
+- **The office rent is a control of four named stops, and one of them has a
+  source.** $54 is the published asking rent — Manhattan Class B and C
+  combined, from the Comptroller's May 2024 spotlight — and it is the default,
+  at which nothing converts. The other three stops are ours: $41 for what a
+  landlord collects after free months and fit-out money (a flat 25% discount,
+  since no effective-rent series is published for this stock), $32 for a
+  building in trouble, $70 for a repositioned one. Each stop carries its
+  justification on the control, and the legend names which one is selected and
+  whose number it is.
 - **A displaced office job is a job in a district, not a person on a street.**
   The jobs removed are the office-using jobs recorded on that floor area — about
   one per 490 square feet in Lower Manhattan, per 324 in Midtown South, both
@@ -241,43 +248,49 @@ picture moved.
   is gross and some of it is empty. Whether those jobs vanish, move to a
   different building in the same district, or move to New Jersey, the model has
   nothing to say. It is a subtraction, not a relocation.
-- **One capitalisation rate is applied to both uses.** Office and residential do
-  not trade at the same yield, and the gap between them is a real part of why
-  anyone converts anything. Using one rate for both also makes the control
-  nearly inert, because it divides both sides of the comparison at once.
+- **The capitalisation rate is two controls now, office and residential,
+  defaulting equal.** One rate used to be applied to both uses, which divided
+  both sides of the comparison at once and made the control nearly inert -
+  office and residential do not trade at the same yield, and the gap between
+  them is a real part of why anyone converts anything. Equal defaults reproduce
+  the old behaviour exactly, so the reader discovers the effect by pulling them
+  apart. Both are market convention, not measurement: no published NYC series
+  was verified for either.
 
-## Two counts and no curve
+## Two counts, and now the curve between them
 
 The panel over the map holds the sandbox's actual argument, and it is worth
 reading before the buildings.
 
 Two populations, both counted. **198,677 office-using jobs** in Lower Manhattan,
 from LODES, at work in the daytime. **85,841 residents**, from the 2020 census.
-And then what the conversions do to each: at a 25% concession discount, the
-model converts 67 buildings, removes about **5,450 office jobs** and adds about
-**4,600 residents**. Roughly one for one. In Midtown South it is 34,000 jobs
-for 19,000 residents — two for one.
+And then what the conversions do to each: at the $41 rent stop, the model
+converts 59 buildings, removes about **4,700 office jobs** and adds about
+**3,900 residents**. Roughly one for one.
 
 That ratio is the thing to argue with. A conversion programme that reads as
 enormous in units is small against the number of people already in the district
 during the day, and it does not obviously make the street busier at nine; it
 trades a large daytime population for a smaller resident one.
 
-**And there is no curve between those two numbers, on purpose.**
+**An earlier version of this card said there was no curve between those two
+counts, and that nothing published describes a Manhattan evening. The second
+claim was wrong.** It was true of the two *trip* tables that had been checked —
+NHTS 8-1 is six national bands, ACS B08302 describes the morning — and false
+of the MTA's origin-destination ridership estimate, which counts arrivals at
+and departures from every subway complex by hour and day of week. On an
+October 2024 weekday the district's stations record 2.5 times as many exits at
+five in the afternoon as entries at eight in the morning, which is what a jobs
+district must show, and that asymmetry is the check that the fields mean what
+their dictionary says.
 
-The sandbox is named for nine in the evening. To draw who is on the street at
-nine you need a published account of when people leave. There isn't one. The
-National Household Travel Survey's table 8-1 is national, six bands wide, and
-its finest statement about the evening is that 28% of trips begin somewhere
-between six and midnight. ACS table B08302 gives half-hour bands at tract level
-— but its universe is departures *to* work, so it describes the morning only.
-Nothing published says when a Manhattan office empties.
-
-So the panel shows two counts and stops. No animated crowd, no trips on the
-street network. It is not only the schedule that would have to be invented:
-which building a trip starts at is an assumption doing as much work as the
-schedule is, and an animation built on both would look far more specific than
-anything behind it.
+So the crowd is now drawn, and its register is printed on the canvas: the
+gateway shares are **measured** (counted taps), while the building each trip
+starts at (proportional to jobs) and the route (shortest path, which nobody
+walks) are **assumed**, and the morning's arrivals are attributed to workers
+and the evening's to residents because the taps are not split by who is
+riding. Underneath the counts, the ATUS at-workplace curve — a survey, counted
+independently of the subway — is the number the animation is checked against.
 
 ## What else it can't see
 

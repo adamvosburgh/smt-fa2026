@@ -18,14 +18,19 @@ See the header of each script for what that means in its case.
 
 | Script | Sandbox | Reads | Writes |
 | --- | --- | --- | --- |
-| `pencil.py` | 02 Does It Pencil | MapPLUTO, HUD Small Area FMR + Income Limits, ACS tract income, NYC floodplain layers | `processed/pencil/` |
-| `after-five.py` | 03 After Five | DCP 3-D Building Model (CityGML), NYC Building Footprints, MapPLUTO, DOB filings + certificates of occupancy | `processed/after-five/` |
-| `bathtub.py` | 07 Bathtub | USGS 3DEP DEM, Building Footprints, MapPLUTO, ACS tracts | `processed/bathtub/` |
+| `pencil.py` | 01 Does It Pencil | MapPLUTO, HUD Small Area FMR + Income Limits, ACS tract income, NYC floodplain layers | `processed/pencil/` |
+| `after-five.py` | 02 After Five | DCP 3-D Building Model (CityGML), NYC Building Footprints, MapPLUTO, DOB filings + certificates of occupancy | `processed/after-five/` |
+| `after-five-agents.py` | 02 After Five | MTA O-D ridership aggregates + entrances, NYC Street Centerline, ATUS 2003-2025 | `processed/after-five/` (the agent layer's five files + `agents.json`) |
+| `anthromes.py` | 04 Anthromes | HYDE 3.2 raw-data.zip (streamed, never extracted), the Anthromes 12K replication archive (the gate), the 3.5 classified series at 33km | `processed/anthromes/` |
+| `bathtub.py` | 05 Bathtub | USGS 3DEP DEM, Building Footprints, MapPLUTO, ACS tracts, NOAA datums | `processed/bathtub/` |
 
-Sandbox 04, The Coefficients, has **no pipeline and no processed data**. Its data
+Sandbox 03, The Coefficients, has **no pipeline and no processed data**. Its data
 is source code - a vendored simulation engine under
 `src/lib/sandboxes/coefficients/vendor/` - so there is nothing here for it and
 nothing in `processed/`.
+
+`checks/` holds preflight.py - run it before believing a handoff has its data -
+and the measurement scripts behind the pencil frontage method.
 
 Two shared modules sit beside the pipelines:
 

@@ -21,14 +21,22 @@ export const FLAG = {
 
 // Column offsets into lots.bin. Must match manifest.columns.
 const LON = 0, LAT = 1, LOT_FRONT = 2, REQ_DEPTH = 3, LOT_AREA = 4,
-      RENT_FMR = 5, TRACT_INCOME = 6, TRACT_IDX = 7, BLDG_TYPE = 8,
-      REAR_X = 9, REAR_Y = 10, REAR_DEPTH = 11, REAR_WIDTH = 12;
-export const STRIDE = 13;
+      RENT_FMR = 5, TRACT_INCOME = 6, TRACT_IDX = 7, BLDG_TYPE = 8;
+export const STRIDE = 9;
 // Exported so the component does not have to hardcode an offset. It did, and
 // the offsets moved when the sizing became a browser-side computation.
 export const COL = { LON, LAT, LOT_FRONT, REQ_DEPTH, LOT_AREA, RENT_FMR,
-                     TRACT_INCOME, TRACT_IDX, BLDG_TYPE, REAR_X, REAR_Y,
-                     REAR_DEPTH, REAR_WIDTH };
+                     TRACT_INCOME, TRACT_IDX, BLDG_TYPE };
+
+// The rear-yard box rides in rear.bin, an Int16Array in lots.bin's row order:
+// whole feet, because nothing in a siting box is precise to better than a
+// foot. frontage_count is the number of street frontages the pipeline's
+// block test found - 0 landlocked, 1 ordinary, 2+ corner and through lots.
+// Must match manifest.rear_columns.
+const REAR_X = 0, REAR_Y = 1, REAR_DEPTH = 2, REAR_WIDTH = 3,
+      FRONTAGE_COUNT = 4;
+export const RSTRIDE = 5;
+export const RCOL = { REAR_X, REAR_Y, REAR_DEPTH, REAR_WIDTH, FRONTAGE_COUNT };
 
 // lots.bin column 8. Attached buildings cannot have a backyard ADU under
 // ZR 23-341(b)(4) at all, so their area comes out zero; the category is here so
@@ -54,9 +62,11 @@ export const FT_PER_DEG_LAT = 364000;
  * visible rather than fudged - the rule the programme applies is about the AREA
  * of the required rear yard, and an area is not a plan.
  */
-export function siteUnit(lots, base, aduSf, setbackFt, ratio) {
-  const bx = lots[base + REAR_X], by = lots[base + REAR_Y];
-  const boxDepth = lots[base + REAR_DEPTH], boxWidth = lots[base + REAR_WIDTH];
+export function siteUnit(lots, rear, i, aduSf, setbackFt, ratio) {
+  const base = i * STRIDE;
+  const rbase = i * RSTRIDE;
+  const bx = rear[rbase + REAR_X], by = rear[rbase + REAR_Y];
+  const boxDepth = rear[rbase + REAR_DEPTH], boxWidth = rear[rbase + REAR_WIDTH];
   if (!(boxDepth > 0) || !(aduSf > 0)) return null;
 
   // NOT A SQUARE. Every design in HPD's library is a rectangle, and the unit is
@@ -152,7 +162,7 @@ function median(sorted) {
  * Returns typed arrays the layer reads directly, plus the panel's numbers.
  * Nothing is allocated per lot and nothing is recomputed twice.
  */
-export function compute(lots, flags, manifest, p) {
+export function compute(lots, rear, flags, manifest, p) {
   const n = flags.length;
   const margin = new Float32Array(n);
   const aduSf = new Float32Array(n);
@@ -296,7 +306,7 @@ export function compute(lots, flags, manifest, p) {
     const i = passingIdx[rank];
     const y = releaseYear[i];
     if (y > p.year) break;
-    if (siteUnit(lots, i * STRIDE, aduSf[i], p.side_setback_ft, ratio)) placeable += 1;
+    if (siteUnit(lots, rear, i, aduSf[i], p.side_setback_ft, ratio)) placeable += 1;
   }
 
   const marginsOfPassing = passingIdx.map((i) => margin[i]).sort((a, b) => a - b);

@@ -5,7 +5,6 @@
 // with card.md.
 export default {
   slug: 'pencil',
-  number: 2,
   title: 'Does It Pencil',
   subtitle:
     'Every one-to-two-family lot in Queens, priced against one real subsidy programme and tinted by the monthly cash flow a backyard unit on it would produce.',
@@ -47,7 +46,7 @@ export default {
     'NYC Open Data 27ya-gqtm and ek8y-fsqz: the NPCC 2050s and 2080s floodplains, standing in for DEP\'s 10-year rainfall and coastal flood risk areas. They are the ingredients DEP builds those areas from, not the areas themselves - the adopted map was not obtainable, and the card says so.'
   ],
   cannotSee:
-    "Whether a homeowner can raise the equity, wants a tenant, or trusts the city. Lots that pass are not lots that build. It cannot see which way a lot faces: nothing in the data says where the street is, so the back garden is taken to be the side away from the house, which is wrong for a corner lot and for a house built at the back of its own parcel. And the required rear yard it sizes the unit from is a rectangle the full width of the lot, because MapPLUTO records no shape - though the drawing does use the real lot outline and the real building footprints to decide where the unit stands. It also cannot see who owns the house they live in: the programme requires the owner to reside there 270 days a year, and there is no dataset of who lives where, so that requirement is simply absent from the model rather than modelled badly. There is no contractor, no financing rejection, no family, and nobody who just doesn't want to.",
-  tutorial: '/tutorials/02-pencil/',
+    "Whether a homeowner can raise the equity, wants a tenant, or trusts the city. Lots that pass are not lots that build. Which way a lot faces is now measured - the street frontage is the lot edge no neighbour in the tax block shares - but a corner lot has two street frontages and the model takes the longest as the front, which is our rule, not the city's. And the required rear yard it sizes the unit from is a rectangle the full width of the lot, because MapPLUTO records no shape - though the drawing does use the real lot outline and the real building footprints to decide where the unit stands. It also cannot see who owns the house they live in: the programme requires the owner to reside there 270 days a year, and there is no dataset of who lives where, so that requirement is simply absent from the model rather than modelled badly. There is no contractor, no financing rejection, no family, and nobody who just doesn't want to.",
+  tutorial: '/tutorials/01-pencil/',
   live: false
 };

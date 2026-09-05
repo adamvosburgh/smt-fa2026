@@ -1,6 +1,6 @@
 export default {
+  published: false,
   slug: 'sunlight',
-  number: 5,
   title: 'Where the Sunlight Goes',
   subtitle: 'A single floor plate in real context, units false-colored by annual direct sun hours.',
   status: 'planned',

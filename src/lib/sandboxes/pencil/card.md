@@ -162,17 +162,20 @@ those tracts.
   Road, which at true area is a 208-metre square and painted over whole
   neighbourhoods. The lot areas themselves are untouched; it is only the drawing
   that is bounded.
-- **Where the unit stands is inferred, and the inference is the weak part.**
-  The volumes used to be drawn at the lot centroid, which is where the house is,
-  so every proposed cottage sat on an existing roof. They are now placed in the
-  open ground behind the house: the lot outline comes from MapPLUTO's shapefile
-  and the house from the city's building footprints, both recorded, and the
-  sandbox measures how deep and how wide the back garden is. **What is inferred
-  is which end of the lot is the back.** Nothing in either dataset says where
-  the street is, so the back is taken to be the direction away from the existing
-  house. That is right for an ordinary house set toward the street, and wrong
-  for a corner lot, a through lot, and a house built at the back of its own
-  parcel. The unit is drawn as a plain rectangle rather than as a building
+- **Where the unit stands is measured, and one rule in it is ours.** The
+  volumes are placed in the open ground behind the house: the lot outline comes
+  from MapPLUTO's shapefile and the house from the city's building footprints,
+  both recorded, and the sandbox measures how deep and how wide the back garden
+  is. **Which end of the lot is the back is measured too**, since the 2026-09-04
+  rebuild: the street frontage is the unshared lot edge — the only stretch of a
+  lot's boundary no other lot in its tax block touches, because a tax block is
+  bounded by streets — and the back is its opposite. Checked against 500 sampled
+  blocks, that direction points into the block 96.5% of the time; the
+  away-from-the-house inference it replaced managed 55.5%, a coin flip that had
+  roughly a third of the cottages at the wrong end of the lot. What remains ours
+  is the corner-lot rule: a corner or through lot has two street frontages, and
+  the longest one is taken as *the* front. The legend counts the lots that rule
+  decided. The unit is drawn as a plain rectangle rather than as a building
   because the position is that good and no better.
 - **The unit is drawn at the plan library's proportions**, not as a square.
   Every published design is a rectangle, and the ratio of short side to long

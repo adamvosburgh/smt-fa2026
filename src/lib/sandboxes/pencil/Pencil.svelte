@@ -16,7 +16,7 @@
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
-  import { compute, colours, STRIDE, COL, siteUnit, RAMP, RAMP_SPAN } from './proforma.js';
+  import { compute, colours, STRIDE, RSTRIDE, COL, siteUnit, RAMP, RAMP_SPAN } from './proforma.js';
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready } = $props();
 
@@ -72,7 +72,7 @@
   }
 
   let map, overlay, detachRedraw, SolidPolygonLayer, ScatterplotLayer;
-  let lots, flags, result;
+  let lots, rear, flags, result;
   let ready = false;
   let pending = 0;
 
@@ -87,16 +87,19 @@
       manifest = m;
 
       loading = 'reading 247,000 lots…';
-      const [lotsBuf, flagsBuf] = await Promise.all([
+      const [lotsBuf, rearBuf, flagsBuf] = await Promise.all([
         fetch(`${dataBase}/lots.bin`).then((r) => r.arrayBuffer()),
+        fetch(`${dataBase}/rear.bin`).then((r) => r.arrayBuffer()),
         fetch(`${dataBase}/flags.bin`).then((r) => r.arrayBuffer())
       ]);
       lots = new Float32Array(lotsBuf);
+      rear = new Int16Array(rearBuf);
       flags = new Uint8Array(flagsBuf);
-      if (lots.length !== flags.length * STRIDE) {
+      if (lots.length !== flags.length * STRIDE || rear.length !== flags.length * RSTRIDE) {
         throw new Error(
-          `lots.bin and flags.bin disagree: ${lots.length / STRIDE} rows against ` +
-          `${flags.length}. Re-run data/scripts/pencil.py.`);
+          `lots.bin, rear.bin and flags.bin disagree: ${lots.length / STRIDE} / ` +
+          `${rear.length / RSTRIDE} rows against ${flags.length}. ` +
+          `Re-run data/scripts/pencil.py.`);
       }
 
       const [w, s, e, n] = m.bounds;
@@ -107,6 +110,11 @@
         onBasemapFail: () => { basemapFailed = true; },
         onTileFail: (k) => { tileFailures = k; }
       }));
+      // The study area is Queens, so the map is Queens: the camera is held
+      // near the lots' own bounding box, and the mask layer below blanks the
+      // basemap outside it. Without both, the crop is a suggestion.
+      const pw = (e - w) * 0.25, ph = (n - s) * 0.25;
+      try { map.setMaxBounds([[w - pw, s - ph], [e + pw, n + ph]]); } catch { /* not ready */ }
 
       loading = null;
       render();
@@ -125,7 +133,7 @@
     if (!overlay || !manifest || !lots) return;
 
     const t0 = performance.now();
-    result = compute(lots, flags, manifest, params);
+    result = compute(lots, rear, flags, manifest, params);
     const rgba = colours(result, lots, params, manifest);
     lastPassMs = performance.now() - t0;
 
@@ -199,7 +207,29 @@
       updateTriggers: { getFillColor: [rgba] }
     });
 
-    const layers = [flat];
+    // The crop mask: page-coloured, with the study area cut out of it, drawn
+    // under the marks as the ground. It ends the basemap at the edge of what
+    // the model actually covers - a map that runs on into Brooklyn implies the
+    // model does too, and it does not.
+    const [bw, bs, be, bn] = manifest.bounds;
+    const P = 8; // past the horizon even in the tilted volumes view
+    const mask = new SolidPolygonLayer({
+      id: 'crop-mask',
+      data: [{
+        p: [
+          [[bw - P, bs - P], [be + P, bs - P], [be + P, bn + P], [bw - P, bn + P]],
+          [[bw, bs], [be, bs], [be, bn], [bw, bn]]
+        ]
+      }],
+      getPolygon: (d) => d.p,
+      filled: true,
+      pickable: false,
+      // Unlit, or the tilted view shades the "page" like a surface in the scene.
+      material: false,
+      getFillColor: [244, 244, 242, 255]
+    });
+
+    const layers = [mask, flat];
     if (showVolumes) {
       layers.push(new SolidPolygonLayer({
         id: 'units-3d',
@@ -252,7 +282,7 @@
     for (let i = 0; i < flags.length; i++) {
       const y = result.releaseYear[i];
       if (y < 0 || y > params.year) continue;
-      const ring = siteUnit(lots, i * STRIDE, result.aduSf[i],
+      const ring = siteUnit(lots, rear, i, result.aduSf[i],
                             params.side_setback_ft, unitRatio);
       if (!ring) { unsited += 1; continue; }
       const o = i * 4;
@@ -407,8 +437,10 @@
           The solids are the units built by {params.year}, one per lot, at their
           own floor area and the plan library's proportions, 15ft tall — the
           rule's limit. Set behind the house, {params.side_setback_ft}ft off the
-          rear lot line. Which way is "back" is inferred from where the house
-          is, and it is often wrong: see the card.
+          rear lot line. Which way is "back" is measured from the unshared lot
+          edge — the stretch of boundary no neighbour touches, which is the
+          street. On a corner lot the longest such run is taken as the front;
+          that rule is ours: see the card.
         </span>
         {#if unsitedBuilt > 0}
           <span class="note">
@@ -437,14 +469,16 @@
 <style>
   .wrap { position: absolute; inset: 0; }
   .map { position: absolute; inset: 0; }
+  /* Above the deck.gl canvas, which rides in MapLibre's control container at
+     z-index 2 - an overlay without its own z-index paints under the model. */
   .loading, .err {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     font-size: 0.75rem; color: #888; background: rgba(255,255,255,0.9);
-    padding: 0.4rem 0.7rem;
+    padding: 0.4rem 0.7rem; z-index: 5;
   }
   .err { color: #a00; max-width: 70%; text-align: center; }
   .key {
-    position: absolute; left: 0.6rem; bottom: 0.6rem;
+    position: absolute; left: 0.6rem; bottom: 0.6rem; z-index: 5;
     display: flex; flex-direction: column; gap: 0.2rem;
     background: rgba(255,255,255,0.88); padding: 0.4rem 0.55rem;
     font-size: 0.62rem; line-height: 1.4; color: #444; pointer-events: none;

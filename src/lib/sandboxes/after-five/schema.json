@@ -11,13 +11,14 @@
     "year",
     "residential_rent",
     "district",
-    "office_rent_discount",
-    "cap_rate",
     "opex_share",
     "w_depth",
     "w_f2f",
     "w_area",
-    "w_age"
+    "w_age",
+    "office_rent",
+    "cap_rate_office",
+    "cap_rate_residential"
   ],
   "properties": {
     "district": {
@@ -35,12 +36,31 @@
         "both"
       ],
       "default": "mn01",
-      "description": "Manhattan Community District 1 is the Financial District, Battery Park City, Tribeca and Governors Island. District 5 is Midtown South, which has a very different office stock - newer, deeper, and much more of it. Both are shipped; the one you are not looking at is drawn faintly rather than hidden, because the edge of a study area is a choice and it helps to see it."
+      "description": "Manhattan Community District 1 is the Financial District, Battery Park City, Tribeca and Governors Island. District 5 is Midtown South, which has a very different office stock - newer, deeper, and much more of it. Both are shipped, and the map crops to the one being looked at; 'both' shows the pair and the mile and a half between them, because the edge of a study area is a choice and it helps to see it."
+    },
+    "hour": {
+      "type": "number",
+      "title": "Hour of day",
+      "x-group": "the clock",
+      "x-timeline": "primary",
+      "x-play-rate": 100,
+      "x-play-loop": true,
+      "x-play-auto": true,
+      "x-format": "clock",
+      "x-step-jump": 1,
+      "minimum": 0,
+      "maximum": 24,
+      "x-step": 0.001,
+      "default": 8,
+      "description": "The day's clock. Agents walk between the subway gateways and the buildings on the measured curves; playing the year holds this clock at its value, and playing this holds the year."
     },
     "year": {
       "type": "integer",
       "title": "Year",
       "x-group": "the clock",
+      "x-timeline": "secondary",
+      "x-play-rate": 1,
+      "x-play-loop": false,
       "enum": [
         2025,
         2030,
@@ -59,6 +79,95 @@
       ],
       "default": 2035,
       "description": "The model tests the deal at each of six dates and a building converts at the first one where it clears. Six dates means the model has six opinions about the future and nothing in between them; the scrubber snaps rather than slides, which is honest about that."
+    },
+    "agent_count": {
+      "type": "integer",
+      "title": "Agents",
+      "x-group": "the crowd",
+      "minimum": 500,
+      "maximum": 30000,
+      "x-step": 500,
+      "default": 15000,
+      "description": "How many walkers stand in for the district's day. A sample for the eye, not a census - the counted flows are the same at any setting, and even the maximum is a twelfth of the people the counts say are here."
+    },
+    "schedule_source": {
+      "type": "string",
+      "title": "Schedule",
+      "x-group": "the crowd",
+      "enum": [
+        "measured",
+        "parametric"
+      ],
+      "x-enum-labels": [
+        "measured",
+        "parametric"
+      ],
+      "x-enum-notes": [
+        "Times drawn from the MTA origin-destination curves themselves - October 2024 weekdays, counted taps.",
+        "Times drawn from four bell curves you shape below. Their defaults are read off the measured curves, so this starts where the data is and moves away from it knowingly."
+      ],
+      "default": "measured",
+      "description": "Where an agent's clock comes from."
+    },
+    "arrival_median": {
+      "type": "number",
+      "title": "Arrival median",
+      "x-group": "the crowd",
+      "minimum": 4,
+      "maximum": 23,
+      "x-step": 0.1,
+      "default": 8.78,
+      "x-unit": "h",
+      "x-disabled-when": {
+        "schedule_source": "measured"
+      },
+      "x-disabled-note": "from the MTA curve",
+      "description": "When half the morning's arrivals have happened. 08:47 in the measured curve (October 2024 weekdays)."
+    },
+    "arrival_spread": {
+      "type": "number",
+      "title": "Arrival spread",
+      "x-group": "the crowd",
+      "minimum": 0.25,
+      "maximum": 6,
+      "x-step": 0.1,
+      "default": 1.96,
+      "x-unit": "h",
+      "x-disabled-when": {
+        "schedule_source": "measured"
+      },
+      "x-disabled-note": "from the MTA curve",
+      "description": "The width of the morning peak, in hours."
+    },
+    "departure_median": {
+      "type": "number",
+      "title": "Departure median",
+      "x-group": "the crowd",
+      "minimum": 4,
+      "maximum": 23,
+      "x-step": 0.1,
+      "default": 17.46,
+      "x-unit": "h",
+      "x-disabled-when": {
+        "schedule_source": "measured"
+      },
+      "x-disabled-note": "from the MTA curve",
+      "description": "When half the evening's departures have happened. 17:28 in the measured curve."
+    },
+    "departure_spread": {
+      "type": "number",
+      "title": "Departure spread",
+      "x-group": "the crowd",
+      "minimum": 0.25,
+      "maximum": 6,
+      "x-step": 0.1,
+      "default": 2.83,
+      "x-unit": "h",
+      "x-disabled-when": {
+        "schedule_source": "measured"
+      },
+      "x-disabled-note": "from the MTA curve",
+      "description": "The width of the evening peak, in hours."
     },
     "conversion_cost_sf": {
       "type": "number",
@@ -92,25 +201,51 @@
       "default": -0.01,
       "description": "How office rent drifts each year from its base. THIS IS THE ONLY THING THAT MAKES TIME PASS IN THIS MODEL. A building converts at the first date the residential deal beats the office income it gives up, so a falling office market is what opens the gate and a rising one holds it shut. The default is a mild decline, which is an assumption and a consequential one - set it to zero and the map stops changing with the year at all, which tells you how much of this story is the office market rather than anything about housing."
     },
-    "office_rent_discount": {
+    "office_rent": {
       "type": "number",
-      "title": "Asking to effective",
+      "title": "Office rent",
       "x-group": "the deal",
-      "minimum": 0,
-      "maximum": 0.5,
-      "x-step": 0.05,
-      "default": 0,
-      "description": "The office rent above is an ASKING rent: $54 a square foot a year for Manhattan class B and C offices, from the Comptroller's May 2024 spotlight. What a landlord actually collects is less, because of free months, fit-out money and other concessions, and in this market the gap is large. NO PUBLISHED EFFECTIVE-RENT SERIES WAS FOUND, so this sandbox subtracts nothing by default and makes you choose the discount yourself. That is not squeamishness. The version of this file before 2026-09-01 had a 39% haircut already applied, in a code comment, to a figure that was not published either - and the map it drew looked completely normal."
+      "enum": [
+        54,
+        41,
+        32,
+        70
+      ],
+      "x-enum-labels": [
+        "$54",
+        "$41",
+        "$32",
+        "$70"
+      ],
+      "x-enum-notes": [
+        "The published asking rent. Manhattan Class B and C combined, asking - NYC Comptroller, Spotlight: NYC's Office Market, 14 May 2024, CoStar as of 30 April 2024. THE ONLY STOP WITH A SOURCE. B and C are combined at source, so this sandbox does not pretend to separate them. At this stop nothing converts, and the empty map is the finding.",
+        "What a landlord collects. Asking rent is a list price; free months and fit-out allowances are not published, so this stop applies a flat 25% discount. Ours, not anyone's.",
+        "A building in trouble. A 40% discount, standing for a half-empty Class C building signing short leases. Ours.",
+        "Not really Class B. The Comptroller's 5-star figure is roughly $100; this stop stands for a repositioned building at the top of the B/C band. Ours."
+      ],
+      "default": 54,
+      "x-unit": "$/sf/yr",
+      "description": "Four named scenario stops, one sourced and three ours. The deal is tested against this rent; the note above says whose number the selected stop is."
     },
-    "cap_rate": {
+    "cap_rate_office": {
       "type": "number",
-      "title": "Capitalisation rate",
+      "title": "Cap rate, office",
       "x-group": "the deal",
       "minimum": 0.03,
       "maximum": 0.1,
       "x-step": 0.005,
       "default": 0.055,
-      "description": "How a yearly income becomes a price: divide the income by this. A MARKET CONVENTION AND NOT A MEASUREMENT - no published New York office cap-rate series was verified for this build. Move it and notice how little happens: the same rate is applied to the office income and to the housing income, so it scales both sides of the comparison at once and very nearly cancels. That is the bug in it. Office and residential do not trade at the same yield, and the gap between them is a large part of why anyone converts anything."
+      "description": "Market convention, not a measurement - no published NYC office cap-rate series was verified. Office and residential used to share one cap rate silently, which scaled both sides of the comparison and very nearly cancelled; setting these two equal reproduces exactly that. Pull them apart to see what the gap between yields does, because that gap is a large part of why anyone converts anything."
+    },
+    "cap_rate_residential": {
+      "type": "number",
+      "title": "Cap rate, residential",
+      "x-group": "the deal",
+      "minimum": 0.03,
+      "maximum": 0.1,
+      "x-step": 0.005,
+      "default": 0.055,
+      "description": "Market convention, not a measurement - no published NYC residential series was verified either. Equal to the office rate by default, which is what the model used to do without saying so."
     },
     "opex_share": {
       "type": "number",
@@ -120,7 +255,38 @@
       "maximum": 0.55,
       "x-step": 0.05,
       "default": 0.35,
-      "description": "The share of gross rent that goes on running the building before any of it counts as income. Ours, and applied identically to an office tower and to the apartments it becomes, which is convenient rather than true."
+      "description": "The share of gross rent that goes on running the building before any of it counts as income. Ours, and applied identically to an office tower and to the apartments it becomes, which is convenient rather than true. Market convention, not a measurement - no published NYC series was verified."
+    },
+    "min_units_for_conversion_sample": {
+      "type": "integer",
+      "title": "Unit floor in the conversion sample",
+      "x-group": "the deal",
+      "enum": [
+        1,
+        2,
+        5,
+        10,
+        20,
+        50
+      ],
+      "x-enum-labels": [
+        "1+",
+        "2+",
+        "5+",
+        "10+",
+        "20+",
+        "50+"
+      ],
+      "x-enum-notes": [
+        "442 filings, 1,366 sf per apartment. No floor at all - every filing that made a business building residential counts, including one-unit oddities reporting a whole tower's floor area against a single apartment.",
+        "388 filings, 1,308 sf per apartment.",
+        "260 filings, 1,266 sf per apartment.",
+        "149 filings, 1,152 sf per apartment. The shipped default - conversions of ten units or more.",
+        "103 filings, 1,116 sf per apartment.",
+        "59 filings, 907 sf per apartment. Only conversions of fifty units or more count."
+      ],
+      "default": 10,
+      "description": "Which DOB conversion filings the floor-area-per-apartment figure is measured from. The cut is a judgement and it moves the answer by 40%; only the six measured cuts are offered, because a value between them would be an invention, not a measurement."
     },
     "w_depth": {
       "type": "number",

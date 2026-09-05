@@ -181,51 +181,83 @@ PUBLISHED = {
         "90": [0.330, 0.584, 1.143, 1.651, 4.496],
     },
     # Tidal datums at The Battery (NOAA CO-OPS station 8518750, 1983-2001
-    # epoch), as metres relative to NAVD88: the published value in feet
-    # minus the station's NAVD88 value (6.06 ft), times 0.3048.
-    #   MHHW 8.34 -> +2.28 ft -> +0.695 m
-    #   MSL  5.86 -> -0.20 ft -> -0.061 m
-    #   MLLW 3.29 -> -2.77 ft -> -0.844 m
+    # epoch, accepted 19 Nov 2012), as metres relative to NAVD88 - derived
+    # EXACTLY from the station's machine-readable metric datums endpoint,
+    # saved at data/original/noaa_datums_8518750_metric.json:
+    #   api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations/8518750/
+    #   datums.json?units=metric
+    # STND-referenced values there: NAVD88 1.848, MHHW 2.543, MSL 1.785,
+    # MLLW 1.002; each datum minus NAVD88 gives the offsets below. The old
+    # values were taken in feet and rounded before conversion, which put MSL
+    # and MLLW 2mm off; 2mm is far below the DEM's noise floor, but a number
+    # that can be derived exactly should not be carried approximately.
+    # read_datums() checks these against the saved file on every run.
     # One station applied across the whole grid. NOAA's own mapping uses a
     # spatially varying tidal surface instead; that gap goes in the model card.
-    "tideOffsetsM": {"mllw": -0.844, "msl": -0.061, "mhhw": 0.695},
+    "tideOffsetsM": {"mllw": -0.846, "msl": -0.063, "mhhw": 0.695},
+    "tideEpoch": "1983-2001, accepted 19 Nov 2012",
 
-    # NOAA Extreme Water Levels, same station, read 2026-09-01 from the Tidal
-    # Datums and Exceedance Probability Levels stick diagram
-    # (tidesandcurrents.noaa.gov/est/stickdiagram.shtml?stnid=8518750).
+    # NOAA Sea Level Trends and Extremes, same station, Extreme High Water
+    # Levels read 2026-09-04 for OCTOBER 2025 (the product's stated data
+    # month, recorded in exceedanceMonth below). This is the successor to the
+    # annual-exceedance product that retires 30 September 2026, and it
+    # publishes the same four levels - there is no 2% and no 0.2%.
     #
-    # THE SITE RETIRES 30 SEPTEMBER 2026 for the integrated Sea Level Trends
-    # and Extremes site. Re-point this citation before the December freeze.
+    # Published in feet above MHHW; converted with the exact +0.695m MHHW
+    # offset above:
+    #     99% (1yr)   2.02 ft -> 0.616 m -> 1.311 m NAVD88
+    #     50% (2yr)   2.82 ft -> 0.860 m -> 1.555 m NAVD88
+    #     10% (10yr)  3.93 ft -> 1.198 m -> 1.893 m NAVD88
+    #      1% (100yr) 5.96 ft -> 1.817 m -> 2.512 m NAVD88
     #
-    # These are annual exceedance probabilities: the chance that the water goes
-    # at least this high in any given year. NOAA publishes exactly four, and
-    # these are they - there is no 2% and no 0.2% in this product. Published as
-    # metres above the 1983-2001 MSL; NAVD88 sits 0.063m above that MSL at this
-    # station (datums page: NAVD88 0.846, MSL 0.783, both above MLLW), so the
-    # NAVD88 figure is the published one minus 0.063:
-    #     99% (1yr)    1.26 -> 1.20      10% (10yr)   1.84 -> 1.78
-    #     50% (2yr)    1.50 -> 1.44       1% (100yr)  2.46 -> 2.40
-    # Cross-check: the station states the 1% as "1.7 meters above MHHW", and
-    # MHHW is 0.758m above MSL, so 2.46 - 0.758 = 1.70. Agrees.
+    # AN AEP LEVEL IS A FUNCTION OF DATE, not a constant - the product states
+    # that the lines move with the average linear change of mean sea level,
+    # which is why the month is recorded beside the values. The previous
+    # manifest carried a second set exactly 0.100m higher labelled 2026; that
+    # round number read as applied rather than read off the product, and the
+    # two sets implied an MHHW offset 12mm away from the one three keys over.
+    # One dated set replaces both, and main() removes the stale key from any
+    # manifest it merges into.
+    #
+    # The product also publishes a LOW-water AEP series. Bathtub is about
+    # flooding and ignores it; the card says so rather than leaving a reader
+    # wondering which half was used.
     #
     # WHAT THESE ARE, which decides how the front end may use them. They are
-    # still-water levels fitted to ANNUAL MAXIMA, with the mean sea level trend
-    # removed. An annual maximum happens at high tide, so the tide is already
-    # inside the number - which is why the sandbox substitutes an AEP level for
-    # the tide offset rather than adding one to the other. They are also not
-    # FEMA base flood elevations: no wave effects, so they come out lower.
-    "exceedanceM": {"99": 1.20, "50": 1.44, "10": 1.78, "1": 2.40},
-
-    # The same four levels from the same diagram's projected column, read for
-    # 2026 on the station's linear sea level trend: 1.36 / 1.60 / 1.94 / 2.56
-    # above the 1983-2001 MSL, i.e. every level 0.10m higher, less the same
-    # 0.063 conversion. NOT ADDED TO ANYTHING. It is NOAA doing the same
-    # arithmetic the sandbox does with NPCC - raising the storm distribution
-    # onto a higher sea - by a different method, so it is shipped as the
-    # cross-check it is. Adding it to an NPCC projection would count the rise
-    # twice. The card says so.
-    "exceedance2026M": {"99": 1.30, "50": 1.54, "10": 1.88, "1": 2.50},
+    # still-water levels fitted to ANNUAL MAXIMA. An annual maximum happens at
+    # high tide, so the tide is already inside the number - which is why the
+    # sandbox substitutes an AEP level for the tide offset rather than adding
+    # one to the other. They are also not FEMA base flood elevations: no wave
+    # effects, so they come out lower.
+    "exceedanceM": {"99": 1.311, "50": 1.555, "10": 1.893, "1": 2.512},
+    "exceedanceMonth": "2025-10",
 }
+
+
+def read_datums(original):
+    """Check the tide offsets against the saved NOAA metric datums file.
+
+    The constants above are hand-carried so the pipeline runs offline; this
+    re-derives them from the machine-readable record whenever it is on disk
+    and refuses to ship a manifest that disagrees with it by more than 1mm.
+    """
+    path = original / "noaa_datums_8518750_metric.json"
+    if not path.exists():
+        print("tides: noaa_datums_8518750_metric.json not on disk; "
+              "constants carried unverified")
+        return
+    d = json.loads(path.read_text())
+    vals = {x["name"]: x["value"] for x in d["datums"]}
+    navd = vals["NAVD88"]
+    derived = {"mllw": vals["MLLW"] - navd, "msl": vals["MSL"] - navd,
+               "mhhw": vals["MHHW"] - navd}
+    for k, v in derived.items():
+        carried = PUBLISHED["tideOffsetsM"][k]
+        assert abs(v - carried) < 0.0015, (
+            f"tideOffsetsM[{k}] = {carried} but the datums file derives "
+            f"{v:.3f}; update the constant")
+    print(f"tides: offsets verified against the saved datums file "
+          f"(epoch {d['epoch']}, accepted {d['accepted']})")
 
 
 # --------------------------------------------------------------------------
@@ -815,8 +847,9 @@ def main():
     ap.add_argument("--scope", choices=["full", "minimal"], default="full",
                     help="minimal skips buildings and PLUTO entirely")
     ap.add_argument("--steps", nargs="*", default=None,
-                    choices=["dem", "buildings", "tracts"],
-                    help="run only these steps")
+                    choices=["dem", "buildings", "tracts", "none"],
+                    help="run only these steps; 'none' updates the manifest's "
+                         "published constants without touching the grids")
     ap.add_argument("--simplify", type=float, default=0.0001, metavar="DEG",
                     help="Douglas-Peucker tolerance for tract outlines, in "
                          "degrees. 0.0001 is about 11m, just under the grid.")
@@ -848,6 +881,10 @@ def main():
         except ValueError:
             manifest = {}
 
+    read_datums(args.original)
+    # The 2026-vintage exceedance set is gone from PUBLISHED - see the note
+    # there - and the merge would otherwise carry it forward silently.
+    manifest.pop("exceedance2026M", None)
     manifest.update({
         **PUBLISHED,
         "sandbox": "bathtub",
@@ -859,7 +896,12 @@ def main():
             "sea_level": "NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. "
                          "10th/25th/75th/90th percentiles - no median is published.",
             "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, "
-                     "relative to NAVD88.",
+                     "relative to NAVD88, from the mdapi metric datums endpoint.",
+            "exceedance": "NOAA Sea Level Trends and Extremes "
+                          "(tidesandcurrents.noaa.gov/trends-and-extremes/), "
+                          "station 8518750, Extreme High Water Levels, read for "
+                          "October 2025. Successor to the annual-exceedance "
+                          "product retired 30 September 2026.",
         },
     })
     if "buildings" in steps:
@@ -868,7 +910,7 @@ def main():
 
     # Order matters: tracts needs the grid the dem step defines.
     order = {"dem": 0, "buildings": 1, "tracts": 2}
-    for step in sorted(steps, key=lambda s: order[s]):
+    for step in sorted((s for s in steps if s != "none"), key=lambda s: order[s]):
         manifest.update({"dem": step_dem, "buildings": step_buildings,
                          "tracts": step_tracts}[step](args, args.out, manifest))
 

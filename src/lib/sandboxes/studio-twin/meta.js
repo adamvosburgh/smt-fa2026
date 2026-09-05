@@ -1,6 +1,6 @@
 export default {
+  published: false,
   slug: 'studio-twin',
-  number: 1,
   title: 'Studio Twin',
   subtitle: 'The studio in 3D with a volumetric CO₂ field animating over time.',
   status: 'gated',

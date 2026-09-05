@@ -98,12 +98,16 @@ OUTPUTS (data/processed/pencil/)
   manifest.json   column order and units, bounds, lot count, the published
                   programme constants with their source, the non-control
                   assumptions with their justification, and every join total
-  lots.bin        Float32Array, row-major, 7 floats per lot:
-                    lon, lat, adu_sf, lot_area, rent_fmr, tract_income, tract_idx
+  lots.bin        Float32Array, row-major, 9 floats per lot:
+                    lon, lat, lot_front, required_rear_yard_depth, lot_area,
+                    rent_fmr, tract_income, tract_idx, bldg_type
                   tract_idx indexes tracts.json's array. It is here because the
                   concentration metric - the share of new units landing in the
                   top tenth of tracts - has to GROUP by tract, which an income
                   value alone cannot do.
+  rear.bin        Int16Array, five per lot, whole feet, lots.bin's row order:
+                    rear_box_x, rear_box_y, rear_box_depth, rear_box_width,
+                    frontage_count
   flags.bin       Uint8Array, one byte per lot, a bitfield - see FLAGS below
   tracts.json     simplified tract outlines with median income, for the
                   concentration metric and optional tract shading
@@ -524,12 +528,144 @@ def _ray_reach(p1, edge, ox, oy, dx, dy):
     return float(t[hit].min()) if hit.any() else None
 
 
-def rear_yard_box(ring, cx, cy, lat, lon, bx_deg, by_deg, hull_deg):
+# The frontage test. Constants match data/scripts/checks/frontage_unshared_edge.py,
+# which is the measured evidence behind this method and the check to re-run
+# against any change here.
+FRONTAGE_SNAP = 3.0         # ft, the grid edge samples snap to
+FRONTAGE_STEP = 3.0         # ft, the sampling interval along an edge
+FRONTAGE_SHARED_FRAC = 0.5  # an edge is shared if this share of its samples is
+
+
+def _ring_edge_samples(ring):
+    """Each edge of a ring as (snap keys, midpoint, unit normal, length).
+
+    Edges are densified at FRONTAGE_STEP and each sample snapped to a
+    FRONTAGE_SNAP grid as a single int64 key, so that the same stretch of
+    boundary walked from either of two adjoining lots lands on the same keys.
+    The normal is not yet oriented; the caller flips it outward.
+    """
+    out = []
+    for k in range(len(ring) - 1):
+        p, q = ring[k], ring[k + 1]
+        dx, dy = q[0] - p[0], q[1] - p[1]
+        L = math.hypot(dx, dy)
+        if L < 0.5:
+            continue
+        n = max(2, int(L / FRONTAGE_STEP) + 1)
+        t = np.linspace(0.0, 1.0, n)
+        kx = np.rint((p[0] + dx * t) / FRONTAGE_SNAP).astype(np.int64)
+        ky = np.rint((p[1] + dy * t) / FRONTAGE_SNAP).astype(np.int64)
+        out.append((kx * 4_000_000 + ky,
+                    (p[0] + q[0]) / 2.0, (p[1] + q[1]) / 2.0,
+                    dy / L, -dx / L, L))
+    return out
+
+
+def block_shared_keys(edge_lists):
+    """The snap keys touched by two or more distinct lots in one block.
+
+    A NYC tax block is bounded by streets, so every shared lot line lies
+    inside a block - which is why sharing can be computed block by block and
+    never needs a citywide spatial index.
+    """
+    K, O = [], []
+    for li, es in enumerate(edge_lists):
+        for e in es:
+            K.append(e[0])
+            O.append(np.full(e[0].shape, li, np.int32))
+    if not K:
+        return np.empty(0, np.int64)
+    K = np.concatenate(K)
+    O = np.concatenate(O)
+    o = np.lexsort((O, K))
+    K, O = K[o], O[o]
+    u = np.ones(len(K), bool)
+    u[1:] = (K[1:] != K[:-1]) | (O[1:] != O[:-1])
+    ku, cn = np.unique(K[u], return_counts=True)
+    return ku[cn >= 2]
+
+
+def lot_frontage(edges, multi, cx, cy):
+    """Frontage direction and count of street frontages, from unshared edges.
+
+    Walks the lot's edges, drops every edge at least half of whose samples lie
+    on a line another lot in the block also touches, groups what survives into
+    CONTIGUOUS RUNS around the ring, and takes the length-weighted mean outward
+    normal of the LONGEST run as the street frontage. That longest-run rule is
+    the corner-lot decision: a corner lot has two street frontages and, in
+    zoning terms, two front yards, and this method takes the longer one as THE
+    front. It is our rule, and the count is recorded so the legend can say how
+    many lots were resolved this way.
+
+    Returns ((fx, fy), n_runs) with the frontage as a unit normal pointing out
+    of the lot toward the street, or (None, 0) for a landlocked lot with no
+    unshared edge at all.
+    """
+    free = []
+    for (kk, mx, my, nx, ny, L) in edges:
+        if len(kk) and float(np.isin(kk, multi).mean()) >= FRONTAGE_SHARED_FRAC:
+            free.append(None)
+            continue
+        if (mx - cx) * nx + (my - cy) * ny < 0:
+            nx, ny = -nx, -ny
+        free.append((nx, ny, L))
+    if not any(free):
+        return None, 0
+
+    # Contiguous unshared runs, circular - BUT a run also breaks where the
+    # boundary turns hard. A corner lot's two street edges are adjacent around
+    # the ring with nothing shared between them, and without the angle test
+    # they fused into one diagonal "frontage" pointing out of the corner - so
+    # only 2% of lots read as corners against the ~15% the block sample
+    # measured. Two edges whose normals differ by more than 45 degrees are two
+    # streets. A frontage split across several colinear polygon vertices is
+    # still one street.
+    COS_SAME_STREET = math.cos(math.radians(45.0))
+    runs = []
+    cur = None
+    prev = None
+    for e in free:
+        if e is None:
+            cur = None
+            prev = None
+            continue
+        if cur is not None and prev is not None:
+            if e[0] * prev[0] + e[1] * prev[1] < COS_SAME_STREET:
+                cur = None
+        if cur is None:
+            cur = [0.0, 0.0, 0.0]
+            runs.append(cur)
+        cur[0] += e[0] * e[2]
+        cur[1] += e[1] * e[2]
+        cur[2] += e[2]
+        prev = e
+    # The ring wraps: if the first and last edges are unshared AND still the
+    # same street by the angle test, they are the same run.
+    first_e = free[0]
+    last_e = free[-1]
+    if (len(runs) > 1 and first_e is not None and last_e is not None
+            and first_e[0] * last_e[0] + first_e[1] * last_e[1] >= COS_SAME_STREET):
+        first = runs.pop(0)
+        runs[-1][0] += first[0]
+        runs[-1][1] += first[1]
+        runs[-1][2] += first[2]
+
+    best = max(runs, key=lambda r: r[2])
+    mag = math.hypot(best[0], best[1])
+    if mag < 1e-9:
+        return None, len(runs)
+    return (best[0] / mag, best[1] / mag), len(runs)
+
+
+def rear_yard_box(ring, cx, cy, lat, lon, dx, dy, hull_deg):
     """The open rectangle behind the house, in feet from the lot centroid.
 
-    Returns (centre_x, centre_y, depth, width), where depth runs away from the
-    house and width runs across it. The unit is placed inside this box by the
-    browser, which is what lets the setback stay a control.
+    (dx, dy) is the direction of the BACK of the lot, a unit vector in the
+    ring's own State Plane frame - measured from the unshared lot edge by
+    lot_frontage(), not inferred from where the house stands. Returns
+    (centre_x, centre_y, depth, width), where depth runs toward the back and
+    width runs across. The unit is placed inside this box by the browser,
+    which is what lets the setback stay a control.
 
     A BOX RATHER THAN A DISTANCE, and the reason is the shape of the thing being
     placed. Measuring only how far the lot runs on before its boundary answers
@@ -540,32 +676,24 @@ def rear_yard_box(ring, cx, cy, lat, lon, bx_deg, by_deg, hull_deg):
     hits the side line almost immediately on a twenty-foot lot and made the rear
     yard look half its real depth. So both dimensions get measured, separately.
 
-    Returns None when it cannot be worked out: no building on the lot, a
-    building centred on it, a centroid outside its own polygon (an L-shaped or
-    flag lot), or a house that already reaches the rear lot line.
+    On failure it returns a string naming the cause instead of a tuple -
+    'geometry' for a centroid outside its own polygon or a failed width ray
+    (an L-shaped or flag lot), 'house_at_rear_line' for a house that already
+    reaches the rear lot line. The caller counts them apart, because a data
+    quirk and a finding are different facts.
     """
     ft_per_deg_lon = FT_PER_DEG_LAT * math.cos(math.radians(lat))
-    bx = (bx_deg - lon) * ft_per_deg_lon
-    by = (by_deg - lat) * FT_PER_DEG_LAT
-    span = math.hypot(bx, by)
-    if span < 1e-6:
-        return None
-    dx, dy = -bx / span, -by / span            # away from the house
     px, py = -dy, dx                           # across the lot
 
-    # The polygon, in a frame centred on the lot centroid.
-    #
-    # One approximation is buried here and it is worth naming: the direction is
-    # derived from longitude and latitude, so it is measured against true north,
-    # while the polygon is State Plane, measured against grid north. The two
-    # differ by about a third of a degree over New York City, which over a
-    # fifty-foot lot is about three inches.
+    # The polygon, in a frame centred on the lot centroid. Direction and
+    # polygon are now BOTH State Plane, so the old true-north/grid-north
+    # mismatch (about a third of a degree) is gone with the old method.
     poly = ring - np.array([cx, cy])
     p1, edge = poly[:-1], poly[1:] - poly[:-1]
 
     reach = _ray_reach(p1, edge, 0.0, 0.0, dx, dy)
     if reach is None:
-        return None
+        return "geometry"
 
     # How far the buildings already reach the same way. The maximum of a dot
     # product over a footprint is attained at a hull vertex, which is why only
@@ -576,7 +704,7 @@ def rear_yard_box(ring, cx, cy, lat, lon, bx_deg, by_deg, hull_deg):
 
     depth = reach - house
     if depth <= 0:
-        return None                            # the house is already at the back
+        return "house_at_rear_line"
 
     # Width, measured across the middle of that strip.
     mid = house + depth / 2.0
@@ -584,7 +712,7 @@ def rear_yard_box(ring, cx, cy, lat, lon, bx_deg, by_deg, hull_deg):
     left = _ray_reach(p1, edge, mx, my, px, py)
     right = _ray_reach(p1, edge, mx, my, -px, -py)
     if left is None or right is None:
-        return None
+        return "geometry"
 
     # The centre of the box: halfway back, and halfway across.
     off = (left - right) / 2.0
@@ -836,12 +964,19 @@ def main():
             # size the required rear yard; ProxCode is DOF's building type;
             # FIRM07_FLA is FEMA's effective 1%-annual-chance area, which is
             # the Zoning Resolution's "high-risk flood zone".
-            "LotFront", "LotDepth", "ProxCode", "FIRM07_FLA", "PFIRM15_FL"]
+            "LotFront", "LotDepth", "ProxCode", "FIRM07_FLA", "PFIRM15_FL",
+            # Block is the unit the frontage test runs over: a tax block is
+            # bounded by streets, so every shared lot line lies inside one.
+            "Block"]
     print(f"pluto: reading {dbf.name}")
 
     lots = []
     counts = {"queens": 0, "ab": 0, "landuse01": 0, "disagree": 0,
               "no_coords": 0, "bad_units": 0, "multi_building": 0}
+    # EVERY Queens lot's shapefile row, grouped by tax block - not only the
+    # one-to-two-family ones. The frontage test needs both sides of a shared
+    # line, and the neighbour may be a corner store.
+    block_rows = {}
     # THE RECORD INDEX IS THE JOIN TO THE SHAPEFILE. Record i of the .dbf is
     # record i of the .shp; there is no key field to match on and none is
     # needed. Kept per lot so the siting step can seek straight to the outline.
@@ -849,6 +984,7 @@ def main():
         if rec["borocode"] != QUEENS_BORO:
             continue
         counts["queens"] += 1
+        block_rows.setdefault(rec["block"], []).append(row)
         cls = rec["bldgclass"]
         is_ab = cls[:1] in ("A", "B")
         is_lu01 = rec["landuse"] == "01"
@@ -899,6 +1035,7 @@ def main():
 
         lots.append({
             "row": row,
+            "block": rec["block"],
             "bbl": int(float(rec["bbl"])) if rec["bbl"] else 0,
             "lon": lon, "lat": lat,
             "x": g("xcoord"), "y": g("ycoord"),
@@ -1183,35 +1320,87 @@ def main():
     # where the house is. Zoomed in - which is exactly what the volumes control
     # tells you to do - each cottage sat on the roof of the building it was
     # meant to stand behind.
+    #
+    # WHICH WAY IS BACK is measured, not inferred, since the 2026-09-04 pass:
+    # the street frontage is the unshared lot edge - the only stretch of a
+    # lot's boundary no other lot in its tax block touches - and the back is
+    # its opposite. Measured against 500 sampled blocks the frontage points
+    # into the block 96.5% of the time; the old away-from-the-house inference
+    # managed 55.5%, a coin flip, and put roughly a third of the cottages at
+    # the wrong end of the lot. The evidence and the re-runnable check are in
+    # data/scripts/checks/frontage_unshared_edge.py.
     shp_base = dbf.with_suffix("")
     rear_x = np.zeros(n, dtype=np.float64)
     rear_y = np.zeros(n, dtype=np.float64)
     rear_depth = np.zeros(n, dtype=np.float64)
     rear_width = np.zeros(n, dtype=np.float64)
+    frontage_n = np.zeros(n, dtype=np.int32)
+    # The unsited, split by cause - a data absence, a finding, and a geometry
+    # failure are three different facts and the manifest reports them apart.
+    causes = {"no_footprint": 0, "landlocked": 0, "house_at_rear_line": 0,
+              "geometry": 0, "no_ring": 0}
     sited = 0
     if (shp_base.with_suffix(".shp").exists()
             and (original / BUILDINGS_FILE).exists()):
         shapes = read_building_shapes(original / BUILDINGS_FILE, QUEENS_BORO)
         shx = read_shape_index(shp_base)
+        target_by_row = {l["row"]: i for i, l in enumerate(lots)}
+        blocks_run = 0
         with open(str(shp_base) + ".shp", "rb") as handle:
-            for i, l in enumerate(lots):
-                b = shapes.get(l["bbl"])
-                if not b or l["x"] == 0:
+            for blk, rows in block_rows.items():
+                if not any(r in target_by_row for r in rows):
                     continue
-                ring = read_outer_ring(handle, shx, l["row"])
-                if ring is None:
-                    continue
-                v = rear_yard_box(ring, l["x"], l["y"], l["lat"], l["lon"],
-                                  b[0], b[1], b[2])
-                if v is None:
-                    continue
-                rear_x[i], rear_y[i], rear_depth[i], rear_width[i] = v
-                sited += 1
+                blocks_run += 1
+                geoms = []
+                for r in rows:
+                    ring = read_outer_ring(handle, shx, r)
+                    if ring is None or len(ring) < 4:
+                        if r in target_by_row:
+                            causes["no_ring"] += 1
+                        continue
+                    geoms.append((r, np.asarray(ring, dtype=np.float64)))
+                edge_lists = [_ring_edge_samples(g[1]) for g in geoms]
+                multi = block_shared_keys(edge_lists)
+                for (r, ring), edges in zip(geoms, edge_lists):
+                    i = target_by_row.get(r)
+                    if i is None:
+                        continue
+                    l = lots[i]
+                    cx = float(ring[:-1, 0].mean())
+                    cy = float(ring[:-1, 1].mean())
+                    front, n_runs = lot_frontage(edges, multi, cx, cy)
+                    frontage_n[i] = n_runs
+                    if front is None:
+                        causes["landlocked"] += 1
+                        continue
+                    b = shapes.get(l["bbl"])
+                    if not b or l["x"] == 0:
+                        causes["no_footprint"] += 1
+                        continue
+                    # back = -frontage; the box is measured from the back lot
+                    # line inward along a direction that is known, not guessed.
+                    v = rear_yard_box(ring, l["x"], l["y"], l["lat"], l["lon"],
+                                      -front[0], -front[1], b[2])
+                    if isinstance(v, str):
+                        causes[v] += 1
+                        continue
+                    rear_x[i], rear_y[i], rear_depth[i], rear_width[i] = v
+                    sited += 1
         ok = rear_depth > 0
+        corners = int((frontage_n >= 2).sum())
+        print(f"site: frontage measured block by block over {blocks_run:,} tax "
+              f"blocks; {corners:,} lots have two or more street frontages "
+              f"({corners / n * 100:.1f}%) and take the longest run as the front")
         print(f"site: {sited:,} of {n:,} lots sited ({sited / n * 100:.1f}%); "
               f"the open ground behind the house is a median "
               f"{np.median(rear_depth[ok]):.0f}ft deep by "
               f"{np.median(rear_width[ok]):.0f}ft wide")
+        print(f"site: not sited, by cause - "
+              f"{causes['no_footprint']:,} no footprint on record, "
+              f"{causes['landlocked']:,} landlocked (no unshared edge), "
+              f"{causes['house_at_rear_line']:,} house already at the rear lot "
+              f"line, {causes['geometry']:,} geometry (centroid outside its own "
+              f"polygon or a failed width ray), {causes['no_ring']:,} no outline")
         print(f"site: {int((fits & ~ok).sum()):,} lots that fit a unit could not "
               f"be sited and will not be drawn as volumes")
     else:
@@ -1318,7 +1507,7 @@ def main():
     # controls and the browser has to be able to recompute it. What ships is
     # what the rule needs: the width of the lot, the depth of the rear yard the
     # ZR requires on it, and what kind of building is standing there.
-    arr = np.empty((n, 13), dtype=np.float32)
+    arr = np.empty((n, 9), dtype=np.float32)
     arr[:, 0] = lon
     arr[:, 1] = lat
     arr[:, 2] = lot_front
@@ -1328,15 +1517,23 @@ def main():
     arr[:, 6] = tract_income
     arr[:, 7] = tract_idx
     arr[:, 8] = type_col
-    # The rear-yard vector, in feet from the lot centroid. Its LENGTH is the
-    # reach to the lot line, not the position of the unit - the setback is a
-    # control, so the browser finishes the sum. (0, 0) means "could not site",
-    # and those lots are drawn flat rather than guessed at.
-    arr[:, 9] = rear_x
-    arr[:, 10] = rear_y
-    arr[:, 11] = rear_depth
-    arr[:, 12] = rear_width
     (out / "lots.bin").write_bytes(arr.tobytes())
+
+    # The rear-yard box rides in its own file at Int16 - nothing in it is
+    # precise to better than a foot, and four float32s per lot were 4MB of
+    # false precision. rear_box_x/y are the box centre in feet from the lot
+    # centroid (signed - a direction is in them); depth and width are the box.
+    # (0, 0, 0, 0) means "could not site" and those lots are drawn flat.
+    # frontage_count is the number of unshared street frontages the block test
+    # found: 0 landlocked, 1 ordinary, 2+ corner and through lots, which took
+    # the longest run as THE front - a rule of ours the legend can count.
+    rear = np.empty((n, 5), dtype="<i2")
+    rear[:, 0] = np.rint(rear_x)
+    rear[:, 1] = np.rint(rear_y)
+    rear[:, 2] = np.rint(rear_depth)
+    rear[:, 3] = np.rint(rear_width)
+    rear[:, 4] = np.clip(frontage_n, 0, 32767)
+    (out / "rear.bin").write_bytes(rear.tobytes())
 
     # The plan library ships alongside, for the control's description and the
     # card. It is small and it is the evidence for the cost default.
@@ -1345,13 +1542,14 @@ def main():
     (out / "flags.bin").write_bytes(flags.tobytes())
     lots_bytes = (out / "lots.bin").stat().st_size
     print(f"write: lots.bin {lots_bytes / 1e6:.1f}MB, "
+          f"rear.bin {(out / 'rear.bin').stat().st_size / 1e6:.2f}MB, "
           f"flags.bin {(out / 'flags.bin').stat().st_size / 1e6:.2f}MB")
 
     # tracts, for the concentration metric and optional shading
 
     manifest = {
         "sandbox": "pencil",
-        "generated": "2026-09-01",
+        "generated": "2026-09-04",
         "borough": "Queens (BoroCode 4)",
         "lots": n,
         "start_year": 2027,
@@ -1361,17 +1559,29 @@ def main():
         "bounds": [float(b) for b in bounds],
         "columns": ["lon", "lat", "lot_front", "required_rear_yard_depth",
                     "lot_area", "rent_fmr", "tract_income", "tract_idx",
-                    "bldg_type", "rear_box_x_ft", "rear_box_y_ft",
-                    "rear_box_depth_ft", "rear_box_width_ft"],
+                    "bldg_type"],
         "column_units": ["degrees", "degrees", "feet", "feet", "square feet",
                          "dollars per month", "dollars per year",
                          "index into tracts.json, -1 for none",
-                         "0 attached, 1 semi-detached, 2 detached, 3 unknown",
-                         "feet east of the lot centroid, to the centre of the "
-                         "open ground behind the house",
-                         "feet north of the same",
-                         "feet, its depth away from the house",
-                         "feet, its width across the lot"],
+                         "0 attached, 1 semi-detached, 2 detached, 3 unknown"],
+        "rear_columns": ["rear_box_x_ft", "rear_box_y_ft",
+                         "rear_box_depth_ft", "rear_box_width_ft",
+                         "frontage_count"],
+        "rear_column_units": ["feet east of the lot centroid, to the centre of "
+                              "the open ground behind the house",
+                              "feet north of the same",
+                              "feet, its depth toward the back lot line",
+                              "feet, its width across the lot",
+                              "unshared street frontages found by the block "
+                              "test: 0 landlocked, 1 ordinary, 2+ corner and "
+                              "through lots"],
+        "rear_dtype": "<i2",
+        "rear_note": "rear.bin is Int16, little-endian, five values per lot in "
+                     "lots.bin's row order. Whole feet - nothing in a siting "
+                     "box is precise to better than a foot, and four float32s "
+                     "per lot were false precision. (0,0,0,0) means the lot "
+                     "could not be sited; frontage_count says why not when it "
+                     "is 0 (landlocked).",
         "columns_note": "adu_sf IS NOT SHIPPED. It was, and it could not stay: "
                         "rear_yard_fraction and side_setback_ft are controls, so "
                         "the unit's floor area moves when they move and the "
@@ -1454,15 +1664,33 @@ def main():
         "siting": {
             "sited": int(sited),
             "of_lots": n,
-            "method": "The unit is placed on the ray that leaves the lot "
-                      "centroid heading directly away from the buildings already "
-                      "on the lot: pushed back to the rear lot line, pulled "
-                      "forward by the setback plus half its own depth, and "
-                      "required to clear the far edge of the existing buildings. "
-                      "rear_x_ft and rear_y_ft give the direction and the "
-                      "distance to the lot line, house_reach_ft how far the "
-                      "buildings already extend that way; the browser finishes "
-                      "the sum, because the setback is a control.",
+            "method": "The back of the lot is MEASURED, not inferred: the "
+                      "street frontage is the unshared lot edge - the only "
+                      "stretch of the boundary no other lot in the same tax "
+                      "block touches - and the back is its opposite. A tax "
+                      "block is bounded by streets, so every shared lot line "
+                      "lies inside one, which is what lets the test run block "
+                      "by block with no spatial index. The rear-yard box is "
+                      "then measured from the back lot line inward, and the "
+                      "browser finishes the sum, because the setback is a "
+                      "control.",
+            "measured_check": "Against 500 randomly sampled Queens blocks "
+                              "(13,670 one-to-two-family lots, 2026-09-04), the "
+                              "frontage found this way points out of the block "
+                              "97.4% of the time and the implied back direction "
+                              "points into it 96.5%. The away-from-the-house "
+                              "inference this replaces managed 55.5% - a coin "
+                              "flip - and had roughly a third of the drawn "
+                              "cottages at the wrong end of the lot. The check "
+                              "is re-runnable: data/scripts/checks/"
+                              "frontage_unshared_edge.py.",
+            "corner_rule": "A corner or through lot has two or more street "
+                           "frontages and, in zoning terms, two front yards. "
+                           "The LONGEST unshared run is taken as the front; the "
+                           "others are treated as the side lot lines the "
+                           "side-setback control already clears. That is our "
+                           "rule, not the city's, and frontage_count in "
+                           "rear.bin says which lots it decided.",
             "when_it_does_not_fit": "A unit whose square will not sit between "
                                     "the back of the house and the setback off "
                                     "the rear lot line is NOT DRAWN, and the "
@@ -1476,25 +1704,19 @@ def main():
                                     "over.",
             "recorded": "The lot outline, from MapPLUTO's shapefile (EPSG:2263, "
                         "feet). The footprints of the buildings on it, from the "
-                        "city's building layer, joined on base_bbl.",
-            "inferred": "WHICH END OF THE LOT IS THE BACK. Neither dataset says "
-                        "where the street is, so the back of the lot is taken to "
-                        "be the direction away from the existing house. That is "
-                        "right for an ordinary house set toward the street and "
-                        "WRONG for a corner lot, a through lot, and a house "
-                        "built at the back of its own parcel. The unit is drawn "
-                        "as a plain square rather than as a building because the "
-                        "position is this good and no better.",
-            "not_sited": "Lots with no building footprint on record, a building "
-                         "centred exactly on the lot, or a centroid lying "
-                         "outside its own polygon - which is what an L-shaped or "
-                         "flag lot does. They are drawn flat and no volume is "
-                         "guessed for them.",
-            "grid_convergence_note": "The direction is measured against true "
-                                     "north and the polygon against State Plane "
-                                     "grid north. Over New York City those differ "
-                                     "by about a third of a degree, which across "
-                                     "a fifty-foot lot is about three inches.",
+                        "city's building layer, joined on base_bbl - still "
+                        "needed for how far the house already reaches toward "
+                        "the back, which is a different question from which "
+                        "way back is.",
+            "not_sited": {k: int(v) for k, v in causes.items()},
+            "not_sited_note": "By cause, and the causes are different facts: "
+                              "no_footprint is a data absence, "
+                              "house_at_rear_line is a finding about the lot, "
+                              "landlocked means no unshared edge at all, "
+                              "geometry is a centroid outside its own polygon "
+                              "or a failed width ray - an L-shaped or flag "
+                              "lot. All are drawn flat and no volume is "
+                              "guessed for them.",
         },
         "hpd_budget": HPD_BUDGET,
         "plan_library": {k: v for k, v in papl.items() if k != "plans"},

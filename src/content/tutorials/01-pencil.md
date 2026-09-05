@@ -1,8 +1,8 @@
 ---
-title: "Tutorial 2 — Does It Pencil"
+title: "Tutorial 1 — Does It Pencil"
 date: "2026-08-31"
 author: Adam Vosburgh
-sequence: 2
+sequence: 1
 cat: tutorial
 published: true
 ---
@@ -160,12 +160,17 @@ the house's actual footprint, which is in the city's building layer. Both are
 recorded. With those you can measure the open ground behind the house — how deep
 it runs and how wide it is — and put a rectangle in it.
 
-But one thing stays inferred, and no amount of geometry fixes it: **which end of
-the lot is the back.** Neither dataset says where the street is. The sandbox
-assumes the back is the direction away from the house, which is right for an
-ordinary lot and wrong for a corner lot. That assumption is named on the card,
-and the unit is drawn as a plain rectangle rather than as a building because
-that is exactly how much the model knows.
+One more question looks unanswerable from the data — **which end of the lot is
+the back** — and the first build got it wrong by assuming the back was the
+direction away from the house. Checked properly, that assumption was a coin
+flip. What answers it is a structural fact about the city, not a new dataset: a
+tax block is bounded by streets, so the only stretch of a lot's boundary that no
+other lot in the block touches is the street frontage, and the back is its
+opposite. Measured against 500 sampled blocks, that direction is right 96.5% of
+the time. One rule in it is still ours — a corner lot has two street frontages,
+and the sandbox takes the longest as *the* front. That rule is named on the
+card, and the unit is drawn as a plain rectangle rather than as a building
+because that is exactly how much the model knows.
 
 Then the payoff, which is the thing to take away. Once you can measure the back
 garden, you find that **only about a third of the lots that pass the area test

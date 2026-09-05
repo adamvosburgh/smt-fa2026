@@ -1,0 +1,43 @@
+{
+  "generated": "2026-09-04",
+  "graph": {
+    "nodes": 2593,
+    "edges": 3767,
+    "layout": "Float32[nodes][2] lon,lat then Uint16[edges][2] node indices, little-endian",
+    "walkable_rw_types": [
+      "1",
+      "10",
+      "3",
+      "5",
+      "6",
+      "7"
+    ],
+    "walkable_note": "CSCL rw_type 1 street, 3 bridge, 5 boardwalk, 6 path, 7 step street, 10 alley; highways, tunnels, ramps, driveways, ferry routes and segments marked non-pedestrian dropped. Our rule."
+  },
+  "routes": {
+    "rows": 165,
+    "layout": "Uint16[rows][nodes] predecessor per node, 65535 = unreachable; row index is route_row in gateways.json"
+  },
+  "sizes_bytes": {
+    "gateways.json": 56524,
+    "flow.json": 24006,
+    "graph.bin": 35812,
+    "routes.bin": 855690,
+    "occupancy.json": 1205
+  },
+  "checks": {
+    "published_alldays_17_over_08": 2.525,
+    "weekday_17dep_over_08arr": 0.989
+  },
+  "schedule_defaults": {
+    "arrival_median": 8.78,
+    "arrival_spread": 1.96,
+    "departure_median": 17.46,
+    "departure_spread": 2.83
+  },
+  "assumptions": [
+    "Which building a trip starts at is proportional to jobs. Nothing says the people leaving 195 Broadway at 5:40 work there.",
+    "The route is the shortest path, not the chosen path. Nobody walks the shortest path to the subway.",
+    "The gateway share is real - counted taps, MTA O-D 2024 - and a complex's flow splits evenly across its entrances."
+  ]
+}

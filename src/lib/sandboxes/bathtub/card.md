@@ -46,11 +46,17 @@ Five things, all published, all downloadable.
   station 8518750, on the 1983-2001 epoch, given relative to NAVD88 so they can
   be added to the ground heights directly.
 - **How often the water gets high.** Four exceedance probability levels from the
-  same gauge, read on 1 September 2026 from NOAA's *Tidal Datums and Exceedance
-  Probability Levels* diagram. NOAA publishes exactly four - 99%, 50%, 10% and
-  1% - and the sandbox offers those four and no others. That is worth a note:
-  the "500-year flood" you have read about is a FEMA quantity, arrived at by a
-  different method, and it is not in this product to be offered.
+  same gauge, from NOAA's *Sea Level Trends and Extremes* site (the successor to
+  the annual-exceedance product that retires 30 September 2026), read for
+  October 2025 - and the month matters, because the levels move with the average
+  linear change of mean sea level; an exceedance level is a function of date,
+  not a constant, and the manifest records which month these are. NOAA publishes
+  exactly four - 99%, 50%, 10% and 1% - and the sandbox offers those four and no
+  others. The product also publishes a low-water series, which this sandbox
+  ignores: Bathtub is about flooding, and that is the half that was used. One
+  more note: the "500-year flood" you have read about is a FEMA quantity,
+  arrived at by a different method, and it is not in this product to be
+  offered.
 - **What is standing on the ground.** NYC Building Footprints for the buildings
   themselves, MapPLUTO for how many homes are in them, and 2020 Census tract
   population for how many people live in the area.
@@ -107,11 +113,11 @@ cannot quietly disagree.
   definitions disagreeing, not the model failing.
 - **The probability and the projection come from different agencies.** The
   storm levels are NOAA's, the sea level rise is the NPCC's, and the sandbox
-  adds one to the other. NOAA publishes its own version of that addition - the
-  same four levels raised onto its linear trend, which for 2026 puts every one
-  of them 0.10m higher - and it is shipped in the manifest as a cross-check but
-  never added, because adding it to an NPCC projection would raise the sea
-  twice. Two agencies, one harbour, two answers, and the sandbox has to pick.
+  adds one to the other. NOAA does its own version of that addition - the
+  exceedance lines ride upward on the station's linear trend - which is why the
+  levels here carry a date and are never combined with NOAA's own projected
+  rise: adding them to an NPCC projection as well would raise the sea twice.
+  Two agencies, one harbour, two answers, and the sandbox has to pick.
 - **Connectivity is a property of the terrain.** Precomputing that connection
   height asserts that "can water get here" has one answer, decided once. On a
   real coastline it doesn't: culverts, tide gates, pumps and surge barriers

@@ -94,6 +94,47 @@ export function drawBlockMap(ctx, blockMap, meta) {
   }
 }
 
+/**
+ * Draw one block map as a translucent heat wash, for compositing OVER the
+ * city. Every block map shares the city's 120x100 tile geometry, so washed
+ * over the tiles at the same transform it shows which actual blocks sit in
+ * the red - the thing neither a thumbnail nor a detached heatmap can show.
+ *
+ * Low values are transparent (the city shows through untinted), high values
+ * saturate. The one signed map (rate of growth) diverges: blue below zero,
+ * red above. Alpha, not lightness, carries the value, so the atlas stays
+ * readable underneath.
+ */
+export function drawWash(ctx, blockMap, meta) {
+  const w = blockMap.width;
+  const h = blockMap.height;
+  const cw = ctx.canvas.width;
+  const ch = ctx.canvas.height;
+  const px = cw / w;
+  const py = ch / h;
+  const signed = meta.min < 0;
+  const span = (meta.max - meta.min) || 1;
+
+  ctx.clearRect(0, 0, cw, ch);
+  for (let by = 0; by < h; by++) {
+    for (let bx = 0; bx < w; bx++) {
+      const v = blockMap.get(bx, by);
+      if (signed) {
+        const t = Math.max(-1, Math.min(1, v / Math.max(Math.abs(meta.min), meta.max)));
+        if (Math.abs(t) < 0.05) continue;
+        ctx.fillStyle = t > 0
+          ? `rgba(180,45,30,${(0.45 * t).toFixed(3)})`
+          : `rgba(35,70,160,${(-0.45 * t).toFixed(3)})`;
+      } else {
+        const t = Math.max(0, Math.min(1, (v - meta.min) / span));
+        if (t < 0.05) continue;
+        ctx.fillStyle = `rgba(180,45,30,${(0.45 * t).toFixed(3)})`;
+      }
+      ctx.fillRect(Math.floor(bx * px), Math.floor(by * py), Math.ceil(px), Math.ceil(py));
+    }
+  }
+}
+
 /** Highest value currently in a block map, for the readout beside its name. */
 export function peak(blockMap) {
   let m = -Infinity;

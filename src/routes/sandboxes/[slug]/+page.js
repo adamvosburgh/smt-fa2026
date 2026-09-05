@@ -1,9 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { sandboxes, bySlug } from '$lib/sandboxes/index.js';
+import { allSandboxes, bySlug } from '$lib/sandboxes/index.js';
 import { bySandbox } from '$lib/submissions.js';
 
+// Hidden sandboxes still render (as NotBuilt) - their slugs are in old build
+// docs, so they must not 404.
 export function entries() {
-  return sandboxes.map((s) => ({ slug: s.slug }));
+  return allSandboxes.map((s) => ({ slug: s.slug }));
 }
 
 export function load({ params }) {

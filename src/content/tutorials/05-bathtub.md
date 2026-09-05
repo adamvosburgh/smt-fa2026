@@ -1,8 +1,8 @@
 ---
-title: "Tutorial 7 — Bathtub"
+title: "Tutorial 5 — Bathtub"
 date: "2026-08-30"
 author: Adam Vosburgh
-sequence: 7
+sequence: 5
 cat: tutorial
 published: true
 ---
@@ -172,15 +172,15 @@ control offers a value the source doesn't publish, you invented it.
 
 The second is arithmetic. These levels are fitted to the highest water level of
 each year, and the highest water level of a year happens at high tide - so the
-tide is already inside the number. NOAA states the 1% level twice, as 2.40m
-above NAVD88 and as 1.70m above mean higher high water, and those are the same
-sentence. Which means the tide control cannot be added to it, and picking a
+tide is already inside the number. NOAA states the 1% level twice, as about
+2.51m above NAVD88 and as 1.82m above mean higher high water, and those are the
+same sentence. Which means the tide control cannot be added to it, and picking a
 probability greys the tide out instead. Getting that wrong would have added
 about 70cm of water to every 100-year map the sandbox draws, and nothing on the
 screen would have looked broken.
 
 Worth knowing what these levels leave out, too: they are still water, no waves.
-The 1% is about 7.9 feet above NAVD88 and Sandy reached about 11.3 feet at this
+The 1% is about 8.2 feet above NAVD88 and Sandy reached about 11.3 feet at this
 gauge. That gap is not an error in either number.
 
 The rest - tide state, depth shading, the flood line toggle - are there so you

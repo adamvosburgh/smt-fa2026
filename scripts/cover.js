@@ -43,6 +43,12 @@ async function capture(browser, url, out) {
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: TIMEOUT });
     await page.waitForSelector('[data-cover-ready="true"]', { timeout: TIMEOUT });
+    // A playing timeline means a nondeterministic cover. Set every timeline
+    // to its schema default and pause, then wait for the frame to say so and
+    // for the sandbox to settle again after the reset moved its params.
+    await page.evaluate(() => window.__transportReset?.());
+    await page.waitForSelector('[data-timeline-paused="true"]', { timeout: TIMEOUT });
+    await page.waitForSelector('[data-cover-ready="true"]', { timeout: TIMEOUT });
     ready = true;
   } catch { /* fall through - we still want the metrics and the problems */ }
 
@@ -88,9 +94,11 @@ if (args.submissions) {
     }
   }
 } else {
-  const { sandboxes } = await import('../src/lib/sandboxes/index.js').catch(() => ({ sandboxes: null }));
-  const slugs = sandboxes
-    ? sandboxes.map((s) => s.slug)
+  // Covers all sandboxes including hidden ones - a NotBuilt cover is harmless
+  // and means unhiding later needs no cover run.
+  const mod = await import('../src/lib/sandboxes/index.js').catch(() => null);
+  const slugs = mod?.allSandboxes
+    ? mod.allSandboxes.map((s) => s.slug)
     : ['studio-twin', 'pencil', 'after-five', 'coefficients', 'sunlight', 'anthromes', 'bathtub'];
   for (const slug of slugs) {
     const r = await capture(browser, `${BASE}/sandboxes/${slug}/`, `static/covers/${slug}.png`);

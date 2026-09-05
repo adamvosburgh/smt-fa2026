@@ -17,8 +17,7 @@
     "seed": 1,
     "run_count": 5,
     "ticks": 1000,
-    "layer": "crimeRateMap",
-    "speed": 2
+    "layer": "crimeRateMap"
   },
   "cover": {
     "crime_base": 220,

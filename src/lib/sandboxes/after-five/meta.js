@@ -5,29 +5,32 @@
 // with card.md.
 export default {
   slug: 'after-five',
-  number: 3,
   title: 'After Five',
   subtitle:
     'Lower Manhattan as massing, with office buildings turning into housing as two gates open. The gates are a score we invented and a tax rule we could only half read - and at the one rent in the model that has a source, nothing converts at all.',
-  status: 'partial',
+  status: 'built',
   statusNote:
-    'The massing, the two gates, the year scrubber and the presence panel are built. AT THE DEFAULTS NOTHING CONVERTS, which is the model\'s answer and not a failure - the office rent it competes against is now the published asking rent rather than the unsourced figure that used to be in the code. The moving crowd the sandbox is named for is NOT built and will not be. The two populations are counted - office-using jobs from LODES, residents from the 2020 census - but NOTHING PUBLISHED SAYS WHEN EITHER OF THEM IS ON THE STREET. The national travel survey is six bands wide and national; the census asks when people leave FOR work, so it describes the morning. There is no evening table. A curve through those two counts, or a trip animation over them, would be invented at both ends: the schedule and the building each trip starts at.',
+    'The massing, the two gates, the transports and the agent layer are built. AT THE DEFAULTS NOTHING CONVERTS, which is the model\'s answer and not a failure - the office rent it competes against is the published asking rent rather than the unsourced figure that used to be in the code. An earlier version of this note said nothing published describes when this district\'s day empties. That was true of the two trip tables it had evaluated and FALSE IN GENERAL: the MTA\'s origin-destination ridership estimate counts arrivals and departures at every subway complex by hour and day of week, and those counted taps are what the crowd now runs on. What stays assumed - the building each trip starts at, the shortest-path route - is printed on the canvas next to the one line that is measured.',
   kind: 'simulation',
   blurb:
     'Every building in Manhattan Community District 1, from the city\'s own 3D survey, with its real identity attached. Office buildings convert to housing when a convertibility score clears a threshold and the residential deal beats the office income given up - and the only thing that makes time pass is the office rent trend. The office rent was in the model twice, at two different values, neither sourced; replacing both with the Comptroller\'s published $54 makes the map go blank. Of the three figures in the deal, one has a source, and at that source the answer is don\'t.',
   controls: [
+    'the hour of day - the primary clock, playing by default; playing the year holds it and playing it holds the year',
+    'the crowd: how many agents stand in for the day, and whether their schedule is the measured MTA curve or four bell curves whose defaults are read off it',
     'the year, snapped to the six the model actually has opinions about',
     'conversion cost per square foot',
     'residential rent per square foot per year',
     'how office rent drifts - the only thing that makes time pass',
-    'the discount between asking rent and what a landlord actually collects, which nobody publishes and which the sandbox therefore refuses to guess for you',
-    'the capitalisation rate and the operating-cost share, both market conventions rather than measurements',
+    'the office rent, four named scenario stops - the published $54 asking figure and three of ours, each with its justification on the control',
+    'two capitalisation rates now, office and residential, defaulting equal - equal is what the model used to do silently - plus the operating-cost share, all market conventions rather than measurements',
+    'the unit floor in the conversion sample the floor-area-per-apartment figure is measured from - six measured cuts, and the choice moves the answer by 40%',
     'the four weights behind the convertibility score, one per criterion',
     'the convertibility threshold, against a score that is ours',
     'whether 467-m\'s eligibility rules apply',
     'whether added floors are drawn'
   ],
   metrics: [
+    'who is mid-walk at this hour, workers against residents',
     'units created',
     'office floor area removed',
     'buildings converted, of the office buildings there are',
@@ -46,10 +49,14 @@ export default {
     'Floor area per apartment: 1,152 sf, measured from 149 DOB filings 2001-2025 where a Manhattan building with no apartments became a residential one of ten units or more. It replaces an unsourced 900.',
     'LEHD LODES 8 Workplace Area Characteristics, New York State, 2023: primary jobs by workplace census block, joined on MapPLUTO BCTCB2020. 198,677 office-using jobs in CD1 and 667,498 in CD5.',
     '2020 decennial census, total population by tract: 85,841 residents in CD1 and 92,438 in CD5. Manhattan\'s tracts total 1,694,251, which is the published county count exactly - that is what made the join believable.',
-    'RPTL 467-m as published by HPD. The eligibility tests are in the FAQ; the benefit schedule is not, so the incentive is modelled as a gate and not as money.'
+    'RPTL 467-m as published by HPD. The eligibility tests are in the FAQ; the benefit schedule is not, so the incentive is modelled as a gate and not as money.',
+    'MTA Subway Origin-Destination Ridership Estimate 2024 (data.ny.gov jsu2-fbtj), fetched as server-side aggregates: arrivals at and departures from each study complex by hour, October 2024 weekdays. 116 million rows at source; a few hundred after grouping, which is all the crowd ever needs.',
+    'MTA Subway Entrances and Exits 2024 (i9wp-a4ja): where each complex\'s stairs actually are. A complex\'s flow splits evenly across them, which is an assumption.',
+    'NYC Street Centerline (inkn-q76z), clipped to the districts and filtered to walkable segments: the graph the trips are routed on.',
+    'ATUS 2003-2025 (BLS): the share of management, business, financial and professional workers at their workplace through the day - the counted curve the animation is checked against, not the thing that drives it.'
   ],
   cannotSee:
-    'When anybody is on the street. The two populations are counted - 198,677 office-using jobs and 85,841 residents in Lower Manhattan - and the conversions move both, trading roughly one office job for one resident. What is missing is the hours between them: the national travel survey says only that 28% of trips begin between six and midnight, and the census asks when people leave FOR work, so nothing published says when a Manhattan office empties. There is therefore no crowd, no curve and no trip animation, because the schedule and the building each trip would start at would both be invented. It also cannot see who moves in, who is displaced, whether a displaced job vanishes or moves down the block, or whether the ground floor becomes a shop or a lobby. Conversion is instant at the moment the deal clears, added floors have no form, and rents are uniform across the whole district.',
-  tutorial: '/tutorials/03-after-five/',
+    'Who any walker is. The crowd runs on counted taps - the MTA\'s origin-destination estimate says how many people pass each subway complex each hour of a 2024 weekday - but the taps are not split by who is riding, so attributing the morning\'s arrivals to workers and the evening\'s to residents is the model\'s assumption, printed on the canvas. So is the building each trip starts at (proportional to jobs - nothing says the people leaving 195 Broadway at 5:40 work there) and the route (the shortest path, which nobody actually walks). Anyone who arrives by ferry, bus, bike, car or foot from outside the district is invisible: the gateways are subway stations because the subway is what got counted. It also cannot see who moves in, who is displaced, whether a displaced job vanishes or moves down the block, or whether the ground floor becomes a shop or a lobby. Conversion is instant at the moment the deal clears, added floors have no form, and rents are uniform across the whole district.',
+  tutorial: '/tutorials/02-after-five/',
   live: false
 };

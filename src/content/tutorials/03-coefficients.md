@@ -1,8 +1,8 @@
 ---
-title: "Tutorial 4 — The Coefficients"
+title: "Tutorial 3 — The Coefficients"
 date: "2026-08-31"
 author: Adam Vosburgh
-sequence: 4
+sequence: 3
 cat: tutorial
 published: true
 ---
@@ -269,11 +269,11 @@ crime = 128 - land value + population density - police
 
 Here it is at the engine's own value:
 
-<div data-sandbox="coefficients" data-mode="view" data-params='{"crime_base":128,"land_value_distance_divisor":2,"seed":1,"ticks":1000,"run_count":5,"layer":"crimeRateMap","speed":2}'></div>
+<div data-sandbox="coefficients" data-mode="view" data-params='{"crime_base":128,"land_value_distance_divisor":2,"seed":1,"ticks":1000,"run_count":5,"layer":"crimeRateMap"}'></div>
 
 And here it is at 220, with nothing else altered:
 
-<div data-sandbox="coefficients" data-mode="view" data-params='{"crime_base":220,"land_value_distance_divisor":2,"seed":1,"ticks":1000,"run_count":5,"layer":"crimeRateMap","speed":2}'></div>
+<div data-sandbox="coefficients" data-mode="view" data-params='{"crime_base":220,"land_value_distance_divisor":2,"seed":1,"ticks":1000,"run_count":5,"layer":"crimeRateMap"}'></div>
 
 Average crime goes from about 92 to about 171 — and the population falls, which
 is the part to sit with. It falls because low land value raises crime and high

@@ -5,7 +5,12 @@
   "$comment": "Every default below was read from the vendored micropolisJS source at commit f13a1624 and matches it exactly. A default that disagrees with the engine is the worst possible bug in this sandbox, because the whole sandbox is an argument about what the defaults are. Slider granularity is x-step, never multipleOf - see the note in bathtub's schema for why. Property order is the panel's reading order: the two contested constants first, then the rest of the rules, then the run, then how it is drawn.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["crime_base", "land_value_distance_divisor", "seed", "ticks"],
+  "required": [
+    "crime_base",
+    "land_value_distance_divisor",
+    "seed",
+    "ticks"
+  ],
   "properties": {
     "crime_base": {
       "type": "integer",
@@ -93,8 +98,16 @@
       "type": "integer",
       "title": "Outside demand",
       "x-group": "demography",
-      "enum": [0, 1, 2],
-      "x-enum-labels": ["1.2", "1.1", "0.98"],
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "x-enum-labels": [
+        "1.2",
+        "1.1",
+        "0.98"
+      ],
       "default": 1,
       "description": "Demand for what the city's industry makes, from everywhere that is not the city. It is one of three numbers, chosen by the difficulty setting, and it never changes for any other reason. The world outside is a constant."
     },
@@ -130,7 +143,7 @@
     },
     "layer": {
       "type": "string",
-      "title": "Layer to enlarge",
+      "title": "Layer over the city",
       "x-group": "how it's drawn",
       "enum": [
         "none",
@@ -146,20 +159,20 @@
         "fireStationMap"
       ],
       "x-enum-labels": [
-        "none", "land value", "crime", "pollution", "density",
-        "traffic", "growth", "unspoilt", "centre", "police", "fire"
+        "none",
+        "land value",
+        "crime",
+        "pollution",
+        "density",
+        "traffic",
+        "growth",
+        "unspoilt",
+        "centre",
+        "police",
+        "fire"
       ],
-      "default": "landValueMap",
-      "description": "Which layer to draw over the city at full size. All of them are drawn small in the panel regardless; this picks the one to look at properly."
-    },
-    "speed": {
-      "type": "integer",
-      "title": "Speed",
-      "x-group": "how it's drawn",
-      "enum": [1, 2, 3],
-      "x-enum-labels": ["slow", "medium", "fast"],
-      "default": 2,
-      "description": "How many steps run per animation frame on screen. It changes how fast you watch, not what happens - the simulation takes the same steps in the same order either way."
+      "default": "none",
+      "description": "Which layer to wash over the city, tile for tile. 'none' follows the rotation - the wash tracks whatever layer the cycle most recently wrote. All fifteen are drawn small in the rail regardless; click one there to pin it."
     }
   }
 }

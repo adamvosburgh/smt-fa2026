@@ -2,13 +2,20 @@
   // Renders controls straight off the sandbox's JSON Schema. One schema does two
   // jobs: it draws this panel, and the server validates submitted params against
   // the same file. If a control is missing here, add it to the schema, not here.
-  let { schema, params = $bindable(), disabled = false } = $props();
+  let { schema, params = $bindable(), disabled = false, transport = null } = $props();
 
   const entries = $derived(Object.entries(schema?.properties ?? {}));
 
   function labelFor(prop, value) {
     const i = (prop.enum ?? []).indexOf(value);
     return prop['x-enum-labels']?.[i] ?? String(value);
+  }
+  // x-enum-notes is x-enum-labels' longer sibling: one note per stop, rendered
+  // under the control for the selected stop only. Where a stop carries its own
+  // justification (After Five's rent scenarios), this is where it goes.
+  function noteFor(prop, value) {
+    const i = (prop.enum ?? []).indexOf(value);
+    return prop['x-enum-notes']?.[i] ?? null;
   }
   // Slider granularity comes from x-step, not from multipleOf. multipleOf is a
   // validation keyword and Ajv checks it by dividing: 1.4 / 0.1 is
@@ -19,6 +26,14 @@
   const stepOf = (prop) => prop['x-step'] ?? prop.multipleOf ?? 1;
 
   function fmt(prop, value) {
+    // x-format "clock" renders a fractional hour as HH:MM - the transport
+    // readout for a time-of-day axis should read as a clock, not a decimal.
+    if (prop['x-format'] === 'clock') {
+      const h = Math.floor(value) % 24;
+      const m = Math.round((value - Math.floor(value)) * 60);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    if (prop.enum) return labelFor(prop, value);
     const step = stepOf(prop);
     const dp = step < 1 ? String(step).split('.')[1].length : 0;
     return `${Number(value).toFixed(dp)}${prop['x-unit'] ? ' ' + prop['x-unit'] : ''}`;
@@ -56,7 +71,42 @@
   );
 </script>
 
+{#snippet speedRow()}
+  <span class="speeds">
+    {#each [0.5, 1, 2, 4] as m (m)}
+      <button
+        type="button"
+        class="speed"
+        class:on={transport.speed === m}
+        onclick={() => transport.setSpeed(m)}>{m}×</button
+      >
+    {/each}
+  </span>
+{/snippet}
+
 <div class="params">
+  {#if transport?.external}
+    <!-- A sandbox whose clock is an engine, not a schema property. Same row,
+         run/pause/step of the simulation underneath. -->
+    <div class="param">
+      <div class="param-head">
+        <label for="p-transport-external">{transport.external.label ?? 'the clock'}</label>
+        <span class="param-value">{transport.externalReadout}</span>
+      </div>
+      <div class="transport" id="p-transport-external">
+        <button
+          type="button"
+          class="tbtn"
+          onclick={() => transport.toggleExternal()}
+          aria-label={transport.playingKey === 'external' ? 'pause' : 'play'}
+        >
+          {transport.playingKey === 'external' ? '⏸' : '⏵'}
+        </button>
+        <button type="button" class="tbtn" onclick={() => transport.stepExternal()} aria-label="step">⏭</button>
+        {@render speedRow()}
+      </div>
+    </div>
+  {/if}
   {#each grouped as { key, prop, heading } (key)}
     {#if heading}
       <h3 class="group">{heading}</h3>
@@ -71,6 +121,30 @@
           <span class="param-value">{fmt(prop, params[key])}</span>
         {/if}
       </div>
+
+      {#if transport && prop['x-timeline'] && !off}
+        {@const held = transport.playingKey !== null && transport.playingKey !== key}
+        <div class="transport">
+          <button type="button" class="tbtn" onclick={() => transport.stepBack(key)} aria-label="back">⏮</button>
+          {#if held}
+            <!-- Another timeline is playing and holds this one. Said on
+                 screen, not just in code. -->
+            <span class="held">held at {fmt(prop, params[key])}</span>
+          {:else}
+            <button
+              type="button"
+              class="tbtn"
+              onclick={() => transport.toggle(key)}
+              aria-label={transport.playingKey === key ? 'pause' : 'play'}
+            >
+              {transport.playingKey === key ? '⏸' : '⏵'}
+            </button>
+            <span class="readout">{fmt(prop, params[key])}</span>
+          {/if}
+          <button type="button" class="tbtn" onclick={() => transport.stepFwd(key)} aria-label="forward">⏭</button>
+          {#if !held}{@render speedRow()}{/if}
+        </div>
+      {/if}
 
       {#if prop.type === 'boolean'}
         <button
@@ -90,7 +164,10 @@
               type="button"
               class:on={params[key] === opt}
               disabled={off}
-              onclick={() => (params[key] = opt)}>{labelFor(prop, opt)}</button
+              onclick={() => {
+                if (prop['x-timeline']) transport?.pause(key);
+                params[key] = opt;
+              }}>{labelFor(prop, opt)}</button
             >
           {/each}
         </div>
@@ -102,12 +179,26 @@
           max={prop.maximum}
           step={stepOf(prop)}
           disabled={off}
+          onpointerdown={() => prop['x-timeline'] && transport?.pause(key)}
+          onkeydown={() => prop['x-timeline'] && transport?.pause(key)}
           bind:value={params[key]}
         />
       {/if}
 
-      {#if prop.description}
-        <p class="param-note">{prop.description}</p>
+      <!-- The prose folds away so the panel is the controls, not an essay
+           with sliders in it. Collapsed by default; the justifications are one
+           click away, and a selected enum stop's own note travels with the
+           description under the same fold. -->
+      {#if prop.description || (prop.enum && noteFor(prop, params[key]))}
+        <details class="why">
+          <summary>why these numbers</summary>
+          {#if prop.enum && noteFor(prop, params[key])}
+            <p class="param-note stop-note">{noteFor(prop, params[key])}</p>
+          {/if}
+          {#if prop.description}
+            <p class="param-note">{prop.description}</p>
+          {/if}
+        </details>
       {/if}
     </div>
   {/each}
@@ -134,7 +225,45 @@
   label { font-size: 0.75rem; font-weight: 700; }
   .param-value { font-size: 0.75rem; color: #666; font-variant-numeric: tabular-nums; }
   .param-note { font-size: 0.68rem; line-height: 1.5; color: #666; margin: 0.15rem 0 0; }
+  .why summary {
+    cursor: pointer; list-style: none;
+    font-size: 0.6rem; color: #aaa; letter-spacing: 0.03em;
+    display: inline-flex; align-items: baseline; gap: 0.3rem;
+  }
+  .why summary::-webkit-details-marker { display: none; }
+  .why summary::before { content: '+'; font-weight: 400; }
+  .why[open] > summary::before { content: '–'; }
+  .why summary:hover { color: #000; }
+  .why[open] > summary { color: #666; margin-bottom: 0.2rem; }
   input[type='range'] { width: 100%; accent-color: #000; }
+  .transport {
+    display: flex; align-items: center; gap: 0.35rem;
+    padding: 0.15rem 0;
+  }
+  .tbtn {
+    font: inherit; font-size: 0.7rem; line-height: 1;
+    padding: 0.25rem 0.4rem;
+    background: #fff; border: 1px solid #ccc; cursor: pointer; color: #000;
+  }
+  .tbtn:hover { border-color: #000; }
+  .readout {
+    flex: 1; text-align: center;
+    font-size: 0.95rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .held {
+    flex: 1; text-align: center;
+    font-size: 0.72rem; font-style: italic; color: #999;
+    font-variant-numeric: tabular-nums;
+  }
+  .speeds { display: flex; }
+  .speed {
+    font: inherit; font-size: 0.6rem; line-height: 1;
+    padding: 0.25rem 0.28rem;
+    background: #fff; border: 1px solid #eee; border-right: 0; cursor: pointer; color: #999;
+  }
+  .speed:last-child { border-right: 1px solid #eee; }
+  .speed.on { background: #000; border-color: #000; color: #fff; }
+  .stop-note { font-style: italic; }
   .segmented { display: flex; border: 1px solid #ccc; }
   .segmented button {
     flex: 1; padding: 0.3rem 0.4rem; font: inherit; font-size: 0.7rem;

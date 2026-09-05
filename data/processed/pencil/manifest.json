@@ -1,6 +1,6 @@
 {
   "sandbox": "pencil",
-  "generated": "2026-09-01",
+  "generated": "2026-09-04",
   "borough": "Queens (BoroCode 4)",
   "lots": 246921,
   "start_year": 2027,
@@ -20,11 +20,7 @@
     "rent_fmr",
     "tract_income",
     "tract_idx",
-    "bldg_type",
-    "rear_box_x_ft",
-    "rear_box_y_ft",
-    "rear_box_depth_ft",
-    "rear_box_width_ft"
+    "bldg_type"
   ],
   "column_units": [
     "degrees",
@@ -35,12 +31,24 @@
     "dollars per month",
     "dollars per year",
     "index into tracts.json, -1 for none",
-    "0 attached, 1 semi-detached, 2 detached, 3 unknown",
+    "0 attached, 1 semi-detached, 2 detached, 3 unknown"
+  ],
+  "rear_columns": [
+    "rear_box_x_ft",
+    "rear_box_y_ft",
+    "rear_box_depth_ft",
+    "rear_box_width_ft",
+    "frontage_count"
+  ],
+  "rear_column_units": [
     "feet east of the lot centroid, to the centre of the open ground behind the house",
     "feet north of the same",
-    "feet, its depth away from the house",
-    "feet, its width across the lot"
+    "feet, its depth toward the back lot line",
+    "feet, its width across the lot",
+    "unshared street frontages found by the block test: 0 landlocked, 1 ordinary, 2+ corner and through lots"
   ],
+  "rear_dtype": "<i2",
+  "rear_note": "rear.bin is Int16, little-endian, five values per lot in lots.bin's row order. Whole feet - nothing in a siting box is precise to better than a foot, and four float32s per lot were false precision. (0,0,0,0) means the lot could not be sited; frontage_count says why not when it is 0 (landlocked).",
   "columns_note": "adu_sf IS NOT SHIPPED. It was, and it could not stay: rear_yard_fraction and side_setback_ft are controls, so the unit's floor area moves when they move and the browser computes it from these columns. Precompute the inputs to the answer, never the answer - the same rule the rest of this pipeline follows.",
   "flags": {
     "two_family": 1,
@@ -130,14 +138,21 @@
     "interpretation": "DOF says 'semi-attached' and the Zoning Resolution says 'semi-detached'. They are treated here as the same category. That is a reading, not a fact."
   },
   "siting": {
-    "sited": 202733,
+    "sited": 212871,
     "of_lots": 246921,
-    "method": "The unit is placed on the ray that leaves the lot centroid heading directly away from the buildings already on the lot: pushed back to the rear lot line, pulled forward by the setback plus half its own depth, and required to clear the far edge of the existing buildings. rear_x_ft and rear_y_ft give the direction and the distance to the lot line, house_reach_ft how far the buildings already extend that way; the browser finishes the sum, because the setback is a control.",
+    "method": "The back of the lot is MEASURED, not inferred: the street frontage is the unshared lot edge - the only stretch of the boundary no other lot in the same tax block touches - and the back is its opposite. A tax block is bounded by streets, so every shared lot line lies inside one, which is what lets the test run block by block with no spatial index. The rear-yard box is then measured from the back lot line inward, and the browser finishes the sum, because the setback is a control.",
+    "measured_check": "Against 500 randomly sampled Queens blocks (13,670 one-to-two-family lots, 2026-09-04), the frontage found this way points out of the block 97.4% of the time and the implied back direction points into it 96.5%. The away-from-the-house inference this replaces managed 55.5% - a coin flip - and had roughly a third of the drawn cottages at the wrong end of the lot. The check is re-runnable: data/scripts/checks/frontage_unshared_edge.py.",
+    "corner_rule": "A corner or through lot has two or more street frontages and, in zoning terms, two front yards. The LONGEST unshared run is taken as the front; the others are treated as the side lot lines the side-setback control already clears. That is our rule, not the city's, and frontage_count in rear.bin says which lots it decided.",
     "when_it_does_not_fit": "A unit whose square will not sit between the back of the house and the setback off the rear lot line is NOT DRAWN, and the legend counts it. It still counts as eligible and it still pencils, because the rule the programme applies is about the AREA of the required rear yard and not about whether a square fits behind the house. That gap between an area test and a plan is worth seeing rather than papering over.",
-    "recorded": "The lot outline, from MapPLUTO's shapefile (EPSG:2263, feet). The footprints of the buildings on it, from the city's building layer, joined on base_bbl.",
-    "inferred": "WHICH END OF THE LOT IS THE BACK. Neither dataset says where the street is, so the back of the lot is taken to be the direction away from the existing house. That is right for an ordinary house set toward the street and WRONG for a corner lot, a through lot, and a house built at the back of its own parcel. The unit is drawn as a plain square rather than as a building because the position is this good and no better.",
-    "not_sited": "Lots with no building footprint on record, a building centred exactly on the lot, or a centroid lying outside its own polygon - which is what an L-shaped or flag lot does. They are drawn flat and no volume is guessed for them.",
-    "grid_convergence_note": "The direction is measured against true north and the polygon against State Plane grid north. Over New York City those differ by about a third of a degree, which across a fifty-foot lot is about three inches."
+    "recorded": "The lot outline, from MapPLUTO's shapefile (EPSG:2263, feet). The footprints of the buildings on it, from the city's building layer, joined on base_bbl - still needed for how far the house already reaches toward the back, which is a different question from which way back is.",
+    "not_sited": {
+      "no_footprint": 717,
+      "landlocked": 1383,
+      "house_at_rear_line": 31921,
+      "geometry": 29,
+      "no_ring": 0
+    },
+    "not_sited_note": "By cause, and the causes are different facts: no_footprint is a data absence, house_at_rear_line is a finding about the lot, landlocked means no unshared edge at all, geometry is a centroid outside its own polygon or a failed width ray - an L-shaped or flag lot. All are drawn flat and no volume is guessed for them."
   },
   "hpd_budget": {
     "source": "HPD ADU Budgeting Tool, housing.hpd.nyc.gov/adu/budget. The defaults were read off the controls and the behaviour was measured by varying one control at a time at a $500,000 hard cost, on 2026-09-01.",

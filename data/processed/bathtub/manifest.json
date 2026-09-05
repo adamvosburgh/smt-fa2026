@@ -1,12 +1,12 @@
 {
   "sandbox": "bathtub",
   "scope": "full",
-  "downsample": 2,
+  "downsample": 1,
   "sources": {
     "dem": "USGS 3DEP 1/3 arc-second (~10m), clipped to NYC. EPSG:4269, metres NAVD88.",
     "sea_level": "NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. 10th/25th/75th/90th percentiles - no median is published.",
-    "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, relative to NAVD88.",
-    "exceedance": "NOAA Extreme Water Levels, station 8518750, Tidal Datums and Exceedance Probability Levels, read 2026-09-01. Still-water levels from a GEV fit to annual maxima with the MSL trend removed - not FEMA base flood elevations. This product retires 2026-09-30."
+    "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, relative to NAVD88, from the mdapi metric datums endpoint.",
+    "exceedance": "NOAA Sea Level Trends and Extremes (tidesandcurrents.noaa.gov/trends-and-extremes/), station 8518750, Extreme High Water Levels, read for October 2025. Successor to the annual-exceedance product retired 30 September 2026."
   },
   "tractid": {
     "file": "tractid.png",
@@ -24,7 +24,7 @@
     "note": "population is reported at tract resolution and never allocated to individual buildings"
   },
   "steps_last_run": [
-    "dem"
+    "none"
   ],
   "grid": {
     "width": 2979,
@@ -104,21 +104,17 @@
     ]
   },
   "tideOffsetsM": {
-    "mllw": -0.844,
-    "msl": -0.061,
+    "mllw": -0.846,
+    "msl": -0.063,
     "mhhw": 0.695
   },
   "waterSurfaceM": 0.3,
   "exceedanceM": {
-    "99": 1.2,
-    "50": 1.44,
-    "10": 1.78,
-    "1": 2.4
+    "99": 1.311,
+    "50": 1.555,
+    "10": 1.893,
+    "1": 2.512
   },
-  "exceedance2026M": {
-    "99": 1.3,
-    "50": 1.54,
-    "10": 1.88,
-    "1": 2.5
-  }
+  "tideEpoch": "1983-2001, accepted 19 Nov 2012",
+  "exceedanceMonth": "2025-10"
 }

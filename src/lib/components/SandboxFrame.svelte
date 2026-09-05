@@ -25,10 +25,12 @@
   // It is gated on its own prop rather than on `mode === 'edit'` because those
   // are different questions. A tutorial can mount an editable sandbox mid-prose
   // and must not have it eat the window.
+  import { untrack } from 'svelte';
   import ParamPanel from './ParamPanel.svelte';
   import SandboxCard from './SandboxCard.svelte';
   import SubmitDialog from './SubmitDialog.svelte';
   import { dataBase } from '$lib/data.js';
+  import { createTransport } from './transport.svelte.js';
 
   let {
     meta,
@@ -58,10 +60,59 @@
   // Readiness is the component's to declare, not the frame's to guess. A
   // sandbox that recomputes asynchronously calls onready(false) when it starts
   // and onready(true) when it has settled. The frame does not race it.
+
+  // The frame owns the clock, for the same reason it owns __metrics: the cover
+  // pipeline needs one thing to wait on across all the sandboxes. The transport
+  // reads and writes params through closures so it never holds a stale copy.
+  const transport = createTransport(
+    schema,
+    (k) => params[k],
+    (k, v) => {
+      params[k] = v;
+    }
+  );
+  // A sandbox whose clock is an engine (The Coefficients) registers here and
+  // gets the same transport row as a schema timeline.
+  function ontransport(adapter) {
+    transport.setExternal(adapter);
+  }
+
+  // UNTRACKED, deliberately: play() and reset() read transport's own $state,
+  // and a tracked effect would re-run - and re-autoplay - every time the user
+  // paused. This effect runs once per mount and owns the clock for its life.
+  $effect(() => {
+    if (mode !== 'edit' || typeof window === 'undefined') return;
+    return untrack(() => {
+      window.__transportReset = () => transport.reset();
+      let raf;
+      let last = performance.now();
+      let lastPoll = 0;
+      const frame = (t) => {
+        transport.tick((t - last) / 1000, ready);
+        last = t;
+        if (t - lastPoll > 160) {
+          transport.pollExternal();
+          lastPoll = t;
+        }
+        raf = requestAnimationFrame(frame);
+      };
+      raf = requestAnimationFrame(frame);
+      // Autoplay is for the sandbox route only, never a gallery of thirty cards.
+      if (full) {
+        for (const t of transport.timelines) if (t.auto) transport.play(t.key);
+      }
+      return () => {
+        cancelAnimationFrame(raf);
+        if (window.__transportReset) delete window.__transportReset;
+      };
+    });
+  });
 </script>
 
 {#snippet titleBlock()}
-  <span class="num">{String(meta.number).padStart(2, '0')}</span>
+  {#if meta.number != null}
+    <span class="num">{String(meta.number).padStart(2, '0')}</span>
+  {/if}
   <h2>{meta.title}</h2>
   <p class="sub">{meta.subtitle}</p>
 {/snippet}
@@ -82,6 +133,7 @@
   data-sandbox={meta.slug}
   data-mode={mode}
   data-cover-ready={ready ? 'true' : 'false'}
+  data-timeline-paused={transport.paused ? 'true' : 'false'}
 >
   {#if full}
     <aside class="dock reading">
@@ -92,7 +144,15 @@
 
   <div class="stage">
     <div class="viewport">
-      <Component {params} {assets} {mode} dataBase={dataBase(meta.slug)} {onmetrics} {onready} />
+      <Component
+        {params}
+        {assets}
+        {mode}
+        dataBase={dataBase(meta.slug)}
+        {onmetrics}
+        {onready}
+        {ontransport}
+      />
     </div>
 
     {#if full}
@@ -111,7 +171,10 @@
 
       {#if mode === 'edit' && schema}
         <h3 class="section">Set it up</h3>
-        <ParamPanel {schema} bind:params />
+        <ParamPanel {schema} bind:params {transport} />
+      {:else if mode === 'edit' && transport.external}
+        <h3 class="section">Set it up</h3>
+        <ParamPanel schema={null} bind:params {transport} />
       {/if}
 
       {#if !full}
