@@ -10,6 +10,7 @@
 import { nearestNodes, sampleAgents, buildTimetable } from './agents.js';
 
 let nodes, routes, gateways, flow, buildings, nearest, manifest;
+let edgeIndexOf = null, nEdges = 0, residentCurves = null;
 
 self.onmessage = (e) => {
   const d = e.data;
@@ -19,8 +20,20 @@ self.onmessage = (e) => {
     gateways = d.gateways;
     flow = d.flow;
     manifest = d.manifest;
+    residentCurves = d.residentCurves ?? null;
     buildings = new Float32Array(d.buildings);
     nearest = nearestNodes(buildings, nodes);
+    // The street graph's edges, keyed by packed node pair, so the timetable
+    // pass can charge each traversal to the segment it walks.
+    if (d.edges) {
+      const edges = new Uint16Array(d.edges);
+      nEdges = edges.length / 2;
+      edgeIndexOf = new Map();
+      for (let i = 0; i < nEdges; i++) {
+        const a = edges[i * 2], b = edges[i * 2 + 1];
+        edgeIndexOf.set(a < b ? a * 65536 + b : b * 65536 + a, i);
+      }
+    }
     self.postMessage({ type: 'ready' });
     return;
   }
@@ -34,9 +47,14 @@ self.onmessage = (e) => {
     gateways,
     flow,
     params: d.params,
+    residentCurves,
     seed: d.seed
   });
-  const trips = buildTimetable({ agents, nodes, routes, gateways, nearest, buildings });
+  const trips = buildTimetable({ agents, nodes, routes, gateways, nearest, buildings,
+                                 edgeIndexOf, nEdges });
+  const transfers = [trips.startIndices.buffer, trips.positions.buffer,
+                     trips.timestamps.buffer, trips.roles.buffer];
+  if (trips.edgeHours) transfers.push(trips.edgeHours.buffer);
   self.postMessage(
     {
       type: 'trips',
@@ -46,9 +64,10 @@ self.onmessage = (e) => {
       startIndices: trips.startIndices,
       positions: trips.positions,
       timestamps: trips.timestamps,
-      roles: trips.roles
+      roles: trips.roles,
+      edgeHours: trips.edgeHours,
+      nEdges
     },
-    [trips.startIndices.buffer, trips.positions.buffer,
-     trips.timestamps.buffer, trips.roles.buffer]
+    transfers
   );
 };

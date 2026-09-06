@@ -19,7 +19,7 @@ import anchor from 'markdown-it-anchor';
 const md = new MarkdownIt({ html: true, breaks: false, linkify: true })
   .use(attrs)
   // Stable section anchors are load-bearing: the build doctor points students at
-  // `/tutorials/05-bathtub/#the-parameters`, and the hand-written failure map
+  // `/tutorials/05-bathtub/#what-came-out`, and the hand-written failure map
   // keys off these slugs. Do not change the slugify rule without migrating it.
   .use(anchor, {
     level: [2, 3],

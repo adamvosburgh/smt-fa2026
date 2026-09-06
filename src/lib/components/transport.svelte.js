@@ -17,7 +17,7 @@
 //     the interaction is stated on screen, not just in code.
 //
 // A sandbox whose clock is an engine rather than a schema property
-// (The Coefficients) registers an external adapter via the frame's
+// (the city simulator) registers an external adapter via the frame's
 // `ontransport` callback and gets the same row in the panel.
 
 // Schema keys:
@@ -202,7 +202,7 @@ export function createTransport(schema, read, write) {
       advance(t, Math.min(dt, 0.25)); // a background tab's first dt back is huge
     },
 
-    // The Coefficients path: same row, engine underneath.
+    // The city-simulator path: same row, engine underneath.
     setExternal(adapter) {
       external = adapter ?? null;
       if (adapter?.playing) playingKey = 'external';

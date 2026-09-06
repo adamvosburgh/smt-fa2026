@@ -71,7 +71,7 @@
       params[k] = v;
     }
   );
-  // A sandbox whose clock is an engine (The Coefficients) registers here and
+  // A sandbox whose clock is an engine (the city simulator) registers here and
   // gets the same transport row as a schema timeline.
   function ontransport(adapter) {
     transport.setExternal(adapter);

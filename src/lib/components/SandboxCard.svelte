@@ -154,6 +154,14 @@
   .body :global(li) { margin-bottom: 0.5rem; }
   .body :global(code) { font-size: 0.9em; background: #f2f2f0; padding: 0 0.2em; }
   .body :global(strong) { font-weight: 700; }
+  /* Footnotes carry the sources. Small, ruled off, and at the end of whichever
+     render they belong to - the whole card in the modal, the section in the dock. */
+  .body :global(.footnote-ref a) { text-decoration: none; font-size: 0.75em; }
+  .body :global(hr.footnotes-sep) { border: 0; border-top: 1px solid #e2e2e0; margin: 1rem 0 0.6rem; }
+  .body :global(.footnotes) { font-size: 0.85em; color: #555; }
+  .body :global(.footnotes-list) { margin: 0; padding-left: 1.2rem; }
+  .body :global(.footnote-item p) { margin: 0 0 0.4rem; }
+  .body :global(.footnote-backref) { text-decoration: none; }
 
   .tut { font-size: 0.75rem; color: #666; border-top: 1px solid #ddd; padding-top: 0.9rem; margin: 1.5rem 0 0; }
   .inline .tut { font-size: 0.68rem; border-top: 0; padding-top: 0; margin-top: 1rem; }

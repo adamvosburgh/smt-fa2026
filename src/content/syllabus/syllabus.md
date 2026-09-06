@@ -15,7 +15,7 @@ built out around it; the content lands separately.
 
 ## Sandboxes
 
-Seven of them, under [Sandboxes](/sandboxes/). Each runs in the browser and
+Five of them, under [Sandboxes](/sandboxes/). Each runs in the browser and
 exposes a small set of parameters. You do not need to be in the class to play
 with any of them.
 

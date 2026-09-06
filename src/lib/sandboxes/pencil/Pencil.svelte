@@ -1,5 +1,5 @@
 <script>
-  // Sandbox 02 - Does It Pencil.
+  // Sandbox 01 - ADU Forecast for Queens (slug pencil).
   //
   // Every one-to-two-family lot in Queens, tested against the published terms of
   // one real subsidy programme and tinted by the monthly cash flow an ADU on it

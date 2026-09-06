@@ -7,7 +7,7 @@ cat: resource
 published: true
 ---
 
-There's an assistant on this site. It knows the seven sandboxes and the tutorials.
+There's an assistant on this site. It knows the five sandboxes and the tutorials.
 It's additive - every tutorial stands on its own, and no tutorial will ever tell
 you to go ask it instead of explaining something.
 

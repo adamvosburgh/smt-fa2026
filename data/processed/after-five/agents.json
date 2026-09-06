@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-04",
+  "generated": "2026-09-05",
   "graph": {
     "nodes": 2593,
     "edges": 3767,
@@ -23,7 +23,7 @@
     "flow.json": 24006,
     "graph.bin": 35812,
     "routes.bin": 855690,
-    "occupancy.json": 1205
+    "occupancy.json": 3071
   },
   "checks": {
     "published_alldays_17_over_08": 2.525,

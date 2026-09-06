@@ -1,5 +1,5 @@
 <script>
-  // Sandbox 03 - The Coefficients.
+  // Sandbox 03 - A City Simulator, Opened Up (slug coefficients).
   //
   // micropolisJS with its guts exposed. One big canvas: the city, with the
   // selected internal layer composited over it as a translucent heat wash,

@@ -142,11 +142,34 @@ The course vocabulary collides with the discipline's, so these are load-bearing:
 
 ## Tutorial anchors are an API
 
-The build doctor points students at `#producing-the-data`, `#the-parameters` and
-friends, and `FAILURE_MAP` in `src/lib/server/validate.js` hardcodes them.
-Renaming a tutorial heading breaks it silently. Every tutorial covers those four
-things and nothing more: producing the data, setting up the web environment, the
-parameters, the assumptions.
+The build doctor points students at `#what-came-out` and `#the-parts`, and
+`FAILURE_MAP` in `src/lib/server/validate.js` hardcodes them. Renaming a
+tutorial heading breaks it silently.
+
+Every tutorial is "<sandbox title> dev notes" and has the same four `##`
+sections in the same order, and nothing more: **The ambition** (what we set out
+to do, one short paragraph), **The parts** (bullets: dataset, then what is
+derived from it), **Roadblocks** (bullets, one sentence each), **What came out**
+(with `### What you should see` and `### Limitations` under it, bullets). No
+Challenge section. Keep them short - they are a works-cited and model card, not
+an essay - and put two or three images in each (the cover from `/covers/`, and
+charts or diagrams under `src/content/tutorials/images/<nn>/`).
 
 Every tutorial also states explicitly what the sandbox can do that the tutorial
 version won't - use the `.gap` callout. Don't hide it.
+
+## Sandbox prose
+
+Every sandbox carries `card.md` with five `##` sections in this order: What this
+is / What it's trying to show / How it works / What it assumes / What it can't
+see. Sources are footnotes on the sentences that use them, each carrying the
+citation plus one specific thing about that dataset. `cards.js` renders each
+section separately, so a footnote must be defined inside the section that
+references it.
+
+The register, for cards, `meta.js`, schema `description` fields and tutorials
+alike: purely explanatory, written for someone who has never seen the work, as
+plain as a model card. Bullets of one sentence each where the content is a list.
+No lines written to drive a point home, no titled mini-sections ("The table
+that..."), no ALL-CAPS emphasis, no "the finding is" framing. Adam rewrites
+this text himself, so voice gets in his way; keep it flat.

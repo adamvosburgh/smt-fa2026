@@ -16,11 +16,11 @@ const validateManifest = ajv.compile(manifestSchema);
 export const FAILURE_MAP = {
   'manifest/missing-gallery-text': '/assignments/#either-way-submit',
   'manifest/bad-sandbox': '/sandboxes/',
-  'params/out-of-range': '#the-parameters',
-  'params/unknown-key': '#the-parameters',
-  'assets/too-large': '#producing-the-data',
-  'assets/path-escape': '#setting-up-the-web-environment',
-  'assets/missing-gltf-layer': '#producing-the-data'
+  'params/out-of-range': '#what-came-out',
+  'params/unknown-key': '#what-came-out',
+  'assets/too-large': '#the-parts',
+  'assets/path-escape': '#the-parts',
+  'assets/missing-gltf-layer': '#the-parts'
 };
 
 function pointer(code, sandbox) {

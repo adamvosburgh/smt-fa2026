@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/coefficients.json",
-  "title": "The Coefficients parameters",
-  "$comment": "Every default below was read from the vendored micropolisJS source at commit f13a1624 and matches it exactly. A default that disagrees with the engine is the worst possible bug in this sandbox, because the whole sandbox is an argument about what the defaults are. Slider granularity is x-step, never multipleOf - see the note in bathtub's schema for why. Property order is the panel's reading order: the two contested constants first, then the rest of the rules, then the run, then how it is drawn.",
+  "title": "A City Simulator, Opened Up parameters",
+  "$comment": "Every default below was read from the vendored micropolisJS source at commit f13a1624 and matches it exactly. A default that disagrees with the engine is the worst possible bug in this sandbox, because the sandbox exists to show what the engine's defaults are. Slider granularity is x-step, never multipleOf - see the note in bathtub's schema for why. Property order is the panel's reading order: which layer to watch first (the simulation transport sits above it), then the two rules the sandbox leads with, then the other rules, then the run.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -12,135 +12,6 @@
     "ticks"
   ],
   "properties": {
-    "crime_base": {
-      "type": "integer",
-      "title": "Crime base",
-      "x-group": "crime",
-      "minimum": 0,
-      "maximum": 255,
-      "x-step": 1,
-      "default": 128,
-      "x-emphasis": true,
-      "description": "The line is: crime = 128 - land value + population density - police. This number is the 128. It sets how much crime a place has before anything about that place is taken into account, and everything else is a correction to it. Nothing in the engine derived it and no data was fitted to produce it; it is a constant somebody typed in 1989 and it has been copied forward ever since. Move it and watch the whole map change at once - then notice that population falls too, because low land value raises crime and high crime lowers land value, and the engine closes that loop on purpose."
-    },
-    "crime_land_value_weight": {
-      "type": "number",
-      "title": "Weight on land value",
-      "x-group": "crime",
-      "minimum": 0,
-      "maximum": 2,
-      "x-step": 0.1,
-      "default": 1,
-      "description": "How strongly cheap land is taken to produce crime. The engine's own value is 1, meaning one point of land value cancels exactly one point of crime - a one-to-one exchange rate between property prices and offences that no study anywhere established. Set it to 0 and the model stops claiming that poverty causes crime; the rest of the simulation carries on without complaint, which is worth seeing."
-    },
-    "crime_police_weight": {
-      "type": "number",
-      "title": "Weight on police",
-      "x-group": "crime",
-      "minimum": 0,
-      "maximum": 4,
-      "x-step": 0.1,
-      "default": 1,
-      "description": "How strongly police presence suppresses crime. The engine's value is 1, and police cover is on a 0-1000 scale while crime is on 0-250 - so a station at full strength does not reduce crime, it erases it. Policing in this model has no diminishing return, no displacement of crime elsewhere, and no upper limit on what it can achieve."
-    },
-    "land_value_centre_base": {
-      "type": "integer",
-      "title": "Land value at the centre",
-      "x-group": "land value",
-      "minimum": 0,
-      "maximum": 100,
-      "x-step": 1,
-      "default": 34,
-      "description": "The value of land at the city centre, before distance is subtracted. The engine's 34 is then shifted left twice, which multiplies it by four, so the real ceiling is 136. Raising this raises the whole surface without changing its shape."
-    },
-    "land_value_distance_divisor": {
-      "type": "number",
-      "title": "Distance divisor",
-      "x-group": "land value",
-      "minimum": 0.5,
-      "maximum": 8,
-      "x-step": 0.5,
-      "default": 2,
-      "x-emphasis": true,
-      "description": "The whole line is: land value = 34 - distance from the city centre / 2. That is a bid-rent gradient, in one statement, with nothing else in it. This number is how fast value falls as you walk away from the middle. Because the model is written this way, no city it can produce is polycentric, and no place far from the centre can be expensive - not because that was tested and found true, but because there is nowhere in the code to express it. Turn the divisor up and the gradient flattens; the city gets richer and less centralised, and it still cannot have two centres."
-    },
-    "max_traffic_distance": {
-      "type": "integer",
-      "title": "How far traffic looks",
-      "x-group": "access",
-      "minimum": 5,
-      "maximum": 120,
-      "x-step": 5,
-      "default": 30,
-      "description": "A zone counts as having access to jobs if a random walk along the roads finds a destination within this many steps. There is no route planning, no journey time, no congestion feeding back into the choice, and nobody deciding where to go - the walk is random and the only question is whether it arrives. On a compact grid like the starting city almost every destination is close, so this control does less here than it would on a sprawling map. That is itself worth knowing about a parameter."
-    },
-    "smooth_passes": {
-      "type": "integer",
-      "title": "Police smoothing passes",
-      "x-group": "influence",
-      "minimum": 0,
-      "maximum": 8,
-      "x-step": 1,
-      "default": 3,
-      "description": "How a police station's influence spreads: by blurring the map of station positions, three times, and calling the result coverage. That is the entire theory of how a service reaches a neighbourhood - a convolution, with the radius set by a repeat count rather than by a distance, a response time, or a road. Set it to 0 and cover collapses to the stations themselves, and crime rises everywhere else."
-    },
-    "birth_rate": {
-      "type": "number",
-      "title": "Birth rate",
-      "x-group": "demography",
-      "minimum": 0,
-      "maximum": 0.1,
-      "x-step": 0.005,
-      "default": 0.02,
-      "description": "Population growth per turn, as a flat share of the residential population. There is no age, no household, no migration in or out, and nobody arriving because the city got better. Demography in this model is one multiplication."
-    },
-    "ext_market_index": {
-      "type": "integer",
-      "title": "Outside demand",
-      "x-group": "demography",
-      "enum": [
-        0,
-        1,
-        2
-      ],
-      "x-enum-labels": [
-        "1.2",
-        "1.1",
-        "0.98"
-      ],
-      "default": 1,
-      "description": "Demand for what the city's industry makes, from everywhere that is not the city. It is one of three numbers, chosen by the difficulty setting, and it never changes for any other reason. The world outside is a constant."
-    },
-    "seed": {
-      "type": "integer",
-      "title": "Seed",
-      "x-group": "the run",
-      "minimum": 0,
-      "maximum": 99999,
-      "x-step": 1,
-      "default": 1,
-      "description": "The starting number for every random choice the simulation makes. The rules and the starting city are identical for every seed; this is the only thing that differs between the runs on the divergence chart. Change it and you get a different city out of the same model, which is the point that chart exists to make."
-    },
-    "run_count": {
-      "type": "integer",
-      "title": "Runs to compare",
-      "x-group": "the run",
-      "minimum": 1,
-      "maximum": 12,
-      "x-step": 1,
-      "default": 5,
-      "description": "How many seeds the divergence chart runs, headlessly, in the background. Each one starts from the same city under the same rules. The spread between them at the end is not noise in a measurement - it is what this model does."
-    },
-    "ticks": {
-      "type": "integer",
-      "title": "Steps per run",
-      "x-group": "the run",
-      "minimum": 100,
-      "maximum": 5000,
-      "x-step": 100,
-      "default": 1000,
-      "description": "How many steps each comparison run takes. One step is one phase of the sixteen-phase cycle, so a full turn of the city's clock is sixteen of them."
-    },
     "layer": {
       "type": "string",
       "title": "Layer over the city",
@@ -172,7 +43,136 @@
         "fire"
       ],
       "default": "none",
-      "description": "Which layer to wash over the city, tile for tile. 'none' follows the rotation - the wash tracks whatever layer the cycle most recently wrote. All fifteen are drawn small in the rail regardless; click one there to pin it."
+      "description": "Which internal layer to draw over the city, tile for tile. 'none' follows the rotation, so the overlay shows whichever layer the cycle most recently wrote. All fifteen are drawn small in the rail regardless; click one there to pin it."
+    },
+    "crime_base": {
+      "type": "integer",
+      "title": "Crime base",
+      "x-group": "the crime rule",
+      "minimum": 0,
+      "maximum": 255,
+      "x-step": 1,
+      "default": 128,
+      "x-emphasis": true,
+      "description": "The crime rule is: crime = 128 - land value + population density - police. This is the 128. It's how much crime a place has before anything about the place is taken into account; the other terms adjust it. Nothing in the engine derived it and no data was fitted to produce it. Moving it changes the whole crime map at once, and population falls with it, because low land value raises crime and high crime lowers land value, and the engine links the two on purpose."
+    },
+    "crime_land_value_weight": {
+      "type": "number",
+      "title": "Weight on land value",
+      "x-group": "the crime rule",
+      "minimum": 0,
+      "maximum": 2,
+      "x-step": 0.1,
+      "default": 1,
+      "description": "How strongly low land value is taken to produce crime. The engine's value is 1, so one point of land value cancels one point of crime. At 0 the model stops connecting land value to crime at all, and the rest of the simulation carries on unchanged."
+    },
+    "crime_police_weight": {
+      "type": "number",
+      "title": "Weight on police",
+      "x-group": "the crime rule",
+      "minimum": 0,
+      "maximum": 4,
+      "x-step": 0.1,
+      "default": 1,
+      "description": "How strongly police presence reduces crime. The engine's value is 1. Police cover is on a 0 to 1000 scale and crime on 0 to 250, so a station at full strength doesn't reduce crime, it removes it. Policing here has no diminishing return, no displacement and no upper limit."
+    },
+    "land_value_centre_base": {
+      "type": "integer",
+      "title": "Land value at the centre",
+      "x-group": "the land value rule",
+      "minimum": 0,
+      "maximum": 100,
+      "x-step": 1,
+      "default": 34,
+      "description": "The value of land at the city centre, before distance is subtracted. The engine's 34 is shifted left twice (multiplied by four) in the code, so the real ceiling is 136. Raising this raises the whole land value surface without changing its shape."
+    },
+    "land_value_distance_divisor": {
+      "type": "number",
+      "title": "Distance divisor",
+      "x-group": "the land value rule",
+      "minimum": 0.5,
+      "maximum": 8,
+      "x-step": 0.5,
+      "default": 2,
+      "x-emphasis": true,
+      "description": "The land value rule is: land value = 34 - distance from the city centre / 2. This is the 2: how fast value falls as you move away from the middle. Because the rule is written this way, no city the engine produces has two centres, and no place far from the middle can be expensive. Raising the divisor flattens the gradient, so the city gets richer and less centralised, but it still has one centre."
+    },
+    "max_traffic_distance": {
+      "type": "integer",
+      "title": "How far traffic looks",
+      "x-group": "the other rules",
+      "minimum": 5,
+      "maximum": 120,
+      "x-step": 5,
+      "default": 30,
+      "description": "A zone counts as having access to jobs if a random walk along the roads finds a destination within this many steps. There's no route planning, no journey time and no congestion feeding back; the walk is random and the only question is whether it arrives. On a compact grid like the starting city most destinations are close, so this control does less here than it would on a sprawling map."
+    },
+    "smooth_passes": {
+      "type": "integer",
+      "title": "Police smoothing passes",
+      "x-group": "the other rules",
+      "minimum": 0,
+      "maximum": 8,
+      "x-step": 1,
+      "default": 3,
+      "description": "How a police station's influence spreads: the map of station positions is blurred this many times and the result is called coverage. That is the whole account of how a service reaches a neighbourhood. At 0, cover collapses to the stations themselves and crime rises everywhere else."
+    },
+    "birth_rate": {
+      "type": "number",
+      "title": "Birth rate",
+      "x-group": "the other rules",
+      "minimum": 0,
+      "maximum": 0.1,
+      "x-step": 0.005,
+      "default": 0.02,
+      "description": "Population growth per turn, as a flat share of the residential population. There are no ages, no households and no migration; demography in this model is one multiplication."
+    },
+    "ext_market_index": {
+      "type": "integer",
+      "title": "Outside demand",
+      "x-group": "the other rules",
+      "enum": [
+        0,
+        1,
+        2
+      ],
+      "x-enum-labels": [
+        "1.2",
+        "1.1",
+        "0.98"
+      ],
+      "default": 1,
+      "description": "Demand for what the city's industry produces, from everywhere that isn't the city. In the game it's one of three numbers set by the difficulty level, and it never changes for any other reason."
+    },
+    "seed": {
+      "type": "integer",
+      "title": "Seed",
+      "x-group": "the run",
+      "minimum": 0,
+      "maximum": 99999,
+      "x-step": 1,
+      "default": 1,
+      "description": "The starting number for every random choice the simulation makes. The rules and the starting city are the same for every seed, so this is the only thing that differs between the runs on the divergence chart. A different seed gives a different city out of the same model."
+    },
+    "run_count": {
+      "type": "integer",
+      "title": "Runs to compare",
+      "x-group": "the run",
+      "minimum": 1,
+      "maximum": 12,
+      "x-step": 1,
+      "default": 5,
+      "description": "How many seeds the divergence chart runs in the background. Each starts from the same city under the same rules. The spread between them at the end is how much the rules leave to chance."
+    },
+    "ticks": {
+      "type": "integer",
+      "title": "Steps per run",
+      "x-group": "the run",
+      "minimum": 100,
+      "maximum": 5000,
+      "x-step": 100,
+      "default": 1000,
+      "description": "How many steps each comparison run takes. One step is one phase of the sixteen-phase cycle, so a full turn of the city's clock is sixteen steps."
     }
   }
 }

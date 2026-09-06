@@ -12,7 +12,7 @@
   }
   // x-enum-notes is x-enum-labels' longer sibling: one note per stop, rendered
   // under the control for the selected stop only. Where a stop carries its own
-  // justification (After Five's rent scenarios), this is where it goes.
+  // justification (the office rent scenarios in the conversion sandbox), this is where it goes.
   function noteFor(prop, value) {
     const i = (prop.enum ?? []).indexOf(value);
     return prop['x-enum-notes']?.[i] ?? null;
@@ -117,7 +117,7 @@
         <label for="p-{key}">{prop.title ?? key}</label>
         {#if off && prop['x-disabled-note']}
           <span class="param-value note">{prop['x-disabled-note']}</span>
-        {:else if prop.type === 'number' || (prop.type === 'integer' && !prop.enum)}
+        {:else if prop.type === 'number' || (prop.type === 'integer' && !prop.enum) || (prop.enum && prop['x-control'] === 'slider')}
           <span class="param-value">{fmt(prop, params[key])}</span>
         {/if}
       </div>
@@ -157,6 +157,24 @@
         >
           <span class="dot"></span>{params[key] ? 'on' : 'off'}
         </button>
+      {:else if prop.enum && prop['x-control'] === 'slider'}
+        <!-- An enum with too many stops for buttons (Anthromes has 75 years)
+             is drawn as a slider over the stop INDEX. The value written back
+             is still the enum member, so the schema validates it unchanged
+             and the transport, which already steps enums by index, needs
+             nothing new. The readout in the head shows the stop's label. -->
+        <input
+          id="p-{key}"
+          type="range"
+          min="0"
+          max={prop.enum.length - 1}
+          step="1"
+          disabled={off}
+          value={Math.max(0, prop.enum.indexOf(params[key]))}
+          onpointerdown={() => prop['x-timeline'] && transport?.pause(key)}
+          onkeydown={() => prop['x-timeline'] && transport?.pause(key)}
+          oninput={(e) => (params[key] = prop.enum[Number(e.currentTarget.value)])}
+        />
       {:else if prop.enum}
         <div class="segmented" id="p-{key}">
           {#each prop.enum as opt}

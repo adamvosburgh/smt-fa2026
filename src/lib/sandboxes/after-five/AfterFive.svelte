@@ -1,5 +1,5 @@
 <script>
-  // Sandbox 03 - After Five.
+  // Sandbox 02 - Office to Residential Conversion (slug after-five).
   //
   // Lower Manhattan in 3D, running one clock. Office buildings recolour to
   // residential as they pass two gates, and grow where a filing added floors.
@@ -34,11 +34,21 @@
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
   import { compute, colours, STRIDE, HEIGHT, FLOORS, FLOORS_ADDED,
            DISTRICT, DISTRICT_INDEX } from './gates.js';
+  import { mulberry32 } from './agents.js';
   import AgentsWorker from './agents.worker.js?worker';
 
   const DISTRICT_KEY = { mn01: 'MN01', mn05: 'MN05' };
   const WORKER_RGB = [60, 92, 138];   // the massing's "still office" blue
   const RESIDENT_RGB = [205, 74, 60]; // the massing's "converted" red
+  // The two-hour comparison recolours the crowd by HOUR instead of by role:
+  // the main clock's crowd in slate, the second hour's in amber. Streets then
+  // show the difference between the two, in the same two hues.
+  const HOUR_A_RGB = [70, 82, 96];
+  const HOUR_B_RGB = [224, 138, 43];
+  // Ground floors: a converted building's frontage, lit or dark. The draw is
+  // deterministic per building so the slider re-interprets the same luck.
+  const LIT_RGB = [242, 178, 64, 245];
+  const DARK_RGB = [48, 48, 56, 245];
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready } = $props();
 
@@ -49,7 +59,8 @@
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
 
-  let map, overlay, detachRedraw, PolygonLayer, ScatterplotLayer, TripsLayer;
+  let map, overlay, detachRedraw, PolygonLayer, ScatterplotLayer, LineLayer,
+      PathLayer, TripsLayer;
   let buildings, footprints;
   // Footprints pre-filtered per district, built once. The arrays must be
   // STABLE identities: a fresh filter() on every render would make deck.gl
@@ -89,6 +100,22 @@
   let workerReady = false;
   let occupancy = $state(null);
   let agentsOn = $state(false);
+
+  // --- the street layer --------------------------------------------------
+  // The graph's own geometry, kept on the main thread so each segment can be
+  // drawn (and stood on). edgeHours arrives with every timetable: walkers per
+  // segment per hour, counted in the worker over the un-coarsened paths.
+  let graphNodes = null;     // Float32 lon/lat per node
+  let graphEdges = null;     // Uint16 node pairs
+  let nEdges = 0;
+  let edgeSrc = null, edgeTgt = null;   // binary positions for LineLayer
+  let streetCols = null, streetWidths = null, streetData = null;
+  let streetKey = '';        // what the cached colour arrays were built for
+  let tripsVersion = 0;
+  // The ground-floor rings: converted footprints, refiltered per heavy pass.
+  let groundData = null;
+  // Street view: the segment being stood on, or null for the district view.
+  let streetView = $state(null);
 
   const FT_TO_M = 0.3048;
 
@@ -188,6 +215,8 @@
       ]);
       PolygonLayer = deckLayers.PolygonLayer;
       ScatterplotLayer = deckLayers.ScatterplotLayer;
+      LineLayer = deckLayers.LineLayer;
+      PathLayer = deckLayers.PathLayer;
       manifest = m;
 
       const [bBuf, fp] = await Promise.all([
@@ -215,6 +244,9 @@
       // a footprint map, which is the thing this sandbox is not.
       map.setPitch(50);
       map.setBearing(-20);
+      // Street view needs to see down a street, not down at one. MapLibre's
+      // default ceiling is 60; 85 is the library's own maximum.
+      map.setMaxPitch(85);
       clampCamera();
 
       loading = null;
@@ -247,6 +279,20 @@
       TripsLayer = geoLayers.TripsLayer;
       const nNodes = agentsMeta.graph.nodes;
       const nodes = graphBuf.slice(0, nNodes * 2 * 4);
+      // The edges follow the nodes in graph.bin. They stay here for drawing
+      // and go to the worker for counting, so the street a walker is drawn on
+      // and the street their traversal is charged to are the same row.
+      nEdges = agentsMeta.graph.edges;
+      const edges = graphBuf.slice(nNodes * 2 * 4, nNodes * 2 * 4 + nEdges * 2 * 2);
+      graphNodes = new Float32Array(nodes.slice(0));
+      graphEdges = new Uint16Array(edges.slice(0));
+      edgeSrc = new Float32Array(nEdges * 2);
+      edgeTgt = new Float32Array(nEdges * 2);
+      for (let i = 0; i < nEdges; i++) {
+        const a = graphEdges[i * 2], b = graphEdges[i * 2 + 1];
+        edgeSrc[i * 2] = graphNodes[a * 2]; edgeSrc[i * 2 + 1] = graphNodes[a * 2 + 1];
+        edgeTgt[i * 2] = graphNodes[b * 2]; edgeTgt[i * 2 + 1] = graphNodes[b * 2 + 1];
+      }
       agentData = { gateways: gws.gateways, flow, agentsMeta };
       occupancy = occ;
       agentWorker = new AgentsWorker();
@@ -261,6 +307,7 @@
         if (d.type !== 'trips' || d.gen !== agentGen) return; // stale answer
         trips = d;
         tripsData = null; // new timetable, new wrapper
+        tripsVersion += 1; // the street colours are cached against this
         agentsOn = true;
         onready?.(true);
         schedule(false); // the massing didn't change, only the crowd
@@ -273,9 +320,11 @@
       agentWorker.postMessage({
         type: 'init',
         nodes,
+        edges,
         routes: routesBuf,
         gateways: gws.gateways,
         flow,
+        residentCurves: occ.residents ?? null,
         manifest: $state.snapshot(manifest),
         buildings: buildings.buffer.slice(0)
       });
@@ -310,7 +359,13 @@
     if (!light || !result || !rgba) {
       result = compute(buildings, manifest, params);
       rgba = colours(result, buildings, params);
+      // The converted footprints, for the ground-floor rings. Refiltered only
+      // here: the set changes when the massing does, never with the clock.
+      groundData = fpFor(params.district).filter((d) => result.state[d.i] === 2);
     }
+
+    const cmp = params.compare_hours === true;
+    const tB = ((params.hour_b ?? 20) % 24) * 3600;
 
     // Each building is drawn as its ground outline extruded to its roof. The
     // CityGML carries several roof levels per building and only the tallest is
@@ -318,8 +373,76 @@
     // drawing it would be a different sandbox. The data is the district's own
     // footprints - the accessors go through d.i because the filtered array's
     // positions no longer line up with buildings.bin's rows.
-    const layers = [
-        maskLayer(),
+    const layers = [maskLayer()];
+
+    // The street, counted. Every timetable arrives with walkers-per-segment-
+    // per-hour; here the selected hour's column becomes colour and width. The
+    // scale is the day's busiest segment, so 20:00 and 08:00 are comparable
+    // by eye. In compare mode the colour is the DIFFERENCE between the two
+    // hours: amber where the second hour has more walkers, slate where the
+    // first does.
+    const t = ((params.hour ?? 8) % 24) * 3600;
+    const binA = Math.min(23, Math.floor((params.hour ?? 8) % 24));
+    const binB = Math.min(23, Math.floor((params.hour_b ?? 20) % 24));
+    if (params.streets !== false && LineLayer && trips?.edgeHours && nEdges > 0) {
+      const key = `${binA}|${cmp ? binB : ''}|${tripsVersion}`;
+      if (key !== streetKey || !streetCols) {
+        streetKey = key;
+        streetCols = new Uint8Array(nEdges * 4);
+        streetWidths = new Float32Array(nEdges);
+        const eh = trips.edgeHours;
+        let max = 0;
+        if (cmp) {
+          for (let i = 0; i < nEdges; i++) {
+            const d = Math.abs(eh[binB * nEdges + i] - eh[binA * nEdges + i]);
+            if (d > max) max = d;
+          }
+        } else {
+          for (let i = 0; i < eh.length; i++) if (eh[i] > max) max = eh[i];
+        }
+        const inv = max > 0 ? 1 / max : 0;
+        for (let i = 0; i < nEdges; i++) {
+          let v, c;
+          if (cmp) {
+            const d = eh[binB * nEdges + i] - eh[binA * nEdges + i];
+            v = Math.sqrt(Math.abs(d) * inv);
+            c = d > 0 ? HOUR_B_RGB : HOUR_A_RGB;
+          } else {
+            v = Math.sqrt(eh[binA * nEdges + i] * inv);
+            c = [30, 32, 38];
+          }
+          const o = i * 4;
+          streetCols[o] = c[0]; streetCols[o + 1] = c[1]; streetCols[o + 2] = c[2];
+          // The floor alpha keeps the empty network faintly there - a blank
+          // street is part of the answer, and it stays clickable.
+          streetCols[o + 3] = Math.round(16 + v * 220);
+          streetWidths[i] = 1 + 5 * v;
+        }
+        // A fresh wrapper object per recompute: the arrays are mutated in
+        // place and deck only re-reads them when the data identity changes.
+        streetData = {
+          length: nEdges,
+          attributes: {
+            getSourcePosition: { value: edgeSrc, size: 2 },
+            getTargetPosition: { value: edgeTgt, size: 2 },
+            getColor: { value: streetCols, size: 4 },
+            getWidth: { value: streetWidths, size: 1 }
+          }
+        };
+      }
+      layers.push(new LineLayer({
+        id: 'street-counts',
+        data: streetData,
+        positionFormat: 'XY',
+        widthUnits: 'pixels',
+        widthMinPixels: 1,
+        widthMaxPixels: 8,
+        pickable: mode === 'edit',
+        onClick: standOnStreet
+      }));
+    }
+
+    layers.push(
         new PolygonLayer({
           id: 'massing',
           data: fpFor(params.district),
@@ -354,7 +477,28 @@
             getElevation: [params.year, params.added_floors, result]
           }
         })
-    ];
+    );
+
+    // The ground-floor rule, drawn. Each converted building's frontage is a
+    // ring at its base: warm where the per-building draw comes up active at
+    // the slider's probability, dark where it doesn't. Deterministic per
+    // building, so dragging the slider flips floors in a fixed order rather
+    // than rerolling the district.
+    if (PathLayer && groundData && groundData.length > 0) {
+      const pGf = params.ground_floor_p ?? 0.5;
+      layers.push(new PathLayer({
+        id: 'ground-floors',
+        data: groundData,
+        getPath: (d) => d.r,
+        getColor: (d) => (mulberry32(20260905 + d.i)() < pGf ? LIT_RGB : DARK_RGB),
+        widthUnits: 'pixels',
+        getWidth: 2.5,
+        widthMinPixels: 2,
+        widthMaxPixels: 5,
+        pickable: false,
+        updateTriggers: { getColor: [pGf], getPath: [groundData] }
+      }));
+    }
 
     // The agents: a DOT for every walker at their position this second, with a
     // short trail behind it for direction. Both layers share the depth buffer
@@ -367,29 +511,38 @@
     // hour moves - the timetable already holds each trip's node times, so a
     // dot is one lerp per walker. The same loop counts who is mid-walk for the
     // metrics strip, so the picture and the number still share one source.
-    const t = ((params.hour ?? 8) % 24) * 3600;
-    let nDots = 0, walkingW = 0, walkingR = 0;
+    let nDots = 0, walkingW = 0, walkingR = 0, walkingA = 0, walkingB = 0;
     if (trips && trips.length > 0) {
-      if (!dotPos || dotPos.length < trips.length * 3) {
-        dotPos = new Float32Array(trips.length * 3);
-        dotCol = new Uint8Array(trips.length * 3);
+      const need = trips.length * 3 * (cmp ? 2 : 1);
+      if (!dotPos || dotPos.length < need) {
+        dotPos = new Float32Array(need);
+        dotCol = new Uint8Array(need);
       }
-      for (let i = 0; i < trips.length; i++) {
-        const s = trips.startIndices[i], e = trips.startIndices[i + 1];
-        if (trips.timestamps[s] > t || trips.timestamps[e - 1] < t) continue;
-        trips.roles[i] ? walkingR++ : walkingW++;
-        let j = s;
-        while (j < e - 2 && trips.timestamps[j + 1] < t) j++;
-        const t0 = trips.timestamps[j], t1 = trips.timestamps[j + 1];
-        const f = t1 > t0 ? (t - t0) / (t1 - t0) : 0;
-        const o = nDots * 3;
-        dotPos[o] = trips.positions[2 * j] + (trips.positions[2 * (j + 1)] - trips.positions[2 * j]) * f;
-        dotPos[o + 1] = trips.positions[2 * j + 1] + (trips.positions[2 * (j + 1) + 1] - trips.positions[2 * j + 1]) * f;
-        dotPos[o + 2] = 0;
-        const c = trips.roles[i] ? RESIDENT_RGB : WORKER_RGB;
-        dotCol[o] = c[0]; dotCol[o + 1] = c[1]; dotCol[o + 2] = c[2];
-        nDots++;
-      }
+      // One placement pass per drawn hour. In compare mode the same crowd is
+      // placed twice and coloured by hour; otherwise once, coloured by role.
+      const place = (tt, hourColour) => {
+        let mid = 0;
+        for (let i = 0; i < trips.length; i++) {
+          const s = trips.startIndices[i], e = trips.startIndices[i + 1];
+          if (trips.timestamps[s] > tt || trips.timestamps[e - 1] < tt) continue;
+          mid++;
+          trips.roles[i] ? walkingR++ : walkingW++;
+          let j = s;
+          while (j < e - 2 && trips.timestamps[j + 1] < tt) j++;
+          const t0 = trips.timestamps[j], t1 = trips.timestamps[j + 1];
+          const f = t1 > t0 ? (tt - t0) / (t1 - t0) : 0;
+          const o = nDots * 3;
+          dotPos[o] = trips.positions[2 * j] + (trips.positions[2 * (j + 1)] - trips.positions[2 * j]) * f;
+          dotPos[o + 1] = trips.positions[2 * j + 1] + (trips.positions[2 * (j + 1) + 1] - trips.positions[2 * j + 1]) * f;
+          dotPos[o + 2] = 0;
+          const c = hourColour ?? (trips.roles[i] ? RESIDENT_RGB : WORKER_RGB);
+          dotCol[o] = c[0]; dotCol[o + 1] = c[1]; dotCol[o + 2] = c[2];
+          nDots++;
+        }
+        return mid;
+      };
+      walkingA = place(t, cmp ? HOUR_A_RGB : null);
+      if (cmp) walkingB = place(tB, HOUR_B_RGB);
     }
     if (trips && TripsLayer && trips.length > 0) {
       if (!tripsData) {
@@ -402,21 +555,36 @@
           }
         };
       }
-      layers.push(new TripsLayer({
-        id: 'agent-trails',
+      // In compare mode the SAME timetable is drawn twice, once per hour,
+      // each in its hour's colour - two crowds on one street network, which
+      // is the comparison without splitting the view.
+      const trailProps = {
         data: tripsData,
         _pathType: 'open',
-        getColor: (_, { index }) =>
-          trips.roles[index] ? RESIDENT_RGB : WORKER_RGB,
-        currentTime: t,
         trailLength: 240,
         fadeTrail: true,
         capRounded: true,
         jointRounded: true,
         opacity: 0.55,
-        widthMinPixels: 1.5,
-        updateTriggers: { getColor: [trips] }
-      }));
+        widthMinPixels: 1.5
+      };
+      if (cmp) {
+        layers.push(
+          new TripsLayer({ ...trailProps, id: 'agent-trails-a',
+            getColor: HOUR_A_RGB, currentTime: t }),
+          new TripsLayer({ ...trailProps, id: 'agent-trails-b',
+            getColor: HOUR_B_RGB, currentTime: tB })
+        );
+      } else {
+        layers.push(new TripsLayer({
+          ...trailProps,
+          id: 'agent-trails',
+          getColor: (_, { index }) =>
+            trips.roles[index] ? RESIDENT_RGB : WORKER_RGB,
+          currentTime: t,
+          updateTriggers: { getColor: [trips] }
+        }));
+      }
     }
     if (nDots > 0 && ScatterplotLayer) {
       layers.push(new ScatterplotLayer({
@@ -453,9 +621,13 @@
 
     const mt = result.metrics;
     // Who is mid-walk at the current hour - counted in the same loop that
-    // placed the dots, so the picture and the number share one source.
+    // placed the dots, so the picture and the number share one source. In
+    // compare mode the split by role gives way to the split by hour.
     const walking = trips && trips.length > 0
-      ? `${walkingW.toLocaleString()} workers · ${walkingR.toLocaleString()} residents`
+      ? (cmp
+        ? `${walkingA.toLocaleString()} at ${clock(params.hour ?? 8)} · ` +
+          `${walkingB.toLocaleString()} at ${clock(params.hour_b ?? 20)}`
+        : `${walkingW.toLocaleString()} workers · ${walkingR.toLocaleString()} residents`)
       : '';
     onmetrics?.({
       ...(walking ? { 'mid-walk at this hour': walking } : {}),
@@ -483,6 +655,41 @@
     70: { label: 'not really Class B', provenance: 'ours' }
   };
   const rentStop = $derived(RENT_STOPS[params.office_rent] ?? null);
+
+  function clock(h) {
+    const m = Math.round(((h % 24) % 1) * 60);
+    return `${String(Math.floor(h % 24)).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  // --- street view --------------------------------------------------------
+  // Clicking a segment stands the camera on it: eye-ish height, looking down
+  // the street, with the walkers passing. A camera change and nothing else -
+  // the same massing, the same crowd, no new data. This is the cheapest
+  // answer to "the map reads as disembodied from the space it describes".
+  function standOnStreet(info) {
+    if (!map || !graphEdges || info?.index == null || info.index < 0) return;
+    const i = info.index;
+    const a = graphEdges[i * 2], b = graphEdges[i * 2 + 1];
+    const ax = graphNodes[a * 2], ay = graphNodes[a * 2 + 1];
+    const bx = graphNodes[b * 2], by = graphNodes[b * 2 + 1];
+    const bearing = (Math.atan2((bx - ax) * Math.cos((ay * Math.PI) / 180), by - ay)
+      * 180) / Math.PI;
+    streetView = { index: i };
+    map.easeTo({
+      center: [(ax + bx) / 2, (ay + by) / 2],
+      zoom: 18.4, pitch: 84, bearing, duration: 900
+    });
+  }
+
+  function leaveStreet() {
+    if (!map || !manifest) { streetView = null; return; }
+    streetView = null;
+    const [w, s, e, n] = boundsFor(manifest, params.district);
+    try {
+      const cam = map.cameraForBounds([[w, s], [e, n]], { padding: 4 });
+      map.easeTo({ ...cam, pitch: 50, bearing: -20, duration: 900 });
+    } catch { /* not ready */ }
+  }
 
   // One rAF, and heavy wins: if a slider and the clock both land before the
   // next frame, the frame is a heavy one.
@@ -513,16 +720,20 @@
           params.district,
           // ...and the ones that only move the crowd. Same heavy path: the
           // sampler weights by compute()'s output, so both rerun together.
-          params.agent_count, params.schedule_source, params.arrival_median,
+          params.agent_count, params.schedule_source, params.resident_schedule,
+          params.arrival_median,
           params.arrival_spread, params.departure_median, params.departure_spread];
     agentsDirty = true;
     schedule();
   });
 
   // The hour is the light path: dots and currentTime only, never a new
-  // timetable and never a re-score of the massing.
+  // timetable and never a re-score of the massing. The street toggles, the
+  // ground-floor probability and the two-hour comparison ride the same path:
+  // they redraw layers over cached results and resample nothing.
   $effect(() => {
-    void params.hour;
+    void [params.hour, params.streets, params.ground_floor_p,
+          params.compare_hours, params.hour_b];
     schedule(false);
   });
 
@@ -534,8 +745,19 @@
     if (!map || !manifest || d === lastDistrict) { lastDistrict = d; return; }
     lastDistrict = d;
     clampCamera();
+    const wasStreet = !!streetView;
+    streetView = null;
     const [w, s, e, n] = boundsFor(manifest, d);
-    try { map.fitBounds([[w, s], [e, n]], { padding: 4, duration: 600 }); } catch { /* not ready */ }
+    try {
+      if (wasStreet) {
+        // Coming up off a street as well as across town: the pitch and
+        // bearing have to come back too, or the new district arrives at 84.
+        const cam = map.cameraForBounds([[w, s], [e, n]], { padding: 4 });
+        map.easeTo({ ...cam, pitch: 50, bearing: -20, duration: 600 });
+      } else {
+        map.fitBounds([[w, s], [e, n]], { padding: 4, duration: 600 });
+      }
+    } catch { /* not ready */ }
   });
 
   onDestroy(() => {
@@ -565,8 +787,14 @@
   });
 </script>
 
+<svelte:window onkeydown={(e) => { if (e.key === 'Escape' && streetView) leaveStreet(); }} />
+
 <div class="wrap">
   <div class="map" bind:this={container}></div>
+
+  {#if streetView && mode === 'edit'}
+    <button class="sv-btn" onclick={leaveStreet}>back over the district</button>
+  {/if}
 
   {#if error}
     <p class="err">Couldn't load the data for this one: {error}</p>
@@ -616,6 +844,12 @@
       <span class="a"><i>assumed</i> which building a trip starts at: proportional to jobs</span>
       <span class="a"><i>assumed</i> the route: shortest path, not the chosen path</span>
       <span class="m"><i>measured</i> the gateway share: counted taps, MTA O-D 2024</span>
+      {#if (params.resident_schedule ?? 'mirrored') === 'atus' && params.schedule_source !== 'parametric'}
+        <span class="a"><i>assumed</i> residents keep the ATUS not-employed day: a national survey, not a New York count</span>
+      {/if}
+      {#if result && result.metrics.converted > 0}
+        <span class="a"><i>assumed</i> the ground floor: active with probability {(params.ground_floor_p ?? 0.5).toFixed(2)}, ours</span>
+      {/if}
     </div>
   {/if}
 
@@ -637,7 +871,10 @@
       {#if result && result.metrics.converted === 0}
         <span class="none">Nothing clears the deal at these numbers. That is the
           model's answer, not a failure to load - the office rent it is competing
-          against is {rentStop ? `${rentStop.label}` : 'the published asking rent'}.</span>
+          against is {rentStop ? `${rentStop.label}` : 'the published asking rent'}.
+          To see conversions, move the office rent to a lower stop, steepen its
+          downward trend, or raise the residential rent - each is a departure
+          from the sourced figure, and the control says whose number you chose.</span>
       {/if}
       <!-- Which rent stop is selected, and whose number it is. One stop is
            sourced; the other three are ours, and the difference is the point. -->
@@ -651,11 +888,26 @@
           threshold of {result.gensler.toFixed(2)} - it moves when the weights
           move.</span>
       {/if}
-      {#if agentsOn}
+      {#if agentsOn && params.compare_hours}
+        <span><i class="sw ha"></i>the crowd at {clock(params.hour ?? 8)}</span>
+        <span><i class="sw hb"></i>the crowd at {clock(params.hour_b ?? 20)}</span>
+        <span class="note">streets take the colour of whichever hour has more
+          walkers on them, darker where the gap is wider</span>
+      {:else if agentsOn}
         <span><i class="sw worker"></i>workers, in by morning, out by evening</span>
-        <span><i class="sw resident"></i>residents, the reverse</span>
+        <span><i class="sw resident"></i>residents{(params.resident_schedule ?? 'mirrored') === 'atus'
+          && params.schedule_source !== 'parametric'
+          ? ', on the survey’s own day' : ', the reverse'}</span>
+        {#if params.streets !== false && mode === 'edit'}
+          <span class="note">streets darken with walkers this hour - click one
+            to stand on it</span>
+        {/if}
       {:else}
         <span class="note">agents still loading — the counts are already right</span>
+      {/if}
+      {#if result && result.metrics.converted > 0}
+        <span><i class="sw lit"></i>ground floor drawn active</span>
+        <span><i class="sw dark"></i>ground floor drawn dark</span>
       {/if}
       {#if basemapFailed}
         <span class="warn">no basemap - the model still works</span>
@@ -695,6 +947,17 @@
   .late { background: rgb(240,70,70); }
   .worker { background: rgb(60,92,138); }
   .resident { background: rgb(205,74,60); }
+  .ha { background: rgb(70,82,96); }
+  .hb { background: rgb(224,138,43); }
+  .lit { background: rgb(242,178,64); }
+  .dark { background: rgb(48,48,56); }
+  .sv-btn {
+    position: absolute; right: 0.6rem; bottom: 0.6rem; z-index: 6;
+    font-size: 0.62rem; color: #222; background: rgba(255,255,255,0.92);
+    border: 1px solid #ccc; padding: 0.3rem 0.55rem; cursor: pointer;
+    font-family: inherit;
+  }
+  .sv-btn:hover { background: #fff; }
   .note { color: #999; }
   .none { color: #222; }
   .presence {

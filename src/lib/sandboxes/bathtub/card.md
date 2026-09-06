@@ -1,152 +1,42 @@
 ## What this is
 
-A flood map of New York that you build yourself, one setting at a time.
+A flood map of New York built one setting at a time. You pick a date and one of the published sea level projections; the sandbox turns that into a single water height for the harbour, adds a tide and optionally a storm, and colours in every piece of ground below it. The panel counts the buildings, homes and people on that ground. It's called a bathtub model because that is what it does: it fills the city like a tub, up to a line.
 
-You have seen a lot of flood maps. Blue over the Rockaways, blue along the
-Gowanus, a caption about 2050. They are one of the few kinds of model that
-regularly make it out of a research group and onto a news site, a rezoning
-document, or an insurance quote for a building someone is about to buy. They
-usually arrive as a finished picture, with the arguments already settled and
-the settings already chosen.
+The ground comes from a national elevation survey,[^dem] the rise from the city's climate panel,[^npcc] the tides and storm levels from the gauge at the Battery,[^tides] and the buildings, homes and people from the city and the census.[^buildings]
 
-This is the same map with the lid off. You pick how far into the future to
-look, and which of the published projections to believe. The sandbox turns
-that into a single number - one water height for the whole harbour - and then
-colours in every piece of ground that sits below it. That is the entire model.
-It's called a bathtub model because that is more or less what it does: it fills
-the city like a tub, up to a line.
+[^dem]: USGS 3DEP, 1/3 arc-second (about 10 m), clipped to New York, metres above NAVD88; shipped at about 20 m per cell. Used instead of the city's one-foot lidar because it covers the whole country.
+[^npcc]: NPCC4 (Braneon et al. 2024), NYC Open Data `38ps-fnsg`: 10th, 25th, 75th and 90th percentiles for the 2030s, 2050s, 2080s, 2100 and 2150, no median. In the 2030s the four are within 18 cm; by 2150 they run from 1.0 m to 4.5 m.
+[^tides]: NOAA CO-OPS station 8518750, the Battery. Tidal datums on the 1983-2001 epoch relative to NAVD88 (low tide -0.85 m, high tide +0.70 m). Exceedance levels from NOAA's Sea Level Trends and Extremes site for the same station, read for October 2025: 99%, 50%, 10% and 1% annual chance, and no others. The product this succeeds retires 30 September 2026.
+[^buildings]: NYC Building Footprints (470,578 kept, as points with recorded ground and roof heights), MapPLUTO `UnitsRes` for homes per lot, 2020 Census tract population (DP1) on NYC Open Data tract boundaries (2,325 tracts).
 
-## Why we're looking at this one
+## What it's trying to show
 
-Because the method is simple enough to hold in your head, and the stakes
-attached to it are not.
+- How a flood map gets made, and how many decisions sit inside one before any blue is drawn: the date, the projection, the tide, whether water needs a route to a place.
+- How simple the method is. NOAA's Sea Level Rise Viewer is a bathtub model with a connectivity step and a varying tidal surface; the gap between this sandbox and an official map is small next to the gap between either and a flood.
 
-Nearly everything that is interesting about a flood map happens before the
-blue goes on. Which projection out of four. Which point in the tide cycle.
-Whether water is required to have a route to a place before that place is
-allowed to flood. None of those choices are visible in the finished map, and
-all of them move the coastline. Turn them into controls and they stop being
-invisible.
+## How it works
 
-It is also a good first model to argue with, because you can check it. The
-numbers in the panel come from the same grid the picture is drawn from, so if
-you think a reading is wrong you can go and look at the place on the map.
-
-## The data
-
-Five things, all published, all downloadable.
-
-- **The ground.** USGS 3DEP elevation, 1/3 arc-second - about one height
-  measurement every 10 metres - clipped to New York. Heights are metres above
-  NAVD88, a national vertical reference surface. We ship it at roughly 20m per
-  cell to keep the download reasonable.
-- **How much the sea rises.** The NPCC4 projections (Braneon et al. 2024, on
-  NYC Open Data as `38ps-fnsg`). Four percentiles for each of five dates.
-- **Where the tide is.** Three tidal datums from NOAA's gauge at the Battery,
-  station 8518750, on the 1983-2001 epoch, given relative to NAVD88 so they can
-  be added to the ground heights directly.
-- **How often the water gets high.** Four exceedance probability levels from the
-  same gauge, from NOAA's *Sea Level Trends and Extremes* site (the successor to
-  the annual-exceedance product that retires 30 September 2026), read for
-  October 2025 - and the month matters, because the levels move with the average
-  linear change of mean sea level; an exceedance level is a function of date,
-  not a constant, and the manifest records which month these are. NOAA publishes
-  exactly four - 99%, 50%, 10% and 1% - and the sandbox offers those four and no
-  others. The product also publishes a low-water series, which this sandbox
-  ignores: Bathtub is about flooding, and that is the half that was used. One
-  more note: the "500-year flood" you have read about is a FEMA quantity,
-  arrived at by a different method, and it is not in this product to be
-  offered.
-- **What is standing on the ground.** NYC Building Footprints for the buildings
-  themselves, MapPLUTO for how many homes are in them, and 2020 Census tract
-  population for how many people live in the area.
-
-## How the map gets made
-
-Everything is measured against the same vertical reference, NAVD88, which is
-what makes the comparison legal in the first place. Sea level rise, storm surge
-and the tide offset are added together into one waterline. A cell of ground is
-flooded if its height is below that line.
-
-Choosing a storm by its probability changes that sum, and the reason is the one
-thing about these levels worth understanding. NOAA fits them to the highest
-water level of each year, and the highest water level of a year happens at high
-tide - so the tide is already inside the published number. The 1% level of 2.40m
-above NAVD88 is the same statement as NOAA's own "1.70m above mean higher high
-water". Adding a tide offset on top of it would count the tide twice, so
-picking a probability takes the tide control over rather than adding to it.
-
-The connectivity switch changes the test. With it on, a cell floods only if
-there is a path of low ground joining it to open water. Working that out for
-every position of the slider would mean re-running a flood fill sixty times a
-second, so we run it once, when the data is built, and store the answer per
-cell: the lowest waterline at which this cell connects to the sea. Then both
-versions of the model are a single comparison, which is why the slider is
-instant.
-
-The blue is drawn on your graphics card, from two images. Ground height and
-that connection height are packed into the red and green channels of ordinary
-PNGs, and a small shader decodes them and compares each against the waterline.
-The flood line is found in the same pass, by looking for wet cells that sit
-next to dry ones. It is not a boundary someone drew and published. Zoom in far
-enough and you can watch it become a staircase of grid cells, which is what
-every smooth blue polygon is hiding.
-
-The numbers in the panel are computed separately, on the CPU, from the same two
-images with the same formula. That is deliberate: the picture and the numbers
-cannot quietly disagree.
+- Sea level rise, storm level and tide offset are added into one waterline, all in metres above NAVD88; a cell floods if its ground is below it.
+- Storm levels already contain a high tide (NOAA fits them to annual maximum water levels; 2.51 m above NAVD88 equals 1.82 m above mean higher high water), so choosing a storm takes over the tide control rather than adding to it.
+- Connectivity is precomputed as a "spill elevation" per cell, the lowest waterline at which the cell connects to open water; with the switch on the test becomes `spill <= waterline`, and the cells where `ground <= waterline < spill` are drawn red.
+- Ground and spill heights are packed into the red and green channels of two PNGs and compared against the waterline in a shader; the flood line is wet cells next to dry ones.
+- The panel's figures are computed separately on the CPU from the same two images with the same formula.
+- A building is judged by its own recorded ground height; homes are divided across the buildings on a lot; population is counted in proportion to the share of a tract's area under water.
+- Only new flooding is drawn, measured against today's high tide with no rise and no storm.
 
 ## What it assumes
 
-- **The sea is flat.** One rise value and one tide value for the whole city.
-  NOAA uses a tidal surface that varies from place to place, because the real
-  one does.
-- **A storm is just a higher number.** Surge is added everywhere at once. There
-  is no arrival, no peak, no drain, and no wind.
-- **A probability is a still-water level.** The exceedance levels are a curve
-  fitted to annual maxima at one gauge, with the long-term rise taken out. No
-  waves are in them, which is the main reason they are lower than the numbers
-  you may be carrying around: the 1% level is about 7.9 feet above NAVD88, and
-  Sandy reached about 11.3 feet at this same gauge. FEMA's base flood elevation
-  is a different quantity, computed a different way, and adds wave effects.
-  Choosing "100-year" here and seeing less water than you remember is two
-  definitions disagreeing, not the model failing.
-- **The probability and the projection come from different agencies.** The
-  storm levels are NOAA's, the sea level rise is the NPCC's, and the sandbox
-  adds one to the other. NOAA does its own version of that addition - the
-  exceedance lines ride upward on the station's linear trend - which is why the
-  levels here carry a date and are never combined with NOAA's own projected
-  rise: adding them to an NPCC projection as well would raise the sea twice.
-  Two agencies, one harbour, two answers, and the sandbox has to pick.
-- **Connectivity is a property of the terrain.** Precomputing that connection
-  height asserts that "can water get here" has one answer, decided once. On a
-  real coastline it doesn't: culverts, tide gates, pumps and surge barriers
-  change it on a timescale of hours. The file format can't express that, so the
-  sandbox can't either.
-- **Grid cells are bigger than lots.** A cell is about 20m across, wider than
-  many row houses. So a building is judged by its own recorded ground height
-  rather than by the cell it sits in, and buildings recorded above 12m are
-  dropped entirely, since the highest water the model can produce is about 9.7m.
-- **Population stays at tract resolution.** A partly flooded tract contributes
-  its population in proportion to the share of its area under water. We never
-  push people down onto individual buildings. That would look more precise and
-  be less true.
-- **A lot's homes are split across its buildings.** MapPLUTO counts homes per
-  lot, and several footprints can share a lot. Counting the lot total once per
-  building gave 11.3 million homes in a city with about 3.6 million, so each
-  lot's count is divided across the buildings on it.
+- The sea is flat: one rise and one tide for the whole city.
+- A storm is a higher number added everywhere at once, with no arrival, drain or wind.
+- The storm levels are still-water levels with no waves; the 1% level is about 8.2 ft above NAVD88 and Sandy reached about 11.3 ft at this gauge. FEMA's base flood elevation is a different quantity that includes waves.
+- Only four storms exist, because NOAA publishes four; the "500-year flood" is a FEMA figure.
+- Storm levels (NOAA) and rise (NPCC) come from different agencies and are simply added; NOAA's own projected rise is never added too.
+- Connectivity is a fixed property of terrain, though culverts, tide gates and pumps change it in hours.
+- Buildings above 12 m are dropped, since the highest water the model can make is about 9.7 m.
+- Homes are split evenly across a lot's buildings (counting the lot total per building gave 11.3 million homes in a city with 3.6 million).
 
 ## What it can't see
 
-Water moving.
-
-There's no time in this model, so there's no rain, no drainage, no waves, no
-storm that arrives and then leaves, no pump switching on, no sea wall someone
-builds in 2043. Nobody in it evacuates, and no basement fills from below. It is
-a line drawn where the ground meets a number.
-
-That's worth saying plainly, and it's also worth saying that this is roughly
-the model most cities publish. NOAA's own Sea Level Rise Viewer is a bathtub
-model with connectivity and a varying tidal surface. The gap between this
-sandbox and the official map is much smaller than the gap between either of
-them and a flood.
+- Water moving: no rain, drainage, waves, storm that arrives and leaves, pump, or sea wall built in 2043.
+- Anyone evacuating, or a basement filling from below.
+- Anything most published flood maps see either; it is, more or less, the same model.

@@ -90,122 +90,8 @@
         "2017AD"
       ],
       "default": "2000AD",
-      "description": "The 75 HYDE 3.2 time steps: millennia, then centuries, then decades, then years. The timeline ends at 2017 because 2018-2025 have no input grids in any HYDE release we could obtain - a gap in the published data, not a choice."
-    },
-    "used_threshold": {
-      "type": "number",
-      "title": "Used-land threshold",
-      "x-group": "the thresholds",
-      "x-emphasis": true,
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "The share of a cell's land that must be cropped, grazed or built before the cell counts as used at all. The published 20% is a judgement, not a measurement, and this is the slider that moves the crossover year - the first time used land exceeds wild - by millennia."
-    },
-    "crops_threshold": {
-      "type": "number",
-      "title": "Cropland threshold",
-      "x-group": "the thresholds",
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "How much of a cell must be cropland before the cell is a cropland anthrome."
-    },
-    "grazing_threshold": {
-      "type": "number",
-      "title": "Grazing threshold",
-      "x-group": "the thresholds",
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "The same 20% for pasture and rangeland together. The reference code keeps it as a separate constant from the crops one, so this sandbox does too."
-    },
-    "rice_threshold": {
-      "type": "number",
-      "title": "Rice threshold",
-      "x-group": "the thresholds",
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "Above dense-settlement population, this share of irrigated rice makes a rice village."
-    },
-    "irrigation_threshold": {
-      "type": "number",
-      "title": "Irrigation threshold",
-      "x-group": "the thresholds",
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "The irrigated share behind irrigated villages and residential irrigated croplands."
-    },
-    "urban_fraction_threshold": {
-      "type": "number",
-      "title": "Urban area threshold",
-      "x-group": "the thresholds",
-      "minimum": 0.02,
-      "maximum": 0.6,
-      "x-step": 0.01,
-      "default": 0.2,
-      "description": "The built-up share that makes a cell Urban outright, whatever its population."
-    },
-    "urban_density": {
-      "type": "number",
-      "title": "Urban density",
-      "x-group": "the densities",
-      "minimum": 500,
-      "maximum": 10000,
-      "x-step": 100,
-      "default": 2500,
-      "x-unit": "/km²",
-      "description": "People per square kilometre of land above which a cell is Urban regardless of built area."
-    },
-    "dense_settlement_density": {
-      "type": "number",
-      "title": "Dense settlement density",
-      "x-group": "the densities",
-      "minimum": 10,
-      "maximum": 500,
-      "x-step": 10,
-      "default": 100,
-      "x-unit": "/km²",
-      "description": "The floor of the villages-and-dense band. Below it, nothing is a village however much rice it grows."
-    },
-    "residential_density": {
-      "type": "number",
-      "title": "Residential density",
-      "x-group": "the densities",
-      "minimum": 1,
-      "maximum": 50,
-      "x-step": 1,
-      "default": 10,
-      "x-unit": "/km²",
-      "description": "The floor of the residential band - residential croplands, rangelands and woodlands."
-    },
-    "populated_density": {
-      "type": "number",
-      "title": "Populated density",
-      "x-group": "the densities",
-      "minimum": 0.1,
-      "maximum": 5,
-      "x-step": 0.1,
-      "default": 1,
-      "x-unit": "/km²",
-      "description": "The line between populated and remote. Below it a cropland is Remote cropland however it is farmed."
-    },
-    "tree_biomes": {
-      "type": "integer",
-      "title": "Forested biomes",
-      "x-group": "the densities",
-      "minimum": 4,
-      "maximum": 12,
-      "x-step": 1,
-      "default": 8,
-      "description": "How many of the fifteen potential-vegetation classes count as potentially forested. The published cascade draws the line after class 8; the classes are ordered from tropical evergreen forest down to polar ice, so moving this redraws the woodland-dryland boundary of every semi-natural and wild cell."
+      "description": "The 75 HYDE 3.2 time steps: every thousand years, then every century, then every decade, then every year. The timeline ends at 2017 because no HYDE release we could obtain carries input grids for 2018 to 2025.",
+      "x-control": "slider"
     },
     "colour_by": {
       "type": "string",
@@ -224,7 +110,122 @@
         "vs published"
       ],
       "default": "anthrome",
-      "description": "Anthrome class; the used fraction of each cell; population density; or where your cascade disagrees with the published method run at native resolution before aggregation - at the defaults, that difference is purely what aggregating a threshold rule does to it."
+      "description": "What the colour means: the anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating. At the default thresholds that last difference is purely what aggregating a threshold rule does."
+    },
+    "used_threshold": {
+      "type": "number",
+      "title": "Used-land threshold",
+      "x-group": "the land-use thresholds",
+      "x-emphasis": true,
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "The share of a cell's land that must be cropped, grazed or built before the cell counts as used at all. The published value is 20%. This is the threshold that decides the crossover year, the first time step at which used land exceeds wild, and moving it shifts that year by millennia."
+    },
+    "crops_threshold": {
+      "type": "number",
+      "title": "Cropland threshold",
+      "x-group": "the land-use thresholds",
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "How much of a cell must be cropland before the cell is a cropland anthrome. Published value 20%."
+    },
+    "grazing_threshold": {
+      "type": "number",
+      "title": "Grazing threshold",
+      "x-group": "the land-use thresholds",
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "How much of a cell must be pasture or rangeland before the cell is a grazing anthrome. Published value 20%. The reference code keeps this separate from the crops threshold, so the sandbox does too."
+    },
+    "rice_threshold": {
+      "type": "number",
+      "title": "Rice threshold",
+      "x-group": "the land-use thresholds",
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "In cells above the dense-settlement population density, the share of irrigated rice that makes the cell a rice village. Published value 20%."
+    },
+    "irrigation_threshold": {
+      "type": "number",
+      "title": "Irrigation threshold",
+      "x-group": "the land-use thresholds",
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "The irrigated share that distinguishes irrigated villages and residential irrigated croplands from their unirrigated counterparts. Published value 20%."
+    },
+    "urban_fraction_threshold": {
+      "type": "number",
+      "title": "Urban area threshold",
+      "x-group": "the land-use thresholds",
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "The built-up share that makes a cell urban outright, whatever its population. Published value 20%."
+    },
+    "urban_density": {
+      "type": "number",
+      "title": "Urban density",
+      "x-group": "the population densities",
+      "minimum": 500,
+      "maximum": 10000,
+      "x-step": 100,
+      "default": 2500,
+      "x-unit": "/km²",
+      "description": "People per square kilometre of land above which a cell is urban regardless of built-up area. Published value 2,500."
+    },
+    "dense_settlement_density": {
+      "type": "number",
+      "title": "Dense settlement density",
+      "x-group": "the population densities",
+      "minimum": 10,
+      "maximum": 500,
+      "x-step": 10,
+      "default": 100,
+      "x-unit": "/km²",
+      "description": "The lower edge of the dense-settlement and village band. Below it a cell can't be a village however much rice it grows. Published value 100 per square kilometre."
+    },
+    "residential_density": {
+      "type": "number",
+      "title": "Residential density",
+      "x-group": "the population densities",
+      "minimum": 1,
+      "maximum": 50,
+      "x-step": 1,
+      "default": 10,
+      "x-unit": "/km²",
+      "description": "The lower edge of the residential band: residential croplands, rangelands and woodlands. Published value 10 per square kilometre."
+    },
+    "populated_density": {
+      "type": "number",
+      "title": "Populated density",
+      "x-group": "the population densities",
+      "minimum": 0.1,
+      "maximum": 5,
+      "x-step": 0.1,
+      "default": 1,
+      "x-unit": "/km²",
+      "description": "The line between populated and remote. Below it a cropland is remote cropland however it's farmed. Published value 1 per square kilometre."
+    },
+    "tree_biomes": {
+      "type": "integer",
+      "title": "Forested biomes",
+      "x-group": "the vegetation",
+      "minimum": 4,
+      "maximum": 12,
+      "x-step": 1,
+      "default": 8,
+      "description": "How many of the fifteen potential-vegetation classes count as potentially forested. The classes are ordered from tropical evergreen forest down to polar ice, and the published cascade draws the line after class 8. Moving it redraws the woodland-dryland boundary of every seminatural and wild cell."
     }
   },
   "required": [
@@ -236,5 +237,7 @@
     "dense_settlement_density",
     "residential_density",
     "populated_density"
-  ]
+  ],
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. The year is an enum of 75 HYDE time steps drawn as a slider over the stop index (x-control: slider); the value stays the enum member so validation is unchanged. Property order is the panel's reading order: the clock and the view, then the six land-use thresholds with the used-land one first, then the four density cutoffs, then the one vegetation control.",
+  "$id": "https://simmodeltwin.net/schemas/sandbox/anthromes.json"
 }

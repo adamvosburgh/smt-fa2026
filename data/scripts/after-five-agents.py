@@ -409,7 +409,7 @@ def build_routes(coords, edges, gateways):
 
 def occupancy(original):
     """Weighted share of office-occupation workers AT their workplace, by
-    15-minute bin.
+    15-minute bin - plus the residents' curves, from the same two files.
 
     Filters per the build doc: TELFS in (1,2) (employed), TUDIARYDAY 2-6
     (a weekday diary), TEIO1OCD 0010-3550 (the 2018 Census classification's
@@ -422,21 +422,26 @@ def occupancy(original):
     commuting is neither at home nor at the workplace, and this curve counts
     only code 2, "Respondent's workplace". That reading is recorded in
     agents.json.
+
+    THE RESIDENTS' CURVES. A second universe on the same weekday-diary rule:
+    respondents who are NOT employed (TELFS 3, 4, 5 - on layoff, looking,
+    not in the labor force), no occupation filter. Three curves come out:
+    the share at home per 15-minute bin (TEWHERE 1), and two 24-hour
+    transition curves - when a known-at-home activity is followed by a
+    known-away one (leaving home) and the reverse (returning). Activities
+    whose place was not collected (TEWHERE < 0: sleeping, grooming) carry
+    the last known state forward, so a night's sleep after an evening at
+    home counts as at home; transitions are only counted between activities
+    whose places are both known. National, all weekdays, not New York -
+    that caveat ships with the curves.
     """
     eligible = {}
+    res_eligible = {}
     dropped_weight = 0
     with zipfile.ZipFile(original / "atusresp-0325.zip") as z:
         with io.TextIOWrapper(z.open("atusresp_0325.dat"), encoding="ascii") as f:
             for r in csv.DictReader(f):
-                if r["TELFS"] not in ("1", "2"):
-                    continue
                 if r["TUDIARYDAY"] not in ("2", "3", "4", "5", "6"):
-                    continue
-                try:
-                    occ = int(r["TEIO1OCD"])
-                except ValueError:
-                    continue
-                if not (10 <= occ <= 3550):
                     continue
                 try:
                     w = float(r["TUFNWGTP"])
@@ -444,6 +449,17 @@ def occupancy(original):
                     w = 0.0
                 if w <= 0:
                     dropped_weight += 1
+                    continue
+                if r["TELFS"] in ("3", "4", "5"):
+                    res_eligible[r["TUCASEID"]] = w
+                    continue
+                if r["TELFS"] not in ("1", "2"):
+                    continue
+                try:
+                    occ = int(r["TEIO1OCD"])
+                except ValueError:
+                    continue
+                if not (10 <= occ <= 3550):
                     continue
                 eligible[r["TUCASEID"]] = w
 
@@ -453,10 +469,19 @@ def occupancy(original):
 
     nb = 96
     at_work = {}
+    res_acts = {}   # cid -> [(start_min, where_code)] in file order
     with zipfile.ZipFile(original / "atusact-0325.zip") as z:
         with io.TextIOWrapper(z.open("atusact_0325.dat"), encoding="ascii") as f:
             for r in csv.DictReader(f):
                 cid = r["TUCASEID"]
+                if cid in res_eligible:
+                    try:
+                        where = int(r["TEWHERE"])
+                    except ValueError:
+                        where = -1
+                    res_acts.setdefault(cid, []).append(
+                        (minutes(r["TUSTARTTIM"]), where))
+                    continue
                 if cid not in eligible or r["TEWHERE"] != "2":
                     continue
                 a = minutes(r["TUSTARTTIM"])
@@ -476,7 +501,10 @@ def occupancy(original):
           f"({dropped_weight:,} dropped for missing TUFNWGTP), at-work share "
           f"peaks {share.max():.3f} at {peak_bin // 4:02d}:{peak_bin % 4 * 15:02d}, "
           f"17:00 share {share[68]:.3f}")
+
+    residents = resident_curves(res_eligible, res_acts, nb)
     return {
+        "residents": residents,
         "bins_per_day": nb,
         "at_workplace_share": share.tolist(),
         "respondents": len(eligible),
@@ -489,6 +517,83 @@ def occupancy(original):
                        "workplace, and this curve counts only TEWHERE 2.",
         "source": "ATUS 2003-2025 activity and respondent files, BLS, "
                   "atusact-0325.zip + atusresp-0325.zip, joined on TUCASEID"
+    }
+
+
+def resident_curves(res_eligible, res_acts, nb):
+    """The not-employed day, as three curves.
+
+    A diary runs 04:00 to 04:00 in activity order. Each activity gets a state
+    - home (TEWHERE 1), away (any other known place, travel included: a
+    person on a bus is on the street, which is what the animation cares
+    about), or unknown (TEWHERE < 0, where the survey did not ask). Unknown
+    states take the previous known one; a diary that OPENS unknown (it
+    usually opens with sleep) takes the first known state that follows,
+    which is nearly always home.
+    """
+    at_home = np.zeros(nb)
+    leave = np.zeros(24)
+    ret = np.zeros(24)
+    total_w = 0.0
+    for cid, acts in res_acts.items():
+        w = res_eligible[cid]
+        states = [1 if where == 1 else (0 if where >= 0 else -1)
+                  for _, where in acts]
+        known = [s for s in states if s >= 0]
+        if not known:
+            continue
+        prev = known[0]  # backfill for a diary that opens with sleep
+        filled = []
+        for s in states:
+            if s >= 0:
+                prev = s
+            filled.append(prev)
+        total_w += w
+        # The share at home, by 15-minute bin. An activity runs from its own
+        # start to the next activity's start; the last runs to the diary's
+        # 04:00 end.
+        mask = np.zeros(nb, dtype=bool)
+        for i, (start, _) in enumerate(acts):
+            if filled[i] != 1:
+                continue
+            stop = acts[i + 1][0] if i + 1 < len(acts) else 4 * 60
+            spans = [(start, stop)] if start < stop else [(start, 1440), (0, stop)]
+            for s0, s1 in spans:
+                mask[s0 // 15: max(s0 // 15 + 1, (s1 + 14) // 15)] = True
+        at_home += w * mask
+        # Transitions between consecutive filled states, timed at the start
+        # of the activity being entered.
+        for i in range(1, len(filled)):
+            if filled[i - 1] == 1 and filled[i] == 0:
+                leave[acts[i][0] // 60] += w
+            elif filled[i - 1] == 0 and filled[i] == 1:
+                ret[acts[i][0] // 60] += w
+    share = (at_home / max(total_w, 1e-9)).round(4)
+    # The checks that the codes mean what the dictionary says: a not-employed
+    # weekday is overwhelmingly at home at 03:00, leaving peaks in daylight.
+    assert share[12] > 0.9, f"at-home share at 03:00 is {share[12]:.2f} - TEWHERE reading is wrong"
+    lp = int(np.argmax(leave))
+    rp = int(np.argmax(ret))
+    assert 7 <= lp <= 17, f"leaving-home curve peaks at {lp}:00"
+    assert 9 <= rp <= 21, f"returning-home curve peaks at {rp}:00"
+    print(f"occupancy: residents {len(res_acts):,} not-employed weekday diaries, "
+          f"at-home share min {share.min():.3f} at "
+          f"{int(share.argmin()) // 4:02d}:{int(share.argmin()) % 4 * 15:02d}, "
+          f"leaving peaks {lp}:00, returning peaks {rp}:00")
+    return {
+        "at_home_share": share.tolist(),
+        "leave_home": [round(v, 1) for v in leave.tolist()],
+        "return_home": [round(v, 1) for v in ret.tolist()],
+        "respondents": len(res_acts),
+        "filters": "TELFS in (3,4,5) (not employed); TUDIARYDAY 2-6; weight "
+                   "TUFNWGTP; no occupation filter",
+        "state_rule": "home is TEWHERE 1; any other known place or mode of "
+                      "travel is away; TEWHERE < 0 (sleep, grooming - place "
+                      "not collected) carries the previous known state "
+                      "forward, and a diary that opens unknown takes the "
+                      "first known state that follows",
+        "caveat": "National, all weekdays, not New York. The curves time the "
+                  "sandbox's resident trips; they do not decide who makes one."
     }
 
 

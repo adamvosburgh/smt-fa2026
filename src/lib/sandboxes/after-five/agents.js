@@ -87,7 +87,8 @@ function drawNormal(median, spread, u1, u2, u3) {
  * across entrances.
  */
 export function sampleAgents({
-  buildings, state, unitsOf, metrics, manifest, gateways, flow, params, seed = 20260904
+  buildings, state, unitsOf, metrics, manifest, gateways, flow, params,
+  residentCurves = null, seed = 20260904
 }) {
   const nB = buildings.length / STRIDE;
   const rand = mulberry32(seed);
@@ -181,6 +182,13 @@ export function sampleAgents({
   const dep = flow.districtDepartures;
   const sd = flow.schedule_defaults;
   const parametric = params.schedule_source === 'parametric';
+  // The residents' own day: ATUS leaving-home and returning-home curves for
+  // the not-employed, instead of mirroring the workers' commute. Survey
+  // minutes rather than counted taps, so it is a control, not the default
+  // silently changing under the measured label.
+  const atusResidents = !parametric
+    && (params.resident_schedule ?? 'mirrored') === 'atus'
+    && residentCurves?.leave_home && residentCurves?.return_home;
 
   for (let a = 0; a < count; a++) {
     // A fixed vector of uniforms per agent: params re-interpret, not reroll.
@@ -204,6 +212,14 @@ export function sampleAgents({
     } else if (isWorker) {
       hIn = drawHour(arr, 4, 13, u[2]);
       hOut = Math.max(hIn + 0.5, drawHour(dep, 12, 24, u[3]));
+    } else if (atusResidents) {
+      // The resident leaves home on the survey's leaving curve and comes
+      // back on its returning curve, drawn from the hours after they left.
+      // The same uniforms as the mirrored draw, so flipping the control
+      // re-times the same crowd rather than rerolling it.
+      hOut = drawHour(residentCurves.leave_home, 4, 24, u[2]);
+      hIn = Math.max(hOut + 0.5,
+        drawHour(residentCurves.return_home, Math.min(23, Math.ceil(hOut)), 24, u[3]));
     } else {
       hOut = drawHour(dep, 4, 13, u[2]);
       hIn = Math.max(hOut + 0.5, drawHour(arr, 12, 24, u[3]));
@@ -243,8 +259,15 @@ function pathFrom(routes, nNodes, row, node) {
  * The day's timetable, as TripsLayer binary attributes. Two trips per agent;
  * timestamps in seconds-of-day; positions straight along graph nodes. The
  * hour scrubbing NEVER calls this - it only moves currentTime.
+ *
+ * When `edgeIndexOf` is supplied (a Map from packed node-pair keys to edge
+ * row), the same walk also counts every traversal into a per-edge, per-hour
+ * table - the street-level number the district totals were hiding. The count
+ * runs over the FULL path before any coarsening, so the street counts do not
+ * degrade when the vertex budget does.
  */
-export function buildTimetable({ agents, nodes, routes, gateways, nearest, buildings, maxVerts = 4_000_000 }) {
+export function buildTimetable({ agents, nodes, routes, gateways, nearest, buildings,
+                                 edgeIndexOf = null, nEdges = 0, maxVerts = 4_000_000 }) {
   const nNodes = nodes.length / 2;
   const { role, bIdx, gwIn, gwOut, tIn, tOut } = agents;
   const count = role.length;
@@ -252,28 +275,44 @@ export function buildTimetable({ agents, nodes, routes, gateways, nearest, build
   const positions = [];
   const timestamps = [];
   const roles = [];
+  const edgeHours = edgeIndexOf ? new Float32Array(24 * nEdges) : null;
 
   const pushTrip = (path, tStart, r, reverse) => {
     if (!path || path.length < 2) return;
+    const seq = reverse ? path.slice().reverse() : path;
+    // Times along the full path first, so the edge counts and any coarsened
+    // rendering share one clock.
+    const times = new Float64Array(seq.length);
+    times[0] = tStart;
+    for (let i = 1; i < seq.length; i++) {
+      const lon0 = nodes[seq[i - 1] * 2], lat0 = nodes[seq[i - 1] * 2 + 1];
+      const lon1 = nodes[seq[i] * 2], lat1 = nodes[seq[i] * 2 + 1];
+      const kx = FT_PER_DEG_LAT * Math.cos((lat1 * Math.PI) / 180);
+      const d = Math.hypot((lon1 - lon0) * kx, (lat1 - lat0) * FT_PER_DEG_LAT);
+      times[i] = times[i - 1] + d / WALK_FT_PER_S;
+    }
+    if (edgeHours) {
+      for (let i = 1; i < seq.length; i++) {
+        const a = seq[i - 1], b = seq[i];
+        const ei = edgeIndexOf.get(a < b ? a * 65536 + b : b * 65536 + a);
+        if (ei === undefined) continue;
+        const h = ((Math.floor(times[i - 1] / 3600) % 24) + 24) % 24;
+        edgeHours[h * nEdges + ei] += 1;
+      }
+    }
     // Every other intermediate node is dropped if the budget is near - the
     // trip's shape coarsens before the crowd shrinks.
     const stride = positions.length / 2 > maxVerts * 0.9 ? 2 : 1;
-    const pts = [];
-    for (let i = 0; i < path.length; i += stride) pts.push(path[i]);
-    if (pts[pts.length - 1] !== path[path.length - 1]) pts.push(path[path.length - 1]);
-    if (reverse) pts.reverse();
-    let t = tStart;
-    let prev = null;
-    for (const n of pts) {
-      const lon = nodes[n * 2], lat = nodes[n * 2 + 1];
-      if (prev) {
-        const kx = FT_PER_DEG_LAT * Math.cos((lat * Math.PI) / 180);
-        const d = Math.hypot((lon - prev[0]) * kx, (lat - prev[1]) * FT_PER_DEG_LAT);
-        t += d / WALK_FT_PER_S;
-      }
-      positions.push(lon, lat);
-      timestamps.push(t);
-      prev = [lon, lat];
+    let lastPushed = -1;
+    for (let i = 0; i < seq.length; i += stride) {
+      positions.push(nodes[seq[i] * 2], nodes[seq[i] * 2 + 1]);
+      timestamps.push(times[i]);
+      lastPushed = i;
+    }
+    if (lastPushed !== seq.length - 1) {
+      const j = seq.length - 1;
+      positions.push(nodes[seq[j] * 2], nodes[seq[j] * 2 + 1]);
+      timestamps.push(times[j]);
     }
     startIndices.push(positions.length / 2);
     roles.push(r);
@@ -294,6 +333,7 @@ export function buildTimetable({ agents, nodes, routes, gateways, nearest, build
     startIndices: new Uint32Array(startIndices),
     positions: new Float32Array(positions),
     timestamps: new Float32Array(timestamps),
-    roles: new Uint8Array(roles)
+    roles: new Uint8Array(roles),
+    edgeHours
   };
 }

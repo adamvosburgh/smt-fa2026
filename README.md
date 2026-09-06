@@ -22,5 +22,5 @@ See `CLAUDE.md` for the architecture, the sandbox contract, and the freeze path.
 
 ## License
 
-GPLv3. Sandbox 4 (The Coefficients) derives from micropolisJS and additionally
+GPLv3. Sandbox 3 (A City Simulator, Opened Up) derives from micropolisJS and additionally
 carries the Micropolis Public Name License - see that sandbox's model card.

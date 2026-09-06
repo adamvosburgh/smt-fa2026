@@ -50,8 +50,8 @@ required any change to make that work.
 
 ## Naming
 
-This sandbox is called **The Coefficients**. It is not called Micropolis and it
-is not called SimCity. It is a modified version of micropolisJS and it does not
+This sandbox is called **A City Simulator, Opened Up**. It is not called
+Micropolis and it is not called SimCity. It is a modified version of micropolisJS and it does not
 imply endorsement by Micropolis GmbH, by Graeme McCutcheon, or by anyone
 associated with the original Micropolis or SimCity.
 
