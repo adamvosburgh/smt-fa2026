@@ -5,26 +5,26 @@ export default {
   slug: 'after-five',
   title: 'Office to Residential Conversion',
   subtitle:
-    'Lower Manhattan in three dimensions, with office buildings turning into housing as a deal clears, and a crowd walking between the subway stations and the buildings over the course of a day. An experiment in what conversion would do to a district, rather than in whether it pays.',
+    'Lower Manhattan in three dimensions. Office buildings turn into housing when a deal clears, a crowd walks between the subway stations and the buildings over a day, and the streets are colored by how many people are on them. An experiment in what conversion would do to a district, not in whether it pays.',
   status: 'built',
   statusNote:
-    'The massing, the two gates, the clock, the crowd and the street layer are built. At the default settings nothing converts: the office rent the deal competes against is the published asking rent, and at that figure the residential deal never beats it before 2050. The workers run on counted subway ridership by hour and the residents on the American Time Use Survey\'s not-employed weekday curves; the building each trip starts at and the route it takes are assumed, and the canvas labels which is which.',
+    'The massing, the two gates, the clock, the crowd and the street layer are built. At the default settings nothing converts, because the office rent is the published asking rent and the residential deal never beats it before 2050. Workers run on counted subway ridership by hour and residents on a national time-use survey; the building each trip goes to and the route are assumed, and the canvas labels which is which.',
   kind: 'simulation',
   blurb:
     'Every building in Manhattan Community District 1 from the city\'s own 3D survey. An office building converts to housing when a convertibility score clears a threshold and the residential deal beats the office income given up. Six dates, an hour-of-day clock, and a crowd drawn from MTA ridership counts. Of the three figures in the deal, one has a source, and at that source nothing converts.',
   controls: [
     'the hour of day, which plays by default and moves the crowd; playing the year holds it and playing it holds the year',
-    'whether the streets are coloured by how many walkers cross each segment during the selected hour; clicking a segment stands the camera on it at eye height',
-    'the chance that a converted building\'s ground floor becomes an active frontage, drawn as a warm or dark line at its base; the probability is ours',
-    'a two-hour comparison that draws the crowd at a second hour in a second colour and colours the streets by the difference in walkers between the hours',
+    'whether streets are colored by how many walkers cross them in the selected hour; clicking a street puts the camera on it at eye height',
+    'the chance that a converted building\'s ground floor is active, drawn as a warm or dark edge at its base; the probability is ours',
+    'a two-hour comparison: the crowd at a second hour in a second color, and streets colored by the difference between the hours',
     'the crowd: how many walkers stand in for the day, and whether their schedule is the measured MTA curve or four bell curves whose defaults are read off it',
-    'where the residents\' times come from: their own day, from the American Time Use Survey\'s not-employed weekday diaries, or a mirror of the workers\' commute',
+    'where residents\' times come from: the American Time Use Survey\'s diaries of people not employed, or a mirror of the workers\' commute',
     'the year, one of six dates from 2025 to 2050',
     'conversion cost per square foot',
     'residential rent per square foot per year',
     'how office rent drifts each year, which is what moves the model through time',
     'the office rent, at four named stops: the published $54 asking figure and three of ours, each with its justification on the control',
-    'two capitalisation rates, office and residential, defaulting equal, plus the operating-cost share; all market convention rather than measurement',
+    'two capitalization rates, office and residential, defaulting equal, plus the operating-cost share; all market convention rather than measurement',
     'which conversion filings the floor-area-per-apartment figure is measured from; six measured cuts, and the choice moves the figure by 40%',
     'the four weights behind the convertibility score, one per criterion',
     'the convertibility threshold',
@@ -58,7 +58,7 @@ export default {
     'ATUS 2003-2025 (BLS): the share of office-type workers at their workplace through the day, drawn as a check on the animation.'
   ],
   cannotSee:
-    'Who any walker is. The crowd runs on counted subway taps by hour, but the taps are not split by who is riding, so treating the morning\'s arrivals as workers and the evening\'s as residents is the model\'s assumption, labelled on the canvas; giving residents the ATUS not-employed day instead swaps that assumption for a national survey\'s, not for a New York count. So is the building each trip starts at (in proportion to jobs) and the route (the shortest path) - which means the street counts are counts of routed trips, not of anyone observed on that street. Anyone who arrives by ferry, bus, bike, car or on foot from outside the district is invisible, because the subway is what got counted. It cannot see who moves in, who is displaced, whether a displaced job vanishes or moves down the block, or what a ground floor is actually used for - the lit-or-dark frontage on converted buildings is a probability slider of ours, not a record. Conversion is instant, added floors have no form, and rents are uniform across the district. Standing on a street is a camera move over the same assumed routes, not a different model.',
+    'Who any walker is. Station flows by hour are counted, but not split by who is riding, so treating morning arrivals as workers is the model\'s assumption; residents\' hours come from a national survey, not a New York count. The building each trip goes to (by jobs) and the route (shortest path) are assumed, so the street counts are counts of routed trips, not of people observed. Anyone arriving by ferry, bus, bike, car or on foot is invisible, because only the subway was counted. It cannot see who moves in, who is displaced, where a displaced job goes, or what a ground floor is used for; the active-or-dark frontage is a probability we chose. Conversion is instant, added floors have no form, and rents are uniform. Standing on a street is a camera move over the same assumptions.',
   tutorial: '/tutorials/02-after-five/',
   live: false
 };

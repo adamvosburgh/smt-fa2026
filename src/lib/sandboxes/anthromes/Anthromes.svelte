@@ -55,7 +55,7 @@
 
   // The palette, by class family: settlements dark red, villages plum,
   // croplands yellow, rangelands orange-brown, woodlands green, drylands
-  // tan, wild muted, ice near-white. A colour choice, not a datum.
+  // tan, wild muted, ice near-white. A color choice, not a datum.
   const PALETTE = {
     11: [122, 32, 28], 12: [176, 74, 60],
     21: [147, 58, 120], 22: [170, 84, 140], 23: [193, 112, 160], 24: [160, 96, 128],

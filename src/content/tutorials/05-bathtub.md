@@ -4,6 +4,7 @@ date: "2026-08-30"
 author: Adam Vosburgh
 sequence: 5
 cat: tutorial
+devnotes: true
 published: true
 ---
 
@@ -23,7 +24,7 @@ Flood maps are probably the simulation most of us use most often: the 100-year f
 
 ## The parts
 
-- **USGS 3DEP elevation, 1/3 arc-second** (about 10 m), clipped to New York, in metres above NAVD88. Gives the ground; shipped at about 20 m per cell.
+- **USGS 3DEP elevation, 1/3 arc-second** (about 10 m), clipped to New York, in meters above NAVD88. Gives the ground; shipped at about 20 m per cell.
 - **NPCC4 sea level rise projections** (NYC Open Data `38ps-fnsg`): four percentiles for five dates, no median. Gives the rise.
 
 ![NPCC projections](/tutorials/images/05/npcc-projections.png#img-full)
@@ -39,7 +40,7 @@ Flood maps are probably the simulation most of us use most often: the 100-year f
 
 - Joining `UnitsRes` (homes per lot) onto every footprint gave 11.3 million homes in a city with about 3.6 million; the count is now divided across a lot's buildings.
 - Open water is below the waterline too, so a plain threshold floods the harbour; everything is measured against today's high tide and only new flooding is drawn.
-- A surge slider in metres meant nothing to anyone, so storms became NOAA's four published levels, named by annual chance, with the slider kept as an override.
+- A surge slider in meters meant nothing to anyone, so storms became NOAA's four published levels, named by annual chance, with the slider kept as an override.
 - NOAA's exceedance levels already contain a high tide (the 1% level is stated both as 2.51 m above NAVD88 and as 1.82 m above mean higher high water), so picking one disables the tide control; adding both would have raised every 100-year map by about 70 cm.
 - NOAA publishes exactly four levels; there is no 2% or 0.2%, and the "500-year flood" is a FEMA figure computed differently.
 - The storm levels are NOAA's and the rise is the NPCC's; NOAA's own projected rise is never added as well, since that would count the rise twice.
@@ -57,7 +58,7 @@ Connectivity off, 1.5 m of rise:
 
 - The red patches are ground below the waterline that water can't reach; turning connectivity on removes them.
 - At 2150 the four projections run from 1.0 m to 4.5 m, and the spread is not symmetric.
-- Picking the 1% storm greys out the tide control and gives about 8.2 ft above NAVD88; Sandy reached about 11.3 ft at this gauge, the difference being waves.
+- Picking the 1% storm grays out the tide control and gives about 8.2 ft above NAVD88; Sandy reached about 11.3 ft at this gauge, the difference being waves.
 - Zoomed in, the flood line becomes a staircase of grid cells.
 
 ### Limitations

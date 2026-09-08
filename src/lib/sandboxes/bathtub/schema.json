@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/bathtub.json",
   "title": "Sea Level Flood Map parameters",
-  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach, this sandbox's own _example submission among them. x-step draws the control; minimum and maximum do the validating. Property ORDER is the panel order and is deliberate: pick a future, get a water height, add what sits on top of it, then choose how the model tests it, then how it is drawn. x-group starts a new labelled section; x-disabled-when greys a control out while another control is making its decision for it, and its value may be a LIST, meaning any one of these takes the control over.",
+  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach, this sandbox's own _example submission among them. x-step draws the control; minimum and maximum do the validating. Property ORDER is the panel order and is deliberate: pick a future, get a water height, add what sits on top of it, then choose how the model tests it, then how it is drawn. x-group starts a new labelled section; x-disabled-when grays a control out while another control is making its decision for it, and its value may be a LIST, meaning any one of these takes the control over.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -154,7 +154,7 @@
         "High tide"
       ],
       "default": "mhhw",
-      "description": "The sea isn't at one height. At the Battery it swings about a metre and a half between low and high tide. This picks which moment of that swing the map shows. Published flood maps usually use the average daily high tide, which is the cautious choice and the default here. The three values come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Choosing a storm probability disables this control, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.82 m above mean higher high water, which is the same 2.51 m written the other way round."
+      "description": "The sea isn't at one height. At the Battery it swings about a meter and a half between low and high tide. This picks which moment of that swing the map shows. Published flood maps usually use the average daily high tide, which is the cautious choice and the default here. The three values come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Choosing a storm probability disables this control, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.82 m above mean higher high water, which is the same 2.51 m written the other way round."
     },
     "connectivity": {
       "type": "boolean",
@@ -177,7 +177,7 @@
         "Flat"
       ],
       "default": "elevation",
-      "description": "Shaded colours the flood darker where the water is deeper, up to six metres. The threshold is the same either way; this only changes how it's drawn. Flat is closer to how most published flood maps look."
+      "description": "Shaded colors the flood darker where the water is deeper, up to six meters. The threshold is the same either way; this only changes how it's drawn. Flat is closer to how most published flood maps look."
     },
     "flood_line": {
       "type": "boolean",

@@ -3,7 +3,7 @@
 // nothing to protect by obscurity, which is what lets the endpoint be open to
 // anonymous visitors at all, and it is a better teaching object than a secret.
 //
-// Behaviour, carried over from constraints.md: interactive direction over doing
+// Behavior, carried over from constraints.md: interactive direction over doing
 // the work. Walk the student through adapting the worked example step by step.
 // Offer to do it outright if needed, and SAY SO OUT LOUD when doing it. Ask the
 // course's questions - what does it sense, what was it trained on, what rule

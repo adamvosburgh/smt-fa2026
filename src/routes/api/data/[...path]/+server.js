@@ -10,7 +10,13 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 
-const TYPES = { '.json': 'application/json', '.bin': 'application/octet-stream', '.png': 'image/png' };
+const TYPES = {
+  '.json': 'application/json',
+  '.bin': 'application/octet-stream',
+  '.png': 'image/png',
+  '.glb': 'model/gltf-binary',
+  '.3dm': 'application/octet-stream'
+};
 
 export async function GET({ params }) {
   const rel = params.path;

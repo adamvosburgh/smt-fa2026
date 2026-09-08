@@ -5,6 +5,12 @@
   //   <div data-sandbox="bathtub" data-mode="view"
   //        data-params='{"slr_m":1.5,"connectivity":false}'></div>
   //
+  // data-assets does the same for the assets a sandbox reads as files, so a
+  // tutorial can mount the sunlight sandbox on a particular model:
+  //
+  //   <div data-sandbox="sunlight" data-mode="view"
+  //        data-assets='{"model":"/data/sunlight/example-f03.glb"}'></div>
+  //
   // ...and this finds it after render and mounts the real component into it.
   // Markdown stays markdown - no Svelte syntax in prose, no curly-brace
   // landmines in code samples - and tutorials still get live components.
@@ -25,7 +31,9 @@
         if (!meta) { node.textContent = `[no such sandbox: ${slug}]`; continue; }
         const { default: Component } = await load(slug);
         let overrides = {};
+        let assets = {};
         try { overrides = JSON.parse(node.dataset.params || '{}'); } catch { /* author typo; ignore */ }
+        try { assets = JSON.parse(node.dataset.assets || '{}'); } catch { /* author typo; ignore */ }
         instances.push(
           mount(SandboxFrame, {
             target: node,
@@ -35,6 +43,7 @@
               Component,
               mode: node.dataset.mode === 'edit' ? 'edit' : 'view',
               params: { ...defaults(slug), ...overrides },
+              assets,
               showChrome: node.dataset.chrome !== 'false'
             }
           })

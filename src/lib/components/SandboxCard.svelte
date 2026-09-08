@@ -39,7 +39,7 @@
     {/each}
     {#if meta.tutorial}
       <p class="tut">
-        How it was built: <a href={meta.tutorial}>the {meta.title} tutorial</a>.
+        <a href={meta.tutorial}>Dev notes</a>: how it was built and where it stops.
       </p>
     {/if}
   </div>
@@ -78,7 +78,7 @@
         <div class="body">{@html html}</div>
         {#if meta.tutorial}
           <p class="tut">
-            How it was built: <a href={meta.tutorial}>the {meta.title} tutorial</a>.
+            <a href={meta.tutorial}>Dev notes</a>: how it was built and where it stops.
           </p>
         {/if}
       </article>

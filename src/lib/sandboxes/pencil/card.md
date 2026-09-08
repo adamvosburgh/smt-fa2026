@@ -1,8 +1,8 @@
 ## What this is
 
-A map of the 246,921 one-to-two-family lots in Queens.[^pluto] For each lot the sandbox works out whether a small second home could be built in the back garden under one city programme, and whether the rent would cover the loan. Lots where the arithmetic works are coloured one way, lots where it doesn't another, and a year slider steps through a rough forecast of how many get built and where.
+A map of the 246,921 one-to-two-family lots in Queens.[^pluto] For each lot the sandbox works out whether a small second home could be built in the back garden under one city program, and whether the rent would cover the loan. Lots where the arithmetic works are colored one way, lots where it doesn't another, and a year slider steps through a rough forecast of how many get built and where.
 
-The programme is Plus One ADU (HPD and HCR). An ADU is an accessory dwelling unit, a small self-contained home on a lot that already has a house. The programme lends up to $220,000 and grants up to $175,000 per homeowner, on the condition that the unit rents at or below a cap tied to area incomes.[^termsheet]
+The program is Plus One ADU (HPD and HCR). An ADU is an accessory dwelling unit, a small self-contained home on a lot that already has a house. The program lends up to $220,000 and grants up to $175,000 per homeowner, on the condition that the unit rents at or below a cap tied to area incomes.[^termsheet]
 
 This is an experiment with the city's published numbers, not a prediction of what homeowners will do.
 
@@ -11,8 +11,8 @@ This is an experiment with the city's published numbers, not a prediction of wha
 
 ## What it's trying to show
 
-- The difference between where a unit is allowed (the eligibility map the city publishes, which you can draw with `Colour by`) and where the loan and rent would work.
-- How much a programme's reach depends on a few numbers on a term sheet: the grant, the loan ceiling, the rate, the rent cap and the cushion are each a slider.
+- The difference between where a unit is allowed (the eligibility map the city publishes, which you can draw with `Color by`) and where the loan and rent would work.
+- How much a program's reach depends on a few numbers on a term sheet: the grant, the loan ceiling, the rate, the rent cap and the cushion are each a slider.
 - A point about scale: whatever the arithmetic produces is a few thousand units a year at most, which is worth holding next to the attention ADUs get compared with making ordinary housing easier to permit.
 
 ## How it works
@@ -39,7 +39,7 @@ Units are drawn in the open ground behind the house, measured from the lot outli
 
 ## What it assumes
 
-- The $200 cushion is a household test in the programme (it sizes the loan) and a per-lot build-or-don't-build test here, because there is no household data.
+- The $200 cushion is a household test in the program (it sizes the loan) and a per-lot build-or-don't-build test here, because there is no household data.
 - The required rear yard is a rectangle the full width of the lot, since the table has no lot shape.
 - Building type (detached, semi-attached, attached) is the assessor's `ProxCode`; a second method from lot and building widths agrees on only 77% of lots.
 - All 34,455 shallow lots get the shallow-lot reduction, because no field records whether a lot existed in 1961.
@@ -56,6 +56,6 @@ Units are drawn in the open ground behind the house, measured from the lot outli
 ## What it can't see
 
 - Whether a homeowner can raise the money, wants a tenant, or trusts the city; lots that pass are not lots that build.
-- Who lives in the house, so the programme's 270-day owner-occupancy requirement is absent rather than modelled.
+- Who lives in the house, so the program's 270-day owner-occupancy requirement is absent rather than modeled.
 - Any contractor, financing rejection, family, or existing basement tenant.
 - What a few hundred backyard units do to a block.

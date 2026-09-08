@@ -45,13 +45,13 @@ INPUTS  (data/original/, as downloaded, never edited in place)
 -------------------------------------------------------------
   output_USGS10m.tif
       USGS 3DEP 1/3 arc-second DEM (~10m), clipped to the NYC bounding box.
-      EPSG:4269, float32, metres above NAVD88, nodata -999999.
+      EPSG:4269, float32, meters above NAVD88, nodata -999999.
       TAKEN: one number per cell - ground elevation. Nothing else.
 
   BUILDING_20260830.geojson                                   [--scope full]
       NYC Building Footprints (Open Data). ~1.08M MultiPolygons.
       TAKEN per building: a representative point, `ground_elevation` and
-      `height_roof` (both FEET, NAVD88 - converted to metres here),
+      `height_roof` (both FEET, NAVD88 - converted to meters here),
       `base_bbl`, `bin`. The polygons themselves are NOT used: the basemap
       draws buildings, so we only need to count them.
       Using the recorded `ground_elevation` rather than sampling the DEM is
@@ -167,7 +167,7 @@ WATER_SURFACE_M = 0.3
 # else published, and they carry their citation here rather than in a
 # comment in the front end.
 #
-# NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. Metres above the
+# NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. Meters above the
 # NPCC4 baseline, converted from the published inches. Note what is absent:
 # NPCC4 reports the 10th, 25th, 75th and 90th percentiles and NO median, so
 # there is no single number to put on a map and every published sea level
@@ -181,7 +181,7 @@ PUBLISHED = {
         "90": [0.330, 0.584, 1.143, 1.651, 4.496],
     },
     # Tidal datums at The Battery (NOAA CO-OPS station 8518750, 1983-2001
-    # epoch, accepted 19 Nov 2012), as metres relative to NAVD88 - derived
+    # epoch, accepted 19 Nov 2012), as meters relative to NAVD88 - derived
     # EXACTLY from the station's machine-readable metric datums endpoint,
     # saved at data/original/noaa_datums_8518750_metric.json:
     #   api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations/8518750/
@@ -411,10 +411,10 @@ def step_dem(args, out, state):
         "waterSurfaceM": WATER_SURFACE_M,
         "encoding": {"channels": "RG", "unit": "decimetres",
                      "offset": ENCODE_OFFSET,
-                     "formula": "metres = ((R * 256 + G) - 1000) / 10"},
+                     "formula": "meters = ((R * 256 + G) - 1000) / 10"},
         "layers": {
             "elev": {"file": "elev.png", "bytes": b_elev,
-                     "description": "ground elevation, metres NAVD88"},
+                     "description": "ground elevation, meters NAVD88"},
             "spill": {"file": "spill.png", "bytes": b_spill,
                       "description": "lowest waterline at which the cell connects to open water"},
         },
@@ -666,7 +666,7 @@ def _simplify_geometry(geom, eps, ndigits):
     """Thin and round a tract outline.
 
     Tract boundaries are shipped at 14 decimal places by the source - about a
-    millimetre, against a flood grid of about twenty metres. Both the thinning
+    millimetre, against a flood grid of about twenty meters. Both the thinning
     and the rounding are chosen to sit just under the grid, so nothing the
     sandbox can actually resolve is lost.
     """
@@ -857,7 +857,7 @@ def main():
                     help="decimal places kept on tract coordinates")
     ap.add_argument("--keep-below", type=float, default=12.0, metavar="M",
                     help="drop buildings whose ground elevation is above this "
-                         "many metres; they cannot flood at any setting")
+                         "many meters; they cannot flood at any setting")
     ap.add_argument("--downsample", type=int, default=1,
                     help="divide both grid dimensions; use while iterating")
     ap.add_argument("--original", type=Path, default=Path("data/original"))
@@ -892,7 +892,7 @@ def main():
         "downsample": args.downsample,
         "sources": {
             "dem": "USGS 3DEP 1/3 arc-second (~10m), clipped to NYC. EPSG:4269, "
-                   "metres NAVD88.",
+                   "meters NAVD88.",
             "sea_level": "NPCC4 (Braneon et al. 2024), NYC Open Data 38ps-fnsg. "
                          "10th/25th/75th/90th percentiles - no median is published.",
             "tides": "NOAA CO-OPS station 8518750 (The Battery), 1983-2001 epoch, "

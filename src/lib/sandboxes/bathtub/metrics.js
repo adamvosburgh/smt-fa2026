@@ -21,8 +21,8 @@ export function mercator(lon, lat) {
  * Decode a packed 16-bit PNG into a Uint16Array, optionally at a stride.
  *
  * Downscaling happens in the draw call with smoothing OFF, so it is a
- * nearest-neighbour pick of real cells. Any interpolation would blend the high
- * and low bytes of neighbouring values and produce elevations that exist
+ * nearest-neighbor pick of real cells. Any interpolation would blend the high
+ * and low bytes of neighboring values and produce elevations that exist
  * nowhere on earth.
  */
 async function decodePacked(url, stride = 1) {
@@ -64,7 +64,7 @@ export async function loadGrid(base, manifest, stride = 2) {
   const cellsPerTract = new Float64Array(pop.length);
   for (let i = 0; i < tract.values.length; i++) cellsPerTract[tract.values[i]]++;
 
-  // Cell area. The grid is EPSG:3857, where a metre of map is not a metre of
+  // Cell area. The grid is EPSG:3857, where a meter of map is not a meter of
   // ground; scale by cos(latitude) to get true area.
   const [west, south, east, north] = manifest.bounds3857;
   const midY = (south + north) / 2;

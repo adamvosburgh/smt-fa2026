@@ -4,6 +4,7 @@ date: "2026-08-31"
 author: Adam Vosburgh
 sequence: 1
 cat: tutorial
+devnotes: true
 published: true
 ---
 
@@ -24,7 +25,7 @@ The city publishes a lot of material on accessory dwelling units: a plan library
 ## The parts
 
 - **MapPLUTO 26v2** (tax lots; only the `.dbf` table is read). Gives the 246,921 one-to-two-family lots, lot width and depth, the assessor's building type, zoning district, transit zone, historic district, ZIP and tract.
-- **Zoning Resolution 23-341(b)(4), 23-342, 12-10.** Gives the unit's size: a third of the required rear yard, whose depth depends on building type, capped at 800 sf, one storey, 15 ft.
+- **Zoning Resolution 23-341(b)(4), 23-342, 12-10.** Gives the unit's size: a third of the required rear yard, whose depth depends on building type, capped at 800 sf, one story, 15 ft.
 - **HPD/HCR Plus One ADU term sheet.** Gives the loan ceiling ($220,000), grant ($175,000), rate (5%), term (180 months), rent cap (100% AMI) and the $200 monthly cushion. Each is a slider.
 - **HPD Pre-Approved Plan Library.** Gives construction cost: the median of eleven designs' cost midpoints, $603/sf.
 
@@ -55,7 +56,7 @@ The city publishes a lot of material on accessory dwelling units: a plan library
 
 ## What came out
 
-A borough-wide map of where the programme's arithmetic works, and a queue that releases passing lots a set number per year from 2027.
+A borough-wide map of where the program's arithmetic works, and a queue that releases passing lots a set number per year from 2027.
 
 ### What you should see
 
@@ -76,11 +77,11 @@ With the grant at zero:
 
 ### Limitations
 
-- The $200 cushion is a household test in the programme and a per-lot test here, because there's no household data.
+- The $200 cushion is a household test in the program and a per-lot test here, because there's no household data.
 - Units are built in order of return on the owner's money; nobody in the model decides anything.
 - Rent is uniform within a ZIP, the rent cap is uniform across eight counties, and property tax is ignored.
 - The required rear yard is a rectangle the full width of the lot, because the table has no shape.
-- Who hears about the programme, who has a contractor, and who trusts the city are not in any dataset, so they aren't in the map.
+- Who hears about the program, who has a contractor, and who trusts the city are not in any dataset, so they aren't in the map.
 
 ---
 

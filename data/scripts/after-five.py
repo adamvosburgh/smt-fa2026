@@ -38,7 +38,7 @@ INPUTS  (data/original/, as downloaded, never edited in place)
       building-footprint centroid. That looked excellent: 99.5% matched, median
       distance 2 feet. Checked against the CityGML's real BINs, IT WAS WRONG FOR
       ONE BUILDING IN FIVE. In a district of party-wall buildings the nearest
-      centroid is frequently the neighbour, and the 2-foot median measured how
+      centroid is frequently the neighbor, and the 2-foot median measured how
       close the nearest one was rather than whether it was the right one.
       Nothing in this pipeline is now joined by position.
 
@@ -171,7 +171,7 @@ FT2_PER_M2 = 10.7639
 #
 # The BENEFIT SCHEDULE - the exemption percentage and its duration, which vary
 # by area under RPTL 467-m - is NOT in the FAQ and was not verified. So 467-m is
-# modelled as a BINARY ELIGIBILITY GATE ONLY. It does not change the arithmetic,
+# modeled as a BINARY ELIGIBILITY GATE ONLY. It does not change the arithmetic,
 # it decides whether a building may play. The card says exactly that.
 INCENTIVE_467M = {
     "source": "HPD 467-m requirements FAQ, read 2026-08-31",
@@ -188,7 +188,7 @@ INCENTIVE_467M = {
     "commence_after": "2022-12-31",
     "commence_before": "2031-06-30",
     "complete_by": "2039-12-31",
-    "benefit_schedule": "NOT VERIFIED - not carried in the FAQ. Modelled as a "
+    "benefit_schedule": "NOT VERIFIED - not carried in the FAQ. Modeled as a "
                         "binary eligibility gate only, with no abatement value.",
 }
 
@@ -235,9 +235,9 @@ CONVERTIBILITY = {
     },
     "proxies": {
         "floorplate_depth": "BldgDepth halved, as a core-to-window estimate. "
-                            "Assumes a centred core and a rectangular plate; "
+                            "Assumes a centered core and a rectangular plate; "
                             "both are often wrong.",
-        "floor_to_floor": "Modelled height divided by NumFloors. Averages over "
+        "floor_to_floor": "Modeled height divided by NumFloors. Averages over "
                           "mechanical floors and lobbies.",
         "floorplate_area": "BldgArea / NumFloors.",
         "age": "YearBuilt, standing in for facade type only. It no longer "
@@ -544,7 +544,7 @@ def measure_sf_per_unit(raw):
          is a conversion rather than an alteration to an apartment house.
       3. A UNIT FLOOR. proposed_zoning_sqft is the floor area of the WHOLE
          BUILDING, not of the part being converted, so a filing that adds two
-         apartments to a twenty-storey tower reports the whole tower against two
+         apartments to a twenty-story tower reports the whole tower against two
          units. Requiring ten or more units keeps the filings where the building
          really is being converted. THIS CHOICE MOVES THE ANSWER BY 40% and the
          whole ladder is reported below rather than just the rung we picked.
@@ -619,7 +619,7 @@ def measure_sf_per_unit(raw):
         "why_a_unit_floor":
             "proposed_zoning_sqft is the WHOLE BUILDING'S zoning floor area, "
             "not the converted part, so a filing that adds two apartments to a "
-            "twenty-storey tower reports the whole tower against two units. "
+            "twenty-story tower reports the whole tower against two units. "
             "Without a floor the number is inflated by exactly that.",
         "sensitivity_to_the_unit_floor": ladder,
         "sensitivity_note":
@@ -865,7 +865,7 @@ def main():
     # The same filings, read for a different question - see measure_sf_per_unit.
     sf_per_unit = measure_sf_per_unit(raw)
     matched_filings = sum(1 for b in buildings if str(b["bin"]) in filings)
-    print(f"dob: {matched_filings:,} of {len(buildings):,} modelled buildings "
+    print(f"dob: {matched_filings:,} of {len(buildings):,} modeled buildings "
           f"carry a conversion filing")
 
     # ---- 4. per-building constants ---------------------------------------
@@ -882,7 +882,7 @@ def main():
     # floor area is the whole stack. Named in the card.
     per_lot = Counter(b["bbl"] for b in buildings if b["bbl"])
     multi = sum(1 for v in per_lot.values() if v > 1)
-    print(f"build: {multi:,} lots carry more than one modelled building; "
+    print(f"build: {multi:,} lots carry more than one modeled building; "
           f"their lot-level floor areas are divided across them")
 
     rows = []
@@ -911,7 +911,7 @@ def main():
         plate_area = bldg_area / floors if floors > 0 else 0.0
         f2f = height_ft / floors if floors > 0 else 0.0
 
-        # The four proxies, each normalised to 0..1 where 1 is EASIER to convert.
+        # The four proxies, each normalized to 0..1 where 1 is EASIER to convert.
         # The ranges are ours and they are in the manifest.
         # THE WEIGHTED SUM IS NOT DONE HERE. All four ship, and the browser
         # weights them, because a weight baked into a binary file is a weight
@@ -1024,10 +1024,10 @@ def main():
             for i, d in enumerate(args.districts)
         },
         "columns": COLUMNS,
-        "column_units": ["degrees", "degrees", "feet", "storeys", "sq ft", "sq ft",
+        "column_units": ["degrees", "degrees", "feet", "stories", "sq ft", "sq ft",
                          "sq ft", "sq ft", "year",
                          "0-1", "0-1", "0-1", "0-1",
-                         "units", "storeys",
+                         "units", "stories",
                          "year or 0", "sq ft", "index into districts"],
         "snapshot_years": [2025, 2030, 2035, 2040, 2045, 2050],
         "household_size": household_size or None,
@@ -1046,7 +1046,7 @@ def main():
             "floor_to_floor_ft": [9, 16],
             "floorplate_area_sf": [5000, 40000],
             "year_built": [1900, 1990],
-            "note": "Ours. Each proxy is clamped to its range and normalised so "
+            "note": "Ours. Each proxy is clamped to its range and normalized so "
                     "that 1 means easier to convert.",
         },
         # Where our score has to sit for it to call a quarter of each district

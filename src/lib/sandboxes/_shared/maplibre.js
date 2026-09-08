@@ -8,7 +8,7 @@ import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&ur
 
 export const BASEMAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
-/** Web Mercator metres to lng/lat, for manifests that carry EPSG:3857 bounds. */
+/** Web Mercator meters to lng/lat, for manifests that carry EPSG:3857 bounds. */
 export function toLngLat(x, y) {
   const R = 6378137;
   return [

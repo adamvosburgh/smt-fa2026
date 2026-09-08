@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simmodeltwin.net/schemas/sandbox/sunlight.json",
+  "title": "Direct Sunlight in a Space parameters",
+  "$comment": "Property ORDER is the panel's reading order: the clock, then how it is drawn, then where on earth the model sits, then the light-and-air rule. Slider granularity is x-step, never multipleOf - multipleOf is validated by floating-point division and rejects positions its own slider can reach. x-hidden-when-asset names an asset whose presence removes the control: example_floor only means anything when the sandbox is showing its own example, and a student who has uploaded a model chose their floor in Rhino.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "hour",
+    "day_of_year",
+    "timezone",
+    "overlay",
+    "period",
+    "cutaway",
+    "show_context",
+    "grid_m",
+    "threshold_hours",
+    "latitude",
+    "longitude",
+    "north_deg",
+    "example_floor",
+    "window_rule",
+    "depth_rule"
+  ],
+  "properties": {
+    "hour": {
+      "type": "number",
+      "title": "Time of day",
+      "x-group": "the clock",
+      "minimum": 0,
+      "maximum": 24,
+      "x-step": 0.05,
+      "x-step-jump": 0.5,
+      "default": 12,
+      "x-format": "clock",
+      "x-timeline": "primary",
+      "x-play-rate": 10,
+      "x-play-loop": true,
+      "x-play-auto": true,
+      "x-emphasis": true,
+      "description": "Local civil time in the time zone below, which is what a clock on the wall of the space would read. Moving it moves the sun and the shadows; it does not change the cumulative coloring, which is a figure for a whole period rather than for a moment."
+    },
+    "day_of_year": {
+      "type": "integer",
+      "title": "Day of the year",
+      "x-group": "the clock",
+      "minimum": 1,
+      "maximum": 365,
+      "x-step": 1,
+      "x-step-jump": 7,
+      "default": 172,
+      "x-format": "date",
+      "x-timeline": "secondary",
+      "x-play-rate": 6,
+      "x-play-loop": true,
+      "description": "A day in 2026, which is not a leap year. The default is 21 June, the summer solstice, when the sun is as high as it gets here. One clock plays at a time; playing this one holds the hour where it is."
+    },
+    "timezone": {
+      "type": "string",
+      "title": "Time zone",
+      "x-group": "the clock",
+      "enum": [
+        "America/New_York",
+        "UTC",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Berlin",
+        "Asia/Tokyo",
+        "Asia/Shanghai",
+        "Asia/Kolkata",
+        "Australia/Sydney"
+      ],
+      "x-enum-labels": [
+        "New York",
+        "UTC",
+        "Chicago",
+        "Denver",
+        "Los Angeles",
+        "London",
+        "Berlin",
+        "Tokyo",
+        "Shanghai",
+        "Kolkata",
+        "Sydney"
+      ],
+      "x-control": "slider",
+      "default": "America/New_York",
+      "description": "The zone the hour is read in. The default is the class example's, from the manifest. If your model is somewhere with no zone on this list, pick the nearest one or use UTC and read the hour as UTC. Daylight saving is handled by the browser's own zone data, so no offset is written down anywhere."
+    },
+    "overlay": {
+      "type": "string",
+      "title": "What the squares show",
+      "x-group": "how it's drawn",
+      "enum": [
+        "none",
+        "hours",
+        "share",
+        "threshold"
+      ],
+      "x-enum-labels": [
+        "Nothing",
+        "Hours",
+        "Share",
+        "Above / below"
+      ],
+      "x-enum-notes": [
+        "No squares. The live shadow at the hour on the clock is the whole picture.",
+        "Hours of direct sun per day, averaged over the period. The scale runs from nothing to the longest day the period contains, so a December figure and a June figure are not squeezed into the same color.",
+        "The same figure as a share of the period's daylight hours, from 0 to 100 per cent.",
+        "Two colors: at or above the threshold below, or under it. This is the daylit band drawn against the deep part of the plate."
+      ],
+      "default": "hours",
+      "description": "The cumulative view is drawn as one small square per sample point, lying in the surface it belongs to. The live shading carries on underneath, so the shadow still moves as you scrub the hour."
+    },
+    "period": {
+      "type": "string",
+      "title": "Over what period",
+      "x-group": "how it's drawn",
+      "enum": [
+        "year",
+        "month",
+        "day"
+      ],
+      "x-enum-labels": [
+        "A year",
+        "A month",
+        "One day"
+      ],
+      "x-enum-notes": [
+        "Twelve representative days, the 15th of each month, each weighted by the length of its month. That is an estimate of the year from twelve days, not the year itself.",
+        "The 15th of the month the clock's day falls in.",
+        "The day on the clock. Moving the day recomputes, which is why the day timeline plays slowly."
+      ],
+      "default": "year",
+      "x-emphasis": true,
+      "description": "How much time the cumulative figure covers. Whatever the period, the figure is reported per day: hours of direct sun on an average day of that period."
+    },
+    "cutaway": {
+      "type": "boolean",
+      "title": "Cut away above the plate",
+      "x-group": "how it's drawn",
+      "default": true,
+      "description": "Slices everything above the ceiling out of the picture so you can see into the floor plate. The geometry that disappears still casts its shadows, which is why the neighbors' shadows carry on falling across the model with their towers not drawn."
+    },
+    "show_context": {
+      "type": "boolean",
+      "title": "The neighbors",
+      "x-group": "how it's drawn",
+      "default": true,
+      "x-emphasis": true,
+      "description": "On, the 552 surveyed buildings around the site cast their shadows on it. Off, they are removed from the picture and from the calculation, and the cumulative figures are recomputed without them. The difference between the two is what the neighbors cost this floor."
+    },
+    "grid_m": {
+      "type": "number",
+      "title": "Sample spacing",
+      "x-group": "how it's drawn",
+      "enum": [
+        0.25,
+        0.5,
+        1
+      ],
+      "x-enum-labels": [
+        "25 cm",
+        "50 cm",
+        "1 m"
+      ],
+      "default": 0.5,
+      "x-unit": "m",
+      "description": "How far apart the sample points sit on the analyzed surfaces. Finer is slower: 50 cm is about 35,000 points on the class example and 25 cm is about 140,000. Changing it recomputes."
+    },
+    "threshold_hours": {
+      "type": "number",
+      "title": "Threshold",
+      "x-group": "how it's drawn",
+      "minimum": 0,
+      "maximum": 8,
+      "x-step": 0.25,
+      "default": 2,
+      "x-unit": "h/day",
+      "description": "Hours of direct sun per day that count as enough, for the two-color overlay and for the metrics. Two hours is ours. New York has no residential direct-sun standard to take a number from; the two-hour figure appears in European daylight practice and is used here because a number is needed, not because it is law."
+    },
+    "latitude": {
+      "type": "number",
+      "title": "Latitude",
+      "x-group": "the site",
+      "minimum": -90,
+      "maximum": 90,
+      "x-step": 0.0001,
+      "default": 40.7026,
+      "x-unit": "°N",
+      "description": "Where on earth the model sits. The default is 25 Water Street, from the pipeline's manifest. Latitude decides how high the sun gets; a model of a room in Stockholm and the same room in Singapore behave very differently at this control alone."
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude",
+      "x-group": "the site",
+      "minimum": -180,
+      "maximum": 180,
+      "x-step": 0.0001,
+      "default": -74.0107,
+      "x-unit": "°E",
+      "description": "The default is 25 Water Street, from the pipeline's manifest. Longitude decides what the clock says when the sun is due south, which is why solar noon in New York is not at 12:00."
+    },
+    "north_deg": {
+      "type": "number",
+      "title": "North offset",
+      "x-group": "the site",
+      "minimum": -180,
+      "maximum": 180,
+      "x-step": 1,
+      "default": 0,
+      "x-unit": "°",
+      "description": "How far the model is turned away from north. A model built with +Y pointing north in Rhino and exported with Map Rhino Z to glTF Y needs 0, which is what the example uses. If your model is turned, put the angle here rather than rotating the geometry."
+    },
+    "example_floor": {
+      "type": "integer",
+      "title": "Which floor of the example",
+      "x-group": "the site",
+      "enum": [
+        3,
+        8,
+        15
+      ],
+      "x-enum-labels": [
+        "3rd",
+        "8th",
+        "15th"
+      ],
+      "default": 8,
+      "x-hidden-when-asset": "model",
+      "description": "The example ships as three files, one per analyzed floor of the 22, with the same neighbors in each. The 3rd is down among the surrounding blocks, the 15th is above most of them. This control does nothing once you have loaded your own model, so it disappears."
+    },
+    "window_rule": {
+      "type": "string",
+      "title": "Light-and-air rule",
+      "x-group": "light and air",
+      "enum": [
+        "mdl30",
+        "mdl277"
+      ],
+      "x-enum-labels": [
+        "MDL §30",
+        "MDL §277"
+      ],
+      "x-enum-notes": [
+        "Multiple Dwelling Law §30(8)(a): the total window area of a room must be at least one tenth of that room's floor area, and every window must be at least 12 square feet.",
+        "Multiple Dwelling Law §277: ten per cent of the floor area for a room under 500 square feet, one percentage point less for each additional 100 square feet, and never less than five per cent. This is the section for converting a building that was not residential."
+      ],
+      "default": "mdl30",
+      "description": "Which of the two New York rules the room table tests each room against. Both were read from the statute on 2026-09-06 and the citations are in the pipeline's manifest. The rule is a ratio of areas: it knows nothing about whether any sun arrives, which is the point of putting it beside the sun figures rather than coloring the model with it."
+    },
+    "depth_rule": {
+      "type": "boolean",
+      "title": "Also apply the 30-foot depth rule",
+      "x-group": "light and air",
+      "default": false,
+      "description": "Multiple Dwelling Law §30(3): a room may not extend more than 30 feet from its window. The statute limits this to apartments of three rooms or fewer, and the sandbox has no idea how the rooms are grouped into apartments, so it is off by default and separate from the rule above. It is measured as how far the room's floor reaches from its window wall, in plan, taken from the floor's own corners."
+    }
+  }
+}

@@ -15,7 +15,7 @@ the CityGML, which does carry BIN, and **the inferred BIN was wrong for one
 building in five**.
 
 The reason is worth keeping. "Nearest centroid" is not "same building". In a
-district of party-wall buildings the centroids of neighbours are tens of feet
+district of party-wall buildings the centroids of neighbors are tens of feet
 apart, so the nearest one is frequently the one next door - and the 2-foot
 median distance measured how close the nearest centroid was, not whether it was
 the right building. A confident-looking statistic about the wrong quantity.

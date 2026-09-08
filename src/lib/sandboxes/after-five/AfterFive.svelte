@@ -32,7 +32,7 @@
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
-  import { compute, colours, STRIDE, HEIGHT, FLOORS, FLOORS_ADDED,
+  import { compute, colors, STRIDE, HEIGHT, FLOORS, FLOORS_ADDED,
            DISTRICT, DISTRICT_INDEX } from './gates.js';
   import { mulberry32 } from './agents.js';
   import AgentsWorker from './agents.worker.js?worker';
@@ -54,7 +54,7 @@
 
   let container = $state(null);
   let error = $state(null);
-  let loading = $state('reading the massing…');
+  let loading = $state('loading the buildings…');
   let manifest = $state(null);
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
@@ -72,7 +72,7 @@
   // calibration and whether anything converted out of this, so it has to be
   // reactive. The rest of the render path is imperative deck.gl and does not.
   let result = $state(null);
-  // The cached colour array, module-level ON PURPOSE. The hour ticks ~30
+  // The cached color array, module-level ON PURPOSE. The hour ticks ~30
   // times a second while the clock plays, and rebuilding this each tick made
   // deck.gl re-upload 3,728 fills per frame - that stutter read as the
   // animation's fault. Identity-stable between heavy passes, so deck's
@@ -110,7 +110,7 @@
   let nEdges = 0;
   let edgeSrc = null, edgeTgt = null;   // binary positions for LineLayer
   let streetCols = null, streetWidths = null, streetData = null;
-  let streetKey = '';        // what the cached colour arrays were built for
+  let streetKey = '';        // what the cached color arrays were built for
   let tripsVersion = 0;
   // The ground-floor rings: converted footprints, refiltered per heavy pass.
   let groundData = null;
@@ -126,7 +126,7 @@
    *
    * The scale is the larger of the two standing populations, so the two deltas
    * come out as the slivers they are - which is the honest shape of this. A
-   * conversion programme that reads as enormous in units is small against the
+   * conversion program that reads as enormous in units is small against the
    * number of people who are already here in the daytime.
    */
   const bars = $derived.by(() => {
@@ -136,16 +136,16 @@
     const res = m.residentsHere ?? 0;
     const top = Math.max(jobs, res, 1);
     const n = (v) => Math.round(v).toLocaleString();
-    // No sign on a zero: "-0" reads as a rounding artefact rather than as
+    // No sign on a zero: "-0" reads as a rounding artifact rather than as
     // "nothing converted", which at the shipped defaults is the actual answer.
     const d = (v, sign) => (Math.round(v) === 0 ? '0' : sign + n(v));
     return [
-      { label: 'at work in offices, in the day', n: n(jobs), pct: 100 * jobs / top },
-      { label: 'living here', n: n(res), pct: 100 * res / top },
-      { label: 'office jobs the conversions take away', delta: true,
+      { label: 'office jobs in the district by day', n: n(jobs), pct: 100 * jobs / top },
+      { label: 'residents', n: n(res), pct: 100 * res / top },
+      { label: 'office jobs removed by the conversions', delta: true,
         n: d(m.officeJobsRemoved ?? 0, '\u2212'),
         pct: 100 * (m.officeJobsRemoved ?? 0) / top },
-      { label: 'residents the conversions add', delta: true,
+      { label: 'residents added by the conversions', delta: true,
         n: d(m.residentsAdded ?? 0, '+'),
         pct: 100 * (m.residentsAdded ?? 0) / top }
     ];
@@ -160,7 +160,7 @@
   // THE CROP. The simulation is a district, so the map is that district: a
   // rectangle of city on the page's own ground, not a city fading off into
   // basemap. Three pieces, and they only work together:
-  //   - the mask, a page-coloured polygon with the district cut out of it,
+  //   - the mask, a page-colored polygon with the district cut out of it,
   //     drawn as the ground so the basemap outside the rectangle never shows;
   //   - the massing filtered to the district, because a masked ground does
   //     nothing about a 3D tower standing on it a mile away;
@@ -176,7 +176,7 @@
   function maskLayer() {
     const [w, s, e, n] = boundsFor(manifest, params.district);
     // The outer ring has to outrun the HORIZON, not the pan limits - at pitch
-    // 50 the camera sees tens of degrees past its own centre.
+    // 50 the camera sees tens of degrees past its own center.
     const P = 8;
     return new PolygonLayer({
       id: 'crop-mask',
@@ -307,7 +307,7 @@
         if (d.type !== 'trips' || d.gen !== agentGen) return; // stale answer
         trips = d;
         tripsData = null; // new timetable, new wrapper
-        tripsVersion += 1; // the street colours are cached against this
+        tripsVersion += 1; // the street colors are cached against this
         agentsOn = true;
         onready?.(true);
         schedule(false); // the massing didn't change, only the crowd
@@ -349,7 +349,7 @@
   }
 
   // TWO RENDER PATHS, ONE FUNCTION. A heavy pass re-scores every building
-  // (compute + colours); a light pass reuses the cached result and only moves
+  // (compute + colors); a light pass reuses the cached result and only moves
   // what the hour moves - the dots, the trail head, the mid-walk count. The
   // clock emits ~30 hour values a second while it plays, and every one of
   // them used to take the heavy path.
@@ -358,7 +358,7 @@
 
     if (!light || !result || !rgba) {
       result = compute(buildings, manifest, params);
-      rgba = colours(result, buildings, params);
+      rgba = colors(result, buildings, params);
       // The converted footprints, for the ground-floor rings. Refiltered only
       // here: the set changes when the massing does, never with the clock.
       groundData = fpFor(params.district).filter((d) => result.state[d.i] === 2);
@@ -376,9 +376,9 @@
     const layers = [maskLayer()];
 
     // The street, counted. Every timetable arrives with walkers-per-segment-
-    // per-hour; here the selected hour's column becomes colour and width. The
+    // per-hour; here the selected hour's column becomes color and width. The
     // scale is the day's busiest segment, so 20:00 and 08:00 are comparable
-    // by eye. In compare mode the colour is the DIFFERENCE between the two
+    // by eye. In compare mode the color is the DIFFERENCE between the two
     // hours: amber where the second hour has more walkers, slate where the
     // first does.
     const t = ((params.hour ?? 8) % 24) * 3600;
@@ -460,7 +460,7 @@
           getElevation: (d) => {
             const base = d.i * STRIDE;
             let ft = buildings[base + HEIGHT];
-            // Added floors: the existing roof pushed up by the storeys a filing
+            // Added floors: the existing roof pushed up by the stories a filing
             // added. This is the QUANTITY of change, not its form - a building
             // that grew four floors grows a four-floor block, with no setback
             // and no new envelope.
@@ -519,7 +519,7 @@
         dotCol = new Uint8Array(need);
       }
       // One placement pass per drawn hour. In compare mode the same crowd is
-      // placed twice and coloured by hour; otherwise once, coloured by role.
+      // placed twice and colored by hour; otherwise once, colored by role.
       const place = (tt, hourColour) => {
         let mid = 0;
         for (let i = 0; i < trips.length; i++) {
@@ -556,7 +556,7 @@
         };
       }
       // In compare mode the SAME timetable is drawn twice, once per hour,
-      // each in its hour's colour - two crowds on one street network, which
+      // each in its hour's color - two crowds on one street network, which
       // is the comparison without splitting the view.
       const trailProps = {
         data: tripsData,
@@ -649,10 +649,10 @@
   // selected and whose number it is. The full justifications live in the
   // schema's x-enum-notes; this is the short form the map carries.
   const RENT_STOPS = {
-    54: { label: 'the published asking rent', provenance: 'sourced' },
-    41: { label: 'what a landlord collects', provenance: 'ours' },
-    32: { label: 'a building in trouble', provenance: 'ours' },
-    70: { label: 'not really Class B', provenance: 'ours' }
+    54: { label: 'published asking rent', provenance: 'sourced' },
+    41: { label: '25% below asking', provenance: 'ours' },
+    32: { label: '40% below asking', provenance: 'ours' },
+    70: { label: 'top of the Class B/C band', provenance: 'ours' }
   };
   const rentStop = $derived(RENT_STOPS[params.office_rent] ?? null);
 
@@ -793,7 +793,7 @@
   <div class="map" bind:this={container}></div>
 
   {#if streetView && mode === 'edit'}
-    <button class="sv-btn" onclick={leaveStreet}>back over the district</button>
+    <button class="sv-btn" onclick={leaveStreet}>back to the district view</button>
   {/if}
 
   {#if error}
@@ -806,7 +806,7 @@
     <!-- The two populations, counted - and now the two counted curves under
          them: MTA taps drive the animation, ATUS occupancy checks it. -->
     <div class="presence">
-      <h4>who is here</h4>
+      <h4>who is in the district</h4>
       {#each bars as b}
         <div class="row" class:delta={b.delta}>
           <span class="bar" style="width:{b.pct}%"></span>
@@ -823,17 +823,11 @@
             {/if}
           </svg>
           <p class="occ-note">
-            {#if occNow}{Math.round(occNow.share * 100)}% of office-occupation
-              workers at their workplace now{/if}
-            — ATUS 2003–2025, the counted curve the swarm is checked against.
+            ATUS 2003-2025: share of office-type workers at their workplace by hour{#if occNow},
+              {Math.round(occNow.share * 100)}% now{/if}. An independent check on the crowd.
           </p>
         </div>
       {/if}
-      <p class="gap">An earlier version said no published table describes this
-        district's evening. That was true of the trip tables it had checked and
-        false in general: the MTA's origin-destination estimate counts arrivals
-        and departures at every complex by hour, and those counted taps are
-        what the animation runs on.</p>
     </div>
   {/if}
 
@@ -841,14 +835,14 @@
     <!-- The register. Three lines, and only one of them is measured - which
          is the point of labelling it. -->
     <div class="assumptions">
-      <span class="a"><i>assumed</i> which building a trip starts at: proportional to jobs</span>
-      <span class="a"><i>assumed</i> the route: shortest path, not the chosen path</span>
-      <span class="m"><i>measured</i> the gateway share: counted taps, MTA O-D 2024</span>
+      <span class="m"><i>measured</i> how many people pass each station, by hour (MTA O-D 2024)</span>
+      <span class="a"><i>assumed</i> which building each trip goes to (in proportion to jobs)</span>
+      <span class="a"><i>assumed</i> the route (shortest path)</span>
       {#if (params.resident_schedule ?? 'mirrored') === 'atus' && params.schedule_source !== 'parametric'}
-        <span class="a"><i>assumed</i> residents keep the ATUS not-employed day: a national survey, not a New York count</span>
+        <span class="a"><i>assumed</i> residents' hours (ATUS, a national survey)</span>
       {/if}
       {#if result && result.metrics.converted > 0}
-        <span class="a"><i>assumed</i> the ground floor: active with probability {(params.ground_floor_p ?? 0.5).toFixed(2)}, ours</span>
+        <span class="a"><i>assumed</i> ground floors active with probability {(params.ground_floor_p ?? 0.5).toFixed(2)}</span>
       {/if}
     </div>
   {/if}
@@ -856,7 +850,7 @@
   {#if manifest && !error}
     <div class="key">
       {#if params.colour_by === 'convertibility'}
-        <span>darker is easier to convert, by our score of published criteria</span>
+        <span>darker scores higher on our convertibility score</span>
       {:else if params.colour_by === 'year_converted'}
         <span><i class="sw early"></i>converted early</span>
         <span><i class="sw late"></i>converted late</span>
@@ -869,50 +863,49 @@
            the published office rent nothing clears the deal, and a reader who
            is not told that will assume the data failed to load. -->
       {#if result && result.metrics.converted === 0}
-        <span class="none">Nothing clears the deal at these numbers. That is the
-          model's answer, not a failure to load - the office rent it is competing
-          against is {rentStop ? `${rentStop.label}` : 'the published asking rent'}.
-          To see conversions, move the office rent to a lower stop, steepen its
-          downward trend, or raise the residential rent - each is a departure
-          from the sourced figure, and the control says whose number you chose.</span>
+        <span class="none">No building converts at these settings. The office rent
+          is the {rentStop ? rentStop.label : 'published asking rent'}, and the
+          residential deal never beats it. To see conversions, choose a lower
+          office rent stop, a steeper downward trend, or a higher residential
+          rent; each control says whose number it is.</span>
       {/if}
       <!-- Which rent stop is selected, and whose number it is. One stop is
            sourced; the other three are ours, and the difference is the point. -->
       {#if rentStop}
-        <span class="note">office rent ${params.office_rent}/sf/yr —
+        <span class="note">office rent ${params.office_rent}/sf/yr:
           {rentStop.label}, <b>{rentStop.provenance}</b></span>
       {/if}
       {#if result?.gensler != null}
-        <span class="note">Gensler found about a quarter of the buildings they
-          scored convertible. Our score passes a quarter of this district at a
-          threshold of {result.gensler.toFixed(2)} - it moves when the weights
-          move.</span>
+        <span class="note">Gensler published that about a quarter of the buildings
+          it scored were convertible; our score reaches a quarter of this district
+          at a threshold of {result.gensler.toFixed(2)}. That figure moves with
+          the weights.</span>
       {/if}
       {#if agentsOn && params.compare_hours}
         <span><i class="sw ha"></i>the crowd at {clock(params.hour ?? 8)}</span>
         <span><i class="sw hb"></i>the crowd at {clock(params.hour_b ?? 20)}</span>
-        <span class="note">streets take the colour of whichever hour has more
-          walkers on them, darker where the gap is wider</span>
+        <span class="note">streets take the color of the hour with more walkers;
+          darker means a wider gap</span>
       {:else if agentsOn}
-        <span><i class="sw worker"></i>workers, in by morning, out by evening</span>
+        <span><i class="sw worker"></i>workers (arrive morning, leave evening)</span>
         <span><i class="sw resident"></i>residents{(params.resident_schedule ?? 'mirrored') === 'atus'
           && params.schedule_source !== 'parametric'
-          ? ', on the survey’s own day' : ', the reverse'}</span>
+          ? ' (hours from ATUS)' : ' (reverse of the workers)'}</span>
         {#if params.streets !== false && mode === 'edit'}
-          <span class="note">streets darken with walkers this hour - click one
+          <span class="note">streets darken with walkers this hour; click one
             to stand on it</span>
         {/if}
       {:else}
-        <span class="note">agents still loading — the counts are already right</span>
+        <span class="note">crowd loading; the counts above are complete</span>
       {/if}
       {#if result && result.metrics.converted > 0}
-        <span><i class="sw lit"></i>ground floor drawn active</span>
-        <span><i class="sw dark"></i>ground floor drawn dark</span>
+        <span><i class="sw lit"></i>converted ground floor: active</span>
+        <span><i class="sw dark"></i>converted ground floor: dark</span>
       {/if}
       {#if basemapFailed}
-        <span class="warn">no basemap - the model still works</span>
+        <span class="warn">basemap unavailable; the model still works</span>
       {:else if tileFailures > 3}
-        <span class="warn">{tileFailures} basemap tiles blocked - the model still works</span>
+        <span class="warn">{tileFailures} basemap tiles blocked; the model still works</span>
       {/if}
     </div>
   {/if}
@@ -978,10 +971,6 @@
   .presence .delta .bar { background: #cd4a3c; }
   .presence .n { font-variant-numeric: tabular-nums; font-weight: 700; color: #222; }
   .presence .l { color: #666; }
-  .presence .gap {
-    margin: 0.5rem 0 0; padding-top: 0.4rem; border-top: 1px solid #eee;
-    color: #666; font-size: 0.6rem;
-  }
   .occ { margin-top: 0.45rem; padding-top: 0.35rem; border-top: 1px solid #eee; }
   .occ svg { display: block; width: 100%; height: 32px; }
   .occ-note { margin: 0.15rem 0 0; font-size: 0.58rem; color: #666; }

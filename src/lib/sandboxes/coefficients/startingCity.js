@@ -55,8 +55,8 @@ function makeTools(map) {
 // it both. A band is six tiles tall:
 //
 //     y+0   wire      (power, and it touches the zone's top row)
-//     y+1   zone      3x3 zones, centred on y+2
-//     y+2   zone      <- zone centres sit here
+//     y+1   zone      3x3 zones, centered on y+2
+//     y+2   zone      <- zone centers sit here
 //     y+3   zone
 //     y+4   road      (access, and it touches the zone's bottom row)
 //     y+5   spare
@@ -71,14 +71,14 @@ function makeTools(map) {
 //
 // A blank map is also the better control condition, and that is the real
 // reason. The sandbox is an argument about one line - land value falling with
-// distance from the city centre - and random terrain adds a second, louder
+// distance from the city center - and random terrain adds a second, louder
 // source of spatial variation on top of it. With flat ground, every difference
 // on the land value layer is the gradient, the plan, or a coefficient someone
 // moved. That is a claim about this city and it belongs in the model card:
 // there is no geography here at all.
 
 const BAND_HEIGHT = 6;
-const COL_SPACING = 4;   // 3-wide zones, centred every 4 columns, 1 tile apart
+const COL_SPACING = 4;   // 3-wide zones, centered every 4 columns, 1 tile apart
 
 const TRUNK_X = 14;
 const FIRST_X = 18;

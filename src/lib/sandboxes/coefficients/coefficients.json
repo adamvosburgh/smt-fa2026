@@ -27,7 +27,7 @@
 
   "land_value": {
     "_source": "vendor/src/blockMapUtils.js, pollutionTerrainLandValueScan()",
-    "_asserts": "Land value is a bid-rent gradient falling linearly from the city centre. One line, and no other geometry is expressible.",
+    "_asserts": "Land value is a bid-rent gradient falling linearly from the city center. One line, and no other geometry is expressible.",
     "centre_base": 34,
     "distance_divisor": 2,
     "shift": 2,

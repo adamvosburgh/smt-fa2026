@@ -39,7 +39,7 @@ export function timelinesOf(schema) {
     }));
 }
 
-// Same rule ParamPanel uses to grey a control: a timeline whose value another
+// Same rule ParamPanel uses to gray a control: a timeline whose value another
 // control has taken over must not play either.
 function overridden(prop, read) {
   const when = prop['x-disabled-when'];

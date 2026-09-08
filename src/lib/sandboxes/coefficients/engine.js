@@ -23,7 +23,7 @@ import { seed, applyParams, applyCoefficients, resetCoefficients, C } from './tu
  */
 export const BLOCK_MAPS = [
   { key: 'landValueMap', label: 'land value', min: 0, max: 250, phase: 12,
-    note: 'Distance from the city centre, plus unspoilt land, minus pollution, minus 20 where crime is over 190.' },
+    note: 'Distance from the city center, plus unspoilt land, minus pollution, minus 20 where crime is over 190.' },
   { key: 'crimeRateMap', label: 'crime', min: 0, max: 250, phase: 13,
     note: 'Base 128, minus land value, plus population density, minus police. Reads the map above; the map above reads it back.' },
   { key: 'pollutionDensityMap', label: 'pollution', min: 0, max: 255, phase: 12,
@@ -35,9 +35,9 @@ export const BLOCK_MAPS = [
   { key: 'rateOfGrowthMap', label: 'rate of growth', min: -200, max: 200, phase: 10,
     note: 'Where zones grew or decayed recently. Decays back towards zero on its own.' },
   { key: 'terrainDensityMap', label: 'unspoilt land', min: 0, max: 240, phase: 12,
-    note: 'How undeveloped a neighbourhood is. On the blank starting map this is nearly uniform.' },
-  { key: 'cityCentreDistScoreMap', label: 'distance from centre', min: -64, max: 64, phase: 14,
-    note: 'The city centre is recomputed as the mean of populated zones, AFTER the land value that depends on it has been written.' },
+    note: 'How undeveloped a neighborhood is. On the blank starting map this is nearly uniform.' },
+  { key: 'cityCentreDistScoreMap', label: 'distance from center', min: -64, max: 64, phase: 14,
+    note: 'The city center is recomputed as the mean of populated zones, AFTER the land value that depends on it has been written.' },
   { key: 'policeStationMap', label: 'police cover', min: 0, max: 1000, phase: 13,
     note: 'Station positions, blurred three times. How far a station reaches is a number of blur passes.' },
   { key: 'policeStationEffectMap', label: 'police cover (working copy)', min: 0, max: 1000, phase: 13,
@@ -68,7 +68,7 @@ export const PHASES = [
   { n: 11, name: 'power', writes: 'which tiles have electricity' },
   { n: 12, name: 'pollution, terrain, land value', writes: 'pollution, unspoilt land, LAND VALUE' },
   { n: 13, name: 'crime', writes: 'police cover, then CRIME' },
-  { n: 14, name: 'density', writes: 'population density, then moves the city centre' },
+  { n: 14, name: 'density', writes: 'population density, then moves the city center' },
   { n: 15, name: 'fire', writes: 'fire cover, and rolls for disasters' }
 ];
 

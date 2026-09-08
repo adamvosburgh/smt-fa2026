@@ -11,7 +11,7 @@
 // of contents of the tutorials with their anchors. Output: one plain sentence
 // and one anchor link. Cost is near zero because it only runs on failure.
 //
-// It is not a reviewer. It makes no judgement about the work and touches nothing
+// It is not a reviewer. It makes no judgment about the work and touches nothing
 // about quality. Its only job is to catch a submission that will not run and
 // point at the part of the tutorial that fixes it.
 import { json } from '@sveltejs/kit';

@@ -56,7 +56,7 @@ export function drawCity(ctx, map, atlas, scale) {
 }
 
 // A single ramp for every layer, so that two layers side by side are comparable
-// and the eye is not asked to learn fifteen colour schemes. Low is pale, high is
+// and the eye is not asked to learn fifteen color schemes. Low is pale, high is
 // dark; the one diverging case (rate of growth, which is signed) is handled by
 // normalising against its own min and max, which are known constants.
 function ramp(t) {

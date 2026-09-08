@@ -77,7 +77,7 @@
   const BUF_W = 720;
   const BUF_H = 600;
   let cityBuf = null;
-  let washBuf = null; // 120x100, one pixel per tile, nearest-neighbour up
+  let washBuf = null; // 120x100, one pixel per tile, nearest-neighbor up
   let soloBuf = null;
 
   // Zoom/pan, CSS pixels. tx/ty is the content's top-left in the stage.

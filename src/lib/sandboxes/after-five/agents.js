@@ -9,7 +9,7 @@
 // THE DOC'S PASS/FAIL: converting an office must visibly move mass from the
 // worker swarm to the resident swarm and reverse its direction of travel.
 // That happens structurally here, not cosmetically - the same compute() state
-// that colours the massing weights the sampling, so a building that converts
+// that colors the massing weights the sampling, so a building that converts
 // stops emitting workers and starts emitting residents.
 
 import { STRIDE, OFFICE_AREA, RES_AREA, LON, LAT, DISTRICT } from './gates.js';
@@ -95,7 +95,7 @@ export function sampleAgents({
   const count = Math.max(1, Math.round(params.agent_count ?? 4000));
   const sfPerUnit = manifest?.economics?.sf_per_unit ?? 1152;
 
-  // Building weights per role, from the same state that colours the massing.
+  // Building weights per role, from the same state that colors the massing.
   const wWork = new Float64Array(nB);
   const wRes = new Float64Array(nB);
   let workTot = 0, resTot = 0;

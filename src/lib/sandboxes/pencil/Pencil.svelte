@@ -2,7 +2,7 @@
   // Sandbox 01 - ADU Forecast for Queens (slug pencil).
   //
   // Every one-to-two-family lot in Queens, tested against the published terms of
-  // one real subsidy programme and tinted by the monthly cash flow an ADU on it
+  // one real subsidy program and tinted by the monthly cash flow an ADU on it
   // would produce.
   //
   // The contract, as bathtub sets it out:
@@ -11,12 +11,12 @@
   //              data-cover-ready. It reports; the frame publishes.
   //
   // The arithmetic is in proforma.js and runs on every parameter change over
-  // 246,921 lots. The SAME pass produces the colour array and the panel's
+  // 246,921 lots. The SAME pass produces the color array and the panel's
   // numbers, so the picture and the figures cannot disagree.
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
-  import { compute, colours, STRIDE, RSTRIDE, COL, siteUnit, RAMP, RAMP_SPAN } from './proforma.js';
+  import { compute, colors, STRIDE, RSTRIDE, COL, siteUnit, RAMP, RAMP_SPAN } from './proforma.js';
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready } = $props();
 
@@ -36,21 +36,21 @@
   //
   // A square of the lot's true area does NOT work here, and the reason is worth
   // keeping. A typical Queens lot is 3,000 square feet, so its equal-area square
-  // is about 17 metres on a side - but the lots themselves are 25 feet wide,
-  // about 7.6 metres apart along a block. Each square therefore covers its two
-  // neighbours, and a block of forty row houses fuses into one continuous
-  // 17-metre band. The borough came out as a field of diagonal streaks, which
-  // read as an artefact of the model and were an artefact of the drawing.
+  // is about 17 meters on a side - but the lots themselves are 25 feet wide,
+  // about 7.6 meters apart along a block. Each square therefore covers its two
+  // neighbors, and a block of forty row houses fuses into one continuous
+  // 17-meter band. The borough came out as a field of diagonal streaks, which
+  // read as an artifact of the model and were an artifact of the drawing.
   //
   // So the square is scaled to the SPACING between lots rather than to their
-  // area: half the equal-area side, which puts the median lot at about 8 metres
+  // area: half the equal-area side, which puts the median lot at about 8 meters
   // and lets a block resolve into houses. Bigger lots are still drawn bigger,
   // so the size still carries information - it is just no longer to scale.
   //
   // It is also clamped. 0.6% of these lots are over 10,000 square feet and the
   // largest is 1,106,431 - a genuine single-family house on a city-owned parcel
-  // off Church Road. At true area that one lot is a 208-metre square, and a
-  // handful of them painted over whole neighbourhoods.
+  // off Church Road. At true area that one lot is a 208-meter square, and a
+  // handful of them painted over whole neighborhoods.
   const FT2_TO_M = 0.3048;
   const AREA_TO_SPACING = 0.5;
   const MIN_SIDE_M = 5;
@@ -134,7 +134,7 @@
 
     const t0 = performance.now();
     result = compute(lots, rear, flags, manifest, params);
-    const rgba = colours(result, lots, params, manifest);
+    const rgba = colors(result, lots, params, manifest);
     lastPassMs = performance.now() - t0;
 
     const showVolumes = params.volumes === true;
@@ -151,7 +151,7 @@
     // At borough zoom the whole of Queens is about 850 pixels wide, so a lot is
     // roughly 0.2 of a pixel. A quarter of a million sub-pixel columns do not
     // render as a map; they render as moire - diagonal streaks that look like a
-    // finding and are an artefact of the rasteriser. Making the squares bigger
+    // finding and are an artifact of the rasteriser. Making the squares bigger
     // or smaller changes nothing, because the problem is that they are smaller
     // than a pixel either way.
     //
@@ -164,7 +164,7 @@
     // extruded. It is only legible zoomed in, which is what its control says.
     // THE VOLUMES ARE THE UNITS, NOT THE LOTS, and that distinction is the
     // whole reason this branch exists. The flat view draws one mark per lot at
-    // the lot's own centre, which is the right place for a fact about a lot.
+    // the lot's own center, which is the right place for a fact about a lot.
     // The extruded view draws the proposed building, so it has to stand where
     // the building would stand - in the back yard, five feet off the lot line,
     // at its own floor area. It used to be drawn at the lot centroid, which is
@@ -207,7 +207,7 @@
       updateTriggers: { getFillColor: [rgba] }
     });
 
-    // The crop mask: page-coloured, with the study area cut out of it, drawn
+    // The crop mask: page-colored, with the study area cut out of it, drawn
     // under the marks as the ground. It ends the basemap at the edge of what
     // the model actually covers - a map that runs on into Brooklyn implies the
     // model does too, and it does not.
@@ -238,7 +238,7 @@
         pickable: false,
         getPolygon: (d) => d.ring,
         getElevation: () => ADU_HEIGHT_M,
-        getFillColor: (d) => d.colour,
+        getFillColor: (d) => d.color,
         updateTriggers: { getFillColor: [rgba] }
       }));
     }
@@ -286,7 +286,7 @@
                             params.side_setback_ft, unitRatio);
       if (!ring) { unsited += 1; continue; }
       const o = i * 4;
-      out.push({ ring, colour: [rgba[o], rgba[o + 1], rgba[o + 2], 235] });
+      out.push({ ring, color: [rgba[o], rgba[o + 1], rgba[o + 2], 235] });
     }
     unsitedBuilt = unsited;
     return out;
@@ -294,7 +294,7 @@
 
   // ---- the legend ------------------------------------------------------
   //
-  // The gradient is drawn from the SAME functions the map is coloured with, so
+  // The gradient is drawn from the SAME functions the map is colored with, so
   // a reader holding the key against the map is holding the real thing. A
   // sentence saying "darker is a higher return" is not a key.
   const css = (c) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
@@ -340,13 +340,13 @@
   // is the only reason a quarter of a million sub-pixel lots resolve into a
   // pattern instead of moire. The cost of that floor is that below roughly zoom
   // 14.5 the marks are wider than the lots under them and overlap their
-  // neighbours - so the reader is looking at a density of lots, not at lots.
+  // neighbors - so the reader is looking at a density of lots, not at lots.
   // Above it the floor stops binding and the marks separate. Two different
   // pictures, and nothing on the map said which one was on screen.
   const PER_LOT_ZOOM = 14.5;
   const perLot = $derived(zoom >= PER_LOT_ZOOM);
 
-  // 247,000 lots is a few milliseconds of arithmetic, but the colour array and
+  // 247,000 lots is a few milliseconds of arithmetic, but the color array and
   // deck.gl's upload are not free. Batch into a frame and tell the frame we are
   // unsettled, rather than debouncing the sliders - a slider that lags behind
   // its own readout is worse than one that takes a frame to land.
@@ -427,7 +427,7 @@
           block of row houses resolves into houses rather than a band.
         {:else}
           At this zoom every mark is held to a minimum of a pixel and a bit, so
-          it is wider than its lot and overlaps its neighbours. You are reading
+          it is wider than its lot and overlaps its neighbors. You are reading
           a density of lots, not lots. Zoom past {PER_LOT_ZOOM} for one mark per lot.
         {/if}
       </span>
@@ -438,7 +438,7 @@
           own floor area and the plan library's proportions, 15ft tall — the
           rule's limit. Set behind the house, {params.side_setback_ft}ft off the
           rear lot line. Which way is "back" is measured from the unshared lot
-          edge — the stretch of boundary no neighbour touches, which is the
+          edge — the stretch of boundary no neighbor touches, which is the
           street. On a corner lot the longest such run is taken as the front;
           that rule is ours: see the card.
         </span>

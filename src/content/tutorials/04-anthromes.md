@@ -4,6 +4,7 @@ date: "2026-09-04"
 author: Adam Vosburgh
 sequence: 4
 cat: tutorial
+devnotes: true
 published: true
 ---
 
@@ -19,7 +20,7 @@ Notes from building the [Anthromes](/sandboxes/anthromes/) sandbox. Pipeline: `d
 
 ## The ambition
 
-What does it mean to understand the Earth through a predictive model, or here a hindcast? The Anthromes maps show the world's land coloured by human use from 10,000 BC to now, and get cited as a record. They are a classification laid over HYDE, itself a model that spreads historical estimates across a grid. The idea was to rebuild the classification with every threshold as a slider and run it live on the published inputs, so the map on screen is your classification and the crossover year (used land first exceeding wild) moves as you move the lines.
+What does it mean to understand the Earth through a predictive model, or here a hindcast? The Anthromes maps show the world's land colored by human use from 10,000 BC to now, and get cited as a record. They are a classification laid over HYDE, itself a model that spreads historical estimates across a grid. The idea was to rebuild the classification with every threshold as a slider and run it live on the published inputs, so the map on screen is your classification and the crossover year (used land first exceeding wild) moves as you move the lines.
 
 ## The parts
 
@@ -40,7 +41,7 @@ What does it mean to understand the Earth through a predictive model, or here a 
 - HYDE 3.5's `1970ce-2023ce` archive holds only 1970-1999; the 2000-2023 folders are present and empty in three separately obtained copies, so the sandbox classifies 3.2 and ends at 2017.
 - The six input TIFFs are 2.8 GB each uncompressed and once filled a scratch disk; they're read as a stream, one row (all 75 years) at a time, with nothing extracted.
 - The pipeline runs the authors' classifier on their test year and refuses to ship unless its own port agrees cell for cell (2,215,829 cells, zero disagreements).
-- Aggregating before thresholding gives a different map from thresholding before aggregating, so the default map doesn't match the published one everywhere; the "vs published" colouring shows where.
+- Aggregating before thresholding gives a different map from thresholding before aggregating, so the default map doesn't match the published one everywhere; the "vs published" coloring shows where.
 - The grid is equirectangular, which exaggerates the high latitudes where most wild land is; area statistics use true cell areas instead of reprojecting.
 
 ## What came out

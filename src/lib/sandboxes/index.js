@@ -11,6 +11,7 @@ import coefficientsSchema from './coefficients/schema.json';
 import pencilSchema from './pencil/schema.json';
 import afterFiveSchema from './after-five/schema.json';
 import anthromesSchema from './anthromes/schema.json';
+import sunlightSchema from './sunlight/schema.json';
 
 // --- stubs. Each gets a meta.js + schema.json + component as it is built. ---
 import studioTwin from './studio-twin/meta.js';
@@ -35,21 +36,24 @@ const schemas = {
   coefficients: coefficientsSchema,
   pencil: pencilSchema,
   'after-five': afterFiveSchema,
-  anthromes: anthromesSchema
+  anthromes: anthromesSchema,
+  sunlight: sunlightSchema
   // ...one per sandbox as it is built.
 };
 
 // The full list, in registry order, including sandboxes hidden from the site.
 // The submission validator and the cover script use this so a hidden sandbox
 // keeps working at its URL rather than 404ing.
+// Sunlight sits at the END, after bathtub, so that unhiding it makes it 6 and
+// nothing already published renumbers.
 export const allSandboxes = [
   studioTwin,
   pencil,
   afterFive,
   coefficients,
-  sunlight,
   anthromes,
-  bathtub
+  bathtub,
+  sunlight
 ].map((m) => ({ ...m, schema: schemas[m.slug] ?? null }));
 
 // What the site shows. `number` is assigned from position here, not read from

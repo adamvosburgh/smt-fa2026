@@ -4,6 +4,7 @@ date: "2026-08-31"
 author: Adam Vosburgh
 sequence: 3
 cat: tutorial
+devnotes: true
 published: true
 ---
 
@@ -116,7 +117,7 @@ What is behind a city simulator? The idea was to take one apart and describe its
     <rect width="132" height="62" fill="#ececff" stroke="#000" stroke-width="1"/>
     <text x="7" y="15" font-size="10" font-family="ui-monospace,monospace" fill="#999">14</text>
     <text x="7" y="31" font-size="10.5" font-family="ui-monospace,monospace" fill="#000">density</text>
-    <text x="7" y="47" font-size="9" font-family="ui-monospace,monospace" fill="#666">density, MOVES CENTRE</text>
+    <text x="7" y="47" font-size="9" font-family="ui-monospace,monospace" fill="#666">density, MOVES CENTER</text>
   </g>
   <g transform="translate(420,210)">
     <rect width="132" height="62" fill="#f5f5f2" stroke="#ccc" stroke-width="1"/>
@@ -126,7 +127,7 @@ What is behind a city simulator? The idea was to take one apart and describe its
   </g>
 </svg>
 
-- **About twenty constants.** Each becomes a slider defaulting to the engine's own value; the two the sandbox leads with are `crime = 128 - land value + population density - police` and `land value = 34 - distance from centre / 2`.
+- **About twenty constants.** Each becomes a slider defaulting to the engine's own value; the two the sandbox leads with are `crime = 128 - land value + population density - police` and `land value = 34 - distance from center / 2`.
 
 ![the two rules](/tutorials/images/03/two-rules.png#img-full)
 
@@ -140,7 +141,7 @@ What is behind a city simulator? The idea was to take one apart and describe its
 - Power spreads only through wires and zones, so a trunk cut by a river left half the city dark and looking like a model whose parameters do nothing.
 - A coal plant supplies 700 tiles and every conductive tile draws power, so two plants lit 77 of 198 zones and the city sat still; the sandbox now reports what was actually placed.
 - The engine's step function is throttled against the wall clock, so a tight loop simulates almost nothing; a second entry point takes one step per call.
-- Land value is written in phase 12 from a city centre not recomputed until phase 14; the engine's own comment says this feels wrong, and it was never changed.
+- Land value is written in phase 12 from a city center not recomputed until phase 14; the engine's own comment says this feels wrong, and it was never changed.
 - The crime scan never ran: its loop was bounded by two properties that don't exist, so crime was zero in every city and the crime-to-land-value feedback never fired; fixed here and recorded in `NOTICE.md`.
 - Swapping a rule for a student's own JavaScript would mean running submitted code in every visitor's browser, so that edit surface is built but switched off.
 - The first build's window was too small to follow; the current one has zoom and pan, room for the layers, and marks which layer is being written.
@@ -159,7 +160,7 @@ The crime rule at the engine's value, then at 220:
 
 - Average crime goes from about 92 to about 171, and population falls, because the engine links low land value to crime and crime back to land value.
 - With the weight on land value at 0 the model stops connecting the two and everything else carries on.
-- Raising the distance divisor flattens the land value gradient, but no setting makes a place far from the centre the most valuable.
+- Raising the distance divisor flattens the land value gradient, but no setting makes a place far from the center the most valuable.
 - With the layer set to `none` the overlay follows whichever map the cycle most recently wrote.
 - Swapping the tile atlas changes the picture and nothing else.
 

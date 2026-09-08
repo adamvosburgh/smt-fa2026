@@ -1,6 +1,6 @@
 // The pro-forma, over typed arrays.
 //
-// One function, called on every parameter change, producing BOTH the colour
+// One function, called on every parameter change, producing BOTH the color
 // array and the metrics in the same pass. That is deliberate and it is the same
 // rule bathtub follows: the picture and the numbers must come from the same
 // data by the same formula, so they cannot quietly disagree.
@@ -50,7 +50,7 @@ export const FT_PER_DEG_LAT = 364000;
 /**
  * Where the unit stands, and how big its footprint is.
  *
- * The pipeline ships the OPEN GROUND BEHIND THE HOUSE as a box - a centre, a
+ * The pipeline ships the OPEN GROUND BEHIND THE HOUSE as a box - a center, a
  * depth running away from the building, and a width across the lot. This
  * finishes the sum, and it has to be finished here rather than baked in
  * because `side_setback_ft` and the size of the unit are both controls.
@@ -59,7 +59,7 @@ export const FT_PER_DEG_LAT = 364000;
  * a lot centroid outside its own polygon (an L-shaped or flag lot), a house
  * that already reaches the rear lot line, or a back garden too shallow or too
  * narrow for a unit this shape. That last case is common and it is left
- * visible rather than fudged - the rule the programme applies is about the AREA
+ * visible rather than fudged - the rule the program applies is about the AREA
  * of the required rear yard, and an area is not a plan.
  */
 export function siteUnit(lots, rear, i, aduSf, setbackFt, ratio) {
@@ -142,7 +142,7 @@ function aduArea(lots, base, p, sizing) {
 function payment(F, annualRate, months) {
   if (F <= 0) return 0;
   const r = annualRate / 12;
-  // The rate slider reaches zero because the programme does - "5%. Rate may be
+  // The rate slider reaches zero because the program does - "5%. Rate may be
   // reduced." - and the amortisation formula divides by zero there.
   if (r === 0) return F / months;
   return (F * r) / (1 - Math.pow(1 + r, -months));
@@ -170,7 +170,7 @@ export function compute(lots, rear, flags, manifest, p) {
   const state = new Uint8Array(n);   // 0 ineligible, 1 fails, 2 over loan cap, 3 pencils
   const releaseYear = new Int16Array(n).fill(-1);
 
-  const loanMax = manifest.programme.loan_max;
+  const loanMax = manifest.program.loan_max;
   const propertyTax = manifest.assumptions.property_tax.value;   // 0 - see the card
   const rentAmi = manifest.rent_ami_monthly;
 
@@ -217,7 +217,7 @@ export function compute(lots, rear, flags, manifest, p) {
 
     // THERE IS NO OWNER-OCCUPANCY CONTROL, deliberately.
     //
-    // The programme requires the owner to live at the property "no less than
+    // The program requires the owner to live at the property "no less than
     // 270 days per year", and this model cannot represent that at all: there is
     // no dataset of who lives in which house. An earlier version had the switch
     // and it screened out city-owned lots, which the eligibility test above
@@ -251,7 +251,7 @@ export function compute(lots, rear, flags, manifest, p) {
     const M = Reff - O - propertyTax - D;
     margin[i] = M;
 
-    // Guard the divide: equity can legitimately be zero, and the programme's
+    // Guard the divide: equity can legitimately be zero, and the program's
     // own default is that the homeowner puts in nothing.
     roe[i] = E > 0 ? (12 * M) / E : (M > 0 ? Infinity : 0);
 
@@ -296,7 +296,7 @@ export function compute(lots, rear, flags, manifest, p) {
     perTract.set(t, (perTract.get(t) ?? 0) + 1);
   }
 
-  // CAN THE UNIT ACTUALLY GO ANYWHERE? The programme's rule is about the AREA
+  // CAN THE UNIT ACTUALLY GO ANYWHERE? The program's rule is about the AREA
   // of the required rear yard, and an area is not a plan. A lot can clear the
   // one-third test and still have no room behind the house for a rectangle the
   // shape of a real published design. That gap is counted here rather than left
@@ -338,7 +338,7 @@ export function compute(lots, rear, flags, manifest, p) {
 }
 
 /**
- * The colour ramps, as pure functions of a normalised position.
+ * The color ramps, as pure functions of a normalized position.
  *
  * EXPORTED SO THE LEGEND CAN DRAW THE ACTUAL GRADIENT. They used to be written
  * inline in the loop below, and the legend described them in a sentence -
@@ -356,15 +356,15 @@ export const RAMP = {
   releaseYear: (t) => [30 + 200 * t, 90 - 30 * t, 140 - 60 * t]
 };
 
-/** The span each ramp covers, in the units of the thing it colours. */
+/** The span each ramp covers, in the units of the thing it colors. */
 export const RAMP_SPAN = { margin: 1200, roe: 0.4, releaseYear: 24 };
 
 /**
- * Colour every lot, from the results of the same pass.
+ * Color every lot, from the results of the same pass.
  *
  * Returns a Uint8Array of RGBA, which deck.gl reads without copying.
  */
-export function colours(result, lots, p, manifest) {
+export function colors(result, lots, p, manifest) {
   const n = result.state.length;
   const rgba = new Uint8Array(n * 4);
   const { state, margin, roe, releaseYear } = result;

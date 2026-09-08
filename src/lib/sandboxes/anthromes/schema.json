@@ -95,7 +95,7 @@
     },
     "colour_by": {
       "type": "string",
-      "title": "Colour by",
+      "title": "Color by",
       "x-group": "how it's drawn",
       "enum": [
         "anthrome",
@@ -110,7 +110,7 @@
         "vs published"
       ],
       "default": "anthrome",
-      "description": "What the colour means: the anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating. At the default thresholds that last difference is purely what aggregating a threshold rule does."
+      "description": "What the color means: the anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating. At the default thresholds that last difference is purely what aggregating a threshold rule does."
     },
     "used_threshold": {
       "type": "number",
@@ -182,7 +182,7 @@
       "x-step": 100,
       "default": 2500,
       "x-unit": "/km²",
-      "description": "People per square kilometre of land above which a cell is urban regardless of built-up area. Published value 2,500."
+      "description": "People per square kilometer of land above which a cell is urban regardless of built-up area. Published value 2,500."
     },
     "dense_settlement_density": {
       "type": "number",
@@ -193,7 +193,7 @@
       "x-step": 10,
       "default": 100,
       "x-unit": "/km²",
-      "description": "The lower edge of the dense-settlement and village band. Below it a cell can't be a village however much rice it grows. Published value 100 per square kilometre."
+      "description": "The lower edge of the dense-settlement and village band. Below it a cell can't be a village however much rice it grows. Published value 100 per square kilometer."
     },
     "residential_density": {
       "type": "number",
@@ -204,7 +204,7 @@
       "x-step": 1,
       "default": 10,
       "x-unit": "/km²",
-      "description": "The lower edge of the residential band: residential croplands, rangelands and woodlands. Published value 10 per square kilometre."
+      "description": "The lower edge of the residential band: residential croplands, rangelands and woodlands. Published value 10 per square kilometer."
     },
     "populated_density": {
       "type": "number",
@@ -215,7 +215,7 @@
       "x-step": 0.1,
       "default": 1,
       "x-unit": "/km²",
-      "description": "The line between populated and remote. Below it a cropland is remote cropland however it's farmed. Published value 1 per square kilometre."
+      "description": "The line between populated and remote. Below it a cropland is remote cropland however it's farmed. Published value 1 per square kilometer."
     },
     "tree_biomes": {
       "type": "integer",

@@ -12,8 +12,8 @@ which is the open-source release of the original SimCity engine.
 | Source | `https://github.com/graememcc/micropolisJS` |
 | Commit | `f13a1624d111d235e804bd80f48ba7c9f66a8e0f` |
 | Retrieved | 2026-08-31 |
-| Licence | GNU GPL v3, with additional terms. See `vendor/LICENSE` and `vendor/COPYING`. |
-| Name licence | Micropolis Public Name License. See `vendor/MicropolisPublicNameLicense.md`. |
+| License | GNU GPL v3, with additional terms. See `vendor/LICENSE` and `vendor/COPYING`. |
+| Name license | Micropolis Public Name License. See `vendor/MicropolisPublicNameLicense.md`. |
 
 "MICROPOLIS" is a registered trademark of Micropolis GmbH, licensed to the
 authors of the Micropolis city simulation and its source code as a courtesy of
@@ -22,13 +22,13 @@ the owner.
 ## What was taken
 
 The complete `src/` tree of the upstream repository — 90 files, about 13,500
-lines — copied to `vendor/src/` with every copyright and licence header intact,
+lines — copied to `vendor/src/` with every copyright and license header intact,
 together with `LICENSE`, `COPYING`, `MicropolisPublicNameLicense.md` and
 `README.md`.
 
 All of it was taken rather than only the parts used, for two reasons. The
-licence bookkeeping is then simply "the whole tree at this commit", with no
-judgement calls about what counts as a derived selection. And the sandbox is
+license bookkeeping is then simply "the whole tree at this commit", with no
+judgment calls about what counts as a derived selection. And the sandbox is
 partly an argument that a simulation of this consequence is small enough for one
 person to read in an afternoon, which is a claim a student should be able to
 check against the whole thing rather than an edited extract.
@@ -70,7 +70,7 @@ public repository.
 Student submissions to this sandbox are modified GPL code redistributed by this
 site. They land in the same public repository, which satisfies availability. The
 tutorial says so plainly: what you submit here is published under the same
-licence.
+license.
 
 ---
 
@@ -142,7 +142,7 @@ to replay to the state its author is arguing about. All three need one call to
 mean one step, with no clock in it.
 
 `simTickImmediate()` is **added alongside** `simTick()`. Nothing existing was
-changed, and the original timing behaviour is untouched.
+changed, and the original timing behavior is untouched.
 
 ## 3. Constants lifted out
 
@@ -160,7 +160,7 @@ every value in `coefficients.json` was read from this commit and matches it.
 Where a count of unrolled calls became a loop — the smoothing passes — the
 alternation between source and destination map is preserved exactly, including
 the consequence that an odd number of passes leaves the last write in the other
-map. That is the engine's own behaviour at its defaults and it is kept.
+map. That is the engine's own behavior at its defaults and it is kept.
 
 ## 4. Randomness
 

@@ -24,6 +24,9 @@ function parse(path, mod) {
   const m = mod.default ?? mod;
   return {
     ...m,
+    // 'sandbox' (a forked state, rendered live) or 'assignment' (an uploaded
+    // file from an assignment page; `sandbox` is then the assignment slug).
+    kind: m.kind === 'assignment' ? 'assignment' : 'sandbox',
     student,
     sandbox,
     url: `/gallery/${student}/${sandbox}/`,

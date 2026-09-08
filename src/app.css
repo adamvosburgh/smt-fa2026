@@ -620,7 +620,7 @@ pre code {
 
    It clears the nav's BOX-SHADOW, not the nav. The pill throws a 30px blur at
    30px spread, which reaches about 170px down the page - the reason every
-   reading page starts at 10rem. At 7rem the shadow washed a grey fog across
+   reading page starts at 10rem. At 7rem the shadow washed a gray fog across
    the top of the map and it read as haze in the data. */
 :root {
   --chrome-top: 9rem;

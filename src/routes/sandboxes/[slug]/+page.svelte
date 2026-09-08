@@ -27,8 +27,8 @@
 
 {#if data.meta.tutorial}
   <p class="tut">
-    How this was built: <a href={data.meta.tutorial}>{data.meta.title} tutorial</a>. The tutorial
-    builds a robust base, not a replica - it says where it stops.
+    <a href={data.meta.tutorial}>Dev notes</a>: what went into this one, where it got stuck, and
+    what a rebuild won't have.
   </p>
 {/if}
 

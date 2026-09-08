@@ -5,7 +5,7 @@ export default {
   slug: 'bathtub',
   title: 'Sea Level Flood Map',
   subtitle:
-    'A flood map of New York built one setting at a time: pick a date and a projection, get a water height, and every piece of ground below it is coloured in.',
+    'A flood map of New York built one setting at a time: pick a date and a projection, get a water height, and every piece of ground below it is colored in.',
   status: 'reference',
   statusNote:
     'Built first, as the reference implementation of the sandbox contract. Everything in it is published data: the USGS terrain for New York, the NPCC4 projections, the tidal datums and storm levels from the gauge at the Battery, the city building footprints. Read this one before building any of the others.',
@@ -14,7 +14,7 @@ export default {
     "Flood maps usually arrive finished, with the date, the projection and the method already chosen. This one leaves those as controls. Pick a year and a projection, the sandbox works out one water height for the whole city, and every cell of ground below that height floods. The switch that matters most is hydraulic connectivity: off, the map floods inland dips the sea can't physically reach, which is a choice made silently in many published flood maps.",
   controls: [
     'how far into the future, and which of the four published projections',
-    'how much the sea rises, in metres, if you would rather set it by hand',
+    'how much the sea rises, in meters, if you would rather set it by hand',
     'which storm, chosen by how often it happens, or a surge height set by hand',
     'which point in the tide cycle',
     'whether water has to be able to reach a place to flood it',
@@ -29,7 +29,7 @@ export default {
     'land that only floods when connectivity is switched off'
   ],
   data: [
-    'Ground height: USGS 3DEP 1/3 arc-second elevation model (about 10m per cell), clipped to New York. Heights are metres above NAVD88.',
+    'Ground height: USGS 3DEP 1/3 arc-second elevation model (about 10m per cell), clipped to New York. Heights are meters above NAVD88.',
     'Sea level rise: NPCC4 projections (Braneon et al. 2024, NYC Open Data 38ps-fnsg). Four percentiles, five horizons, no median.',
     'Tides: NOAA station 8518750 at the Battery, 1983-2001 epoch, relative to NAVD88.',
     'Storms: NOAA exceedance probability levels at the same station, from the Sea Level Trends and Extremes site, read for October 2025. Four levels (99%, 50%, 10%, 1%) and no others are published. Still-water levels fitted to annual maxima, so no waves, and lower than a FEMA base flood elevation.',

@@ -4,34 +4,92 @@
   "title": "Submission manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["sandbox", "student", "title", "gallery_text", "params", "app_version"],
+  "required": [
+    "sandbox",
+    "student",
+    "title",
+    "gallery_text",
+    "params",
+    "app_version"
+  ],
   "properties": {
-    "sandbox": { "type": "string", "pattern": "^[a-z0-9-]+$" },
-    "student": { "type": "string", "pattern": "^[a-z0-9-]+$",
-      "description": "Server-assigned from the submitting token. Anything sent here is ignored." },
-    "title": { "type": "string", "minLength": 1, "maxLength": 140 },
-    "gallery_text": { "type": "string", "minLength": 1, "maxLength": 600,
-      "description": "Two sentences. Text that might accompany a work of art." },
-    "description": { "type": "string", "maxLength": 20000 },
-    "params": { "type": "object",
-      "description": "Validated separately against the per-sandbox schema in src/lib/sandboxes/<slug>/schema.json." },
+    "sandbox": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "sandbox",
+        "assignment"
+      ],
+      "description": "'sandbox' (default) is a forked sandbox state. 'assignment' is a file upload from an assignment page; `sandbox` then holds the assignment slug (assignment-01) and `primary` names the file the gallery shows."
+    },
+    "primary": {
+      "type": "string",
+      "pattern": "^assets/[A-Za-z0-9._-]+$",
+      "description": "Assignment submissions only: the asset the gallery renders (an image, a PDF, or one self-contained HTML file)."
+    },
+    "student": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Server-assigned from the submitting token. Anything sent here is ignored."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 140
+    },
+    "gallery_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600,
+      "description": "Two sentences. Text that might accompany a work of art."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 20000
+    },
+    "params": {
+      "type": "object",
+      "description": "Validated separately against the per-sandbox schema in src/lib/sandboxes/<slug>/schema.json."
+    },
     "assets": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["path", "type", "bytes"],
+        "required": [
+          "path",
+          "type",
+          "bytes"
+        ],
         "properties": {
-          "path": { "type": "string", "pattern": "^assets/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$" },
-          "type": { "type": "string" },
-          "bytes": { "type": "integer", "minimum": 0 }
+          "path": {
+            "type": "string",
+            "pattern": "^assets/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$"
+          },
+          "type": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       }
     },
-    "cover": { "type": "object",
-      "description": "The state the cover screenshot is taken at. Defaults to params." },
-    "app_version": { "type": "string",
-      "description": "So a submission can be migrated when a sandbox changes mid-semester." },
-    "submitted": { "type": "string", "format": "date-time" }
+    "cover": {
+      "type": "object",
+      "description": "The state the cover screenshot is taken at. Defaults to params."
+    },
+    "app_version": {
+      "type": "string",
+      "description": "So a submission can be migrated when a sandbox changes mid-semester."
+    },
+    "submitted": {
+      "type": "string",
+      "format": "date-time"
+    }
   }
 }

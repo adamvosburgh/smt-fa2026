@@ -35,7 +35,7 @@
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
 
-  // The chosen NOAA exceedance level, in metres NAVD88, or null for no storm.
+  // The chosen NOAA exceedance level, in meters NAVD88, or null for no storm.
   // These are still-water levels fitted to ANNUAL MAXIMA, and an annual maximum
   // happens at high tide - so the level already contains a high tide, and it
   // REPLACES the tide offset rather than being added to it. Adding the two
@@ -51,7 +51,7 @@
       : null
   );
 
-  // Water height in metres NAVD88, the same datum the DEM is in - which is what
+  // Water height in meters NAVD88, the same datum the DEM is in - which is what
   // makes the comparison legal in the first place.
   const waterline = $derived.by(() => {
     if (!manifest) return 0;

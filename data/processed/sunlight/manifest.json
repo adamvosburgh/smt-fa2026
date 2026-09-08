@@ -1,0 +1,574 @@
+{
+ "sandbox": "sunlight",
+ "generated": "2026-09-06",
+ "subject": {
+  "name": "25 Water Street",
+  "former_name": "4 New York Plaza",
+  "bin": 1000007,
+  "bbl": "1000050010",
+  "pluto_address": "115 BROAD STREET",
+  "pluto_26v2": {
+   "YearBuilt": 1969,
+   "NumFloors": 32,
+   "UnitsRes": 1320,
+   "ResArea": 995416,
+   "BldgFront_ft": 148,
+   "BldgDepth_ft": 276,
+   "note": "The PLUTO row describes the building after conversion (ten storeys added). The survey used here is from 2014 and shows the 22-storey office building."
+  },
+  "storeys_in_survey": 22,
+  "footprint_survey_m2": 3775.1,
+  "main_roof_m": 85.97,
+  "roof_polygons": 10,
+  "conversion": "From 2023, about 1,300 apartments, ten storeys added, two courtyards cut into the plate (New York YIMBY, 2023-07; Wikipedia)."
+ },
+ "site": {
+  "latitude": 40.702615,
+  "longitude": -74.010687,
+  "timezone": "America/New_York",
+  "origin_epsg2263_ft": [
+   981286.72,
+   195258.07,
+   7.29
+  ],
+  "origin_note": "Vertex-mean centre of the subject's surveyed ground ring, at its surveyed ground elevation (NAVD88 feet in the source). Grid north of EPSG:2263 differs from true north here by about 0.007 degrees, ignored."
+ },
+ "axes": {
+  "model": "+X east, +Y north, +Z up (Rhino, top view)",
+  "gltf": "+X east, +Y up, -Z north; the writer applies (x, y, z) -> (x, z, -y), the same as Rhino's 'Map Rhino Z to glTF Y'"
+ },
+ "floor_to_floor_m": 3.9079,
+ "example_floors": [
+  3,
+  8,
+  15
+ ],
+ "files": {
+  "example-f03.glb": {
+   "bytes": 3257560,
+   "floor": 3,
+   "context_triangles": 86250,
+   "levels": {
+    "finished_floor_m": 8.116,
+    "ceiling_m": 11.424,
+    "room_height_m": 3.308,
+    "sill_m": 9.016,
+    "head_m": 10.516,
+    "interior_floor_m2": 1283.0,
+    "core_m2": 360.0,
+    "bays_m2": 1981.4,
+    "plate_m2": 3624.3
+   }
+  },
+  "example-f08.glb": {
+   "bytes": 3257632,
+   "floor": 8,
+   "context_triangles": 86250,
+   "levels": {
+    "finished_floor_m": 27.655,
+    "ceiling_m": 30.963,
+    "room_height_m": 3.308,
+    "sill_m": 28.555,
+    "head_m": 30.055,
+    "interior_floor_m2": 1283.0,
+    "core_m2": 360.0,
+    "bays_m2": 1981.4,
+    "plate_m2": 3624.3
+   }
+  },
+  "example-f15.glb": {
+   "bytes": 3257564,
+   "floor": 15,
+   "context_triangles": 86250,
+   "levels": {
+    "finished_floor_m": 55.011,
+    "ceiling_m": 58.319,
+    "room_height_m": 3.308,
+    "sill_m": 55.911,
+    "head_m": 57.411,
+    "interior_floor_m2": 1283.0,
+    "core_m2": 360.0,
+    "bays_m2": 1981.4,
+    "plate_m2": 3624.3
+   }
+  }
+ },
+ "context": {
+  "radius_ft": 3000.0,
+  "buildings": 552,
+  "method": "one prism per RoofSurface polygon, from the building's lowest ground-surface elevation to the roof polygon's mean elevation",
+  "ground_plane_half_m": 900.0,
+  "delivery_areas_scanned": [
+   "DA12 (holds everything)",
+   "DA19",
+   "DA11",
+   "DA13 (nothing in the box)"
+  ]
+ },
+ "plate": {
+  "method": "surveyed outline simplified (Douglas-Peucker 1.5 m), rotated onto its longest edge, each of the four sides taken as the length-weighted mean of its edges, corners by intersection",
+  "quad_m": [
+   [
+    33.126,
+    42.426
+   ],
+   [
+    -47.786,
+    24.308
+   ],
+   [
+    -38.235,
+    -18.346
+   ],
+   [
+    42.678,
+    -0.228
+   ]
+  ],
+  "quad_m2": 3624.3,
+  "survey_outline_m2": 3775.1,
+  "max_deviation_m": 3.64,
+  "max_deviation_note": "largest distance from a surveyed outline vertex to the rectangle's boundary; the jogs are at the two short ends",
+  "simplified_outline_m": [
+   [
+    40.5,
+    -2.658
+   ],
+   [
+    43.413,
+    -1.682
+   ],
+   [
+    40.032,
+    8.521
+   ],
+   [
+    38.12,
+    7.155
+   ],
+   [
+    37.278,
+    10.914
+   ],
+   [
+    40.425,
+    11.619
+   ],
+   [
+    33.508,
+    42.512
+   ],
+   [
+    -48.186,
+    24.219
+   ],
+   [
+    -41.247,
+    -6.772
+   ],
+   [
+    -37.292,
+    -5.886
+   ],
+   [
+    -36.712,
+    -8.477
+   ],
+   [
+    -39.422,
+    -9.272
+   ],
+   [
+    -38.134,
+    -19.649
+   ]
+  ]
+ },
+ "assumptions": [
+  {
+   "key": "floor_to_floor",
+   "value_m": 3.9079,
+   "who": "ours",
+   "note": "22 storeys divided evenly into the surveyed 86.0 m main roof. The survey knows the roof, not the floors."
+  },
+  {
+   "key": "slab_thickness",
+   "value_m": 0.3,
+   "who": "ours"
+  },
+  {
+   "key": "glazing_band",
+   "sill_m": 0.9,
+   "head_m": 2.4,
+   "who": "ours",
+   "note": "continuous around the perimeter; the real 1969 facade is strip windows with spandrels, not measured"
+  },
+  {
+   "key": "bay_depth",
+   "value_m": 9.144,
+   "who": "ours",
+   "note": "30 ft, a common residential bay depth"
+  },
+  {
+   "key": "bay_width_target",
+   "value_m": 7.62,
+   "who": "ours",
+   "note": "25 ft; each edge is divided into the nearest whole number of bays"
+  },
+  {
+   "key": "core",
+   "value_m": [
+    30.0,
+    12.0
+   ],
+   "who": "ours",
+   "note": "a single rectangle centred on the plate, aligned with its long edge; the real core is not in any public dataset"
+  },
+  {
+   "key": "interior_rings",
+   "who": "pipeline",
+   "note": "CityGML interior rings (courtyards) are extruded as solids; DA12 has six, none near the subject"
+  }
+ ],
+ "rooms": [
+  {
+   "id": "01",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "02",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "03",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "04",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "05",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "06",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "07",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "08",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "09",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "10",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "11",
+   "edge": 0,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "12",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "13",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "14",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "15",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "16",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "17",
+   "edge": 1,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "18",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "19",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "20",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "21",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "22",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "23",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "24",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "25",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "26",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "27",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "28",
+   "edge": 2,
+   "floor_m2": 61.33,
+   "glazing_m2": 11.31,
+   "frontage_m": 7.54,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.1844
+  },
+  {
+   "id": "29",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "30",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "31",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "32",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "33",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  },
+  {
+   "id": "34",
+   "edge": 3,
+   "floor_m2": 52.68,
+   "glazing_m2": 10.93,
+   "frontage_m": 7.29,
+   "depth_m": 9.144,
+   "glazing_to_floor": 0.2074
+  }
+ ],
+ "tags": {
+  "context": "opaque, casts and receives shadows, not analysed",
+  "space": "group; everything below is analysed",
+  "room_<id>": "planar floor patch, one row in the room table",
+  "floor*": "analysed floor surface belonging to no room",
+  "ceiling*": "analysed",
+  "wall*, core*, partition*": "opaque, casts shadows, analysed",
+  "slab*": "opaque, casts shadows, not analysed (the floor and ceiling surfaces 1 cm off its faces are)",
+  "context_above*": "context that the cut-away view hides from the camera; it still casts shadows",
+  "glazing_<id>": "transparent to the sun, translucent in the view, not analysed; <id> ties it to room_<id>",
+  "match": "prefix, case-insensitive, on node name, then mesh name, then material name"
+ },
+ "light_and_air_rules": {
+  "mdl_30": {
+   "window_to_floor": 0.1,
+   "min_window_sf": 12,
+   "source": "NY Multiple Dwelling Law s.30(8)(a), read 2026-09-06 (law.justia.com)",
+   "depth_rule": "s.30(3): rooms in apartments of three rooms or fewer may not extend more than 30 ft from a window on a lawful court; not applied to larger apartments"
+  },
+  "mdl_277": {
+   "window_to_floor": "0.10 below 500 sf of living-room floor area, less 0.01 per additional 100 sf, floor 0.05",
+   "court": "a court at least 15 ft perpendicular to the window and 100 sf",
+   "source": "NY Multiple Dwelling Law s.277, read 2026-09-06 (law.justia.com, newyork.public.law)",
+   "eligibility_note": "the text read gives buildings occupied non-residentially before 1 Jan 1977 in a city over one million; the widely reported 2024 change to 31 Dec 1990 was not visible in either mirror and is UNVERIFIED"
+  }
+ },
+ "sources": [
+  "DCP 3-D Building Model, CityGML 2.0, NYC Open Data tnru-abg2 (2014 aerial survey), delivery area DA12",
+  "NYC Building Footprints (BUILDING_20260830.geojson): bin 1000007 -> base_bbl 1000050010, used only to identify the subject",
+  "MapPLUTO 26v2 (MapPLUTO.dbf/.shp): BBL 1000050010, used only to identify the subject",
+  "25 Water Street, Wikipedia (read 2026-09-06): formerly 4 New York Plaza, Carson Lundin & Shaw, 1969, 22 storeys, 1.1M sf, CetraRuddy conversion, ten storeys added",
+  "New York YIMBY, 2023-07-xx (read 2026-09-06): two central courtyards cut into the plate, ~1,300 units"
+ ]
+}

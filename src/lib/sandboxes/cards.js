@@ -30,11 +30,18 @@ const raw = import.meta.glob('/src/lib/sandboxes/*/card.md', {
   import: 'default'
 });
 
+// A card that is still a draft carries an HTML comment on its first line saying
+// so. markdown-it is configured with html:false here - correctly, a card is
+// prose and nothing else - which would print that comment as visible text in
+// the modal. The section split drops it anyway, since it sits before the first
+// `##`; this makes the whole-card render agree.
+const stripLeadingComment = (source) => String(source).replace(/^\s*<!--[\s\S]*?-->\s*/, '');
+
 const cards = Object.fromEntries(
   Object.entries(raw).map(([path, source]) => {
     const slug = path.split('/').at(-2);
     // docId prefixes the footnote ids, so two cards on one page cannot collide.
-    return [slug, md.render(source, { docId: slug })];
+    return [slug, md.render(stripLeadingComment(source), { docId: slug })];
   })
 );
 

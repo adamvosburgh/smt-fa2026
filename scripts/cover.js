@@ -20,7 +20,11 @@ const args = Object.fromEntries(
     .filter((x) => x.length)
 );
 const BASE = args.base || 'http://localhost:3000';
-const TIMEOUT = 30000;
+// 60s, not 30s, and the reason is the sunlight sandbox: a year is 880 shadow
+// renders, which is under a second on a GPU and about thirty on a machine
+// falling back to software rasterisation - right on the old limit. Overridable
+// with --timeout for a slow box.
+const TIMEOUT = Number(args.timeout) || 60000;
 
 async function capture(browser, url, out) {
   // 1600x1000, not 1280x900, and the reason is the layout rather than taste.
@@ -53,10 +57,21 @@ async function capture(browser, url, out) {
   } catch { /* fall through - we still want the metrics and the problems */ }
 
   const metrics = await page.evaluate(() => window.__metrics ?? null).catch(() => null);
-  const el = await page.$('.sandbox .viewport');
+  // A sandbox page has a viewport; an assignment upload marks what to shoot.
+  const el = (await page.$('.sandbox .viewport')) ?? (await page.$('[data-cover-target]'));
+  let shot = false;
   if (el) {
     await mkdir(path.dirname(out), { recursive: true });
-    await el.screenshot({ path: out });
+    // Playwright waits for the element to hold still before it shoots, and on a
+    // slow machine a heavy sandbox can miss that window. Caught, because one
+    // sandbox that will not settle must not abandon the other six - the run
+    // reports it as a failure instead.
+    try {
+      await el.screenshot({ path: out, timeout: TIMEOUT });
+      shot = true;
+    } catch (err) {
+      problems.consoleErrors.push(`screenshot failed: ${err?.message ?? err}`);
+    }
   }
   await ctx.close();
 
@@ -68,7 +83,8 @@ async function capture(browser, url, out) {
     metrics,
     ...problems,
     // Stage 2's verdict. Stage 3 only ever fires when this is false.
-    ok: ready && rendered && problems.exceptions.length === 0
+    shot,
+    ok: ready && rendered && shot && problems.exceptions.length === 0
   };
 }
 

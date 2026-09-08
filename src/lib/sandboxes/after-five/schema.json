@@ -52,7 +52,7 @@
       "maximum": 24,
       "x-step": 0.001,
       "default": 8,
-      "description": "The day's clock. The figures on the map walk between the subway stations and the buildings on the measured schedule. Only one clock plays at a time: playing the year holds this one at its value, and playing this one holds the year."
+      "description": "The day's clock. Walkers move between the subway stations and the buildings on the measured schedule. Only one clock plays at a time: playing the year holds this one, and playing this one holds the year."
     },
     "year": {
       "type": "integer",
@@ -82,7 +82,7 @@
     },
     "colour_by": {
       "type": "string",
-      "title": "Colour by",
+      "title": "Color by",
       "x-group": "how it's drawn",
       "enum": [
         "use",
@@ -95,21 +95,21 @@
         "year converted"
       ],
       "default": "use",
-      "description": "What the colour means. \"Use\" is the one to start with: blue is still office, red has become housing."
+      "description": "What the color means. \"Use\" is the one to start with: blue is still office, red has become housing."
     },
     "added_floors": {
       "type": "boolean",
       "title": "Show added floors",
       "x-group": "how it's drawn",
       "default": true,
-      "description": "Where a filing recorded storeys being added, the roof is pushed up by that many. That is the amount of the change and not its shape: no setback, no courtyard, no new envelope. It only shows for buildings whose record came from the older filing system, because the newer source carries no heights."
+      "description": "Where a filing recorded stories being added, the roof is pushed up by that many. That is the amount of the change and not its shape: no setback, no courtyard, no new envelope. It only shows for buildings whose record came from the older filing system, because the newer source carries no heights."
     },
     "streets": {
       "type": "boolean",
-      "title": "Street counts",
+      "title": "Streets by walkers",
       "x-group": "the street",
       "default": true,
-      "description": "Colour each street segment by how many walkers cross it during the selected hour. The counts come from the same routed trips as the dots, so a street is dark because trips were routed down it, not because anyone was counted there. Clicking a segment stands the camera on it at eye height; the button under the map brings the view back up."
+      "description": "Color and widen each street segment by how many walkers cross it in the selected hour. The counts come from the same routed trips as the dots, so they count trips the model sent down a street, not people observed on it. Clicking a segment puts the camera on it at eye height; the button under the map returns to the district view."
     },
     "ground_floor_p": {
       "type": "number",
@@ -119,14 +119,14 @@
       "maximum": 1,
       "x-step": 0.05,
       "default": 0.5,
-      "description": "The chance that a converted building's ground floor becomes an active frontage: a shop, or a lobby with glass rather than a service wall. Converted buildings are edged in a warm line where the draw comes up active and a dark one where it doesn't. The probability is ours; nothing on disk records what a ground floor is used for at building resolution, and the card says so."
+      "description": "The chance that a converted building's ground floor becomes an active frontage (a shop, or a lobby with glass rather than a service wall). Converted buildings are edged in a warm line where the draw comes up active and a dark line where it doesn't. The probability is ours; no dataset here records what a ground floor is used for at building resolution."
     },
     "compare_hours": {
       "type": "boolean",
       "title": "Compare two hours",
       "x-group": "the street",
       "default": false,
-      "description": "Draw the crowd at two hours of the same day at once, in two colours, and colour the streets by the difference in walkers between them. The role colours give way to the hour colours while this is on."
+      "description": "Draw the crowd at two hours of the same day at once, in two colors, and color the streets by the difference in walkers between them. While this is on, the crowd is colored by hour rather than by role."
     },
     "hour_b": {
       "type": "number",
@@ -141,7 +141,7 @@
         "compare_hours": false
       },
       "x-disabled-note": "turn on the comparison",
-      "description": "The hour the comparison holds against the main clock. The default is 20:00, the evening the district's name is about."
+      "description": "The second hour for the comparison. Defaults to 20:00, so that the default comparison is the morning peak against the evening."
     },
     "office_rent": {
       "type": "number",
@@ -189,7 +189,7 @@
       "x-step": 5,
       "default": 75,
       "x-unit": "$/sf/yr",
-      "description": "What the converted apartments rent for, per square foot per year. One figure for the whole district, so a basement studio and a corner unit forty floors up earn the same. It is turned into a building value with the residential capitalisation rate, and it does not change over time."
+      "description": "What the converted apartments rent for, per square foot per year. One figure for the whole district, so a basement studio and a corner unit forty floors up earn the same. It is turned into a building value with the residential capitalization rate, and it does not change over time."
     },
     "conversion_cost_sf": {
       "type": "number",
@@ -282,7 +282,7 @@
       "maximum": 1,
       "x-step": 0.05,
       "default": 0.35,
-      "description": "How much the depth from core to window counts in the convertibility score. It is the heaviest weight, which is our judgement. The proxy is MapPLUTO's building depth halved, which assumes a centred core and a rectangular floor plate."
+      "description": "How much the depth from core to window counts in the convertibility score. It is the heaviest weight, which is our judgment. The proxy is MapPLUTO's building depth halved, which assumes a centered core and a rectangular floor plate."
     },
     "w_f2f": {
       "type": "number",
@@ -292,7 +292,7 @@
       "maximum": 1,
       "x-step": 0.05,
       "default": 0.25,
-      "description": "How much ceiling height counts: the room to run new services under a floor and still have a room. The proxy is the modelled height divided by the number of storeys, which averages lobbies and mechanical floors in with the rest."
+      "description": "How much ceiling height counts: the room to run new services under a floor and still have a room. The proxy is the modeled height divided by the number of stories, which averages lobbies and mechanical floors in with the rest."
     },
     "w_area": {
       "type": "number",
@@ -302,7 +302,7 @@
       "maximum": 1,
       "x-step": 0.05,
       "default": 0.2,
-      "description": "How much a small floor plate counts. The proxy is floor area divided by storeys."
+      "description": "How much a small floor plate counts. The proxy is floor area divided by stories."
     },
     "w_age": {
       "type": "number",
@@ -363,15 +363,15 @@
         "mirror of the workers"
       ],
       "x-enum-notes": [
-        "Residents leave and return on curves cut from the American Time Use Survey's not-employed weekday diaries: out and about through the whole day, which is when a neighbourhood looks different from a jobs district. National survey minutes, not New York counts.",
-        "Residents run the workers' commute in reverse: out in the morning, back in the evening. This is what the counted subway curves alone can say, and it makes a converted block look like an office block with the colours swapped."
+        "Residents leave and return on curves from the American Time Use Survey's weekday diaries of people not employed, which puts them on the street through the day. A national survey, not a New York count.",
+        "Residents run the workers' commute in reverse: out in the morning, back in the evening. This is all the subway counts alone can say."
       ],
       "default": "atus",
       "x-disabled-when": {
         "schedule_source": "parametric"
       },
       "x-disabled-note": "the parametric schedule sets its own",
-      "description": "Where the residents' times come from. The subway counts aren't split by who is riding, so the mirrored option is an attribution; the ATUS option gives residents a measured day of their own, from a national survey rather than a New York count."
+      "description": "Where residents' times come from. The subway counts aren't split by who is riding, so the mirrored option treats residents as the workers' commute in reverse. The ATUS option gives residents their own day from a national time-use survey, not a New York count."
     },
     "arrival_median": {
       "type": "number",

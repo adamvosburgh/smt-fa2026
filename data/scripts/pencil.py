@@ -5,7 +5,7 @@ pencil.py - processing pipeline for Sandbox 02, Does It Pencil.
 WHAT THE MODEL IS
 -----------------
 A pro-forma. Every one-to-two-family lot in Queens is tested against the
-published terms of one real subsidy programme - HPD and HCR's Plus One ADU - and
+published terms of one real subsidy program - HPD and HCR's Plus One ADU - and
 tinted by the monthly cash flow an accessory dwelling unit on it would produce.
 
 Not by whether an ADU is LEGAL there. That map is a zoning map and it is boring,
@@ -75,7 +75,7 @@ INPUTS  (data/original/, as downloaded, never edited in place)
       Queens. They cover the whole New York, NY HUD Metro FMR Area: Bronx,
       Kings, New York, Putnam, Queens, Richmond, Rockland and Westchester
       counties. HUD publishes no smaller geography for income limits. So the
-      programme's rent cap does not vary across Queens AT ALL, while market rent
+      program's rent cap does not vary across Queens AT ALL, while market rent
       does - and the AMI that sets it is computed partly from Westchester and
       Rockland incomes. That asymmetry is the point of the rent_basis control.
 
@@ -96,7 +96,7 @@ INPUTS  (data/original/, as downloaded, never edited in place)
 OUTPUTS (data/processed/pencil/)
 --------------------------------
   manifest.json   column order and units, bounds, lot count, the published
-                  programme constants with their source, the non-control
+                  program constants with their source, the non-control
                   assumptions with their justification, and every join total
   lots.bin        Float32Array, row-major, 9 floats per lot:
                     lon, lat, lot_front, required_rear_yard_depth, lot_area,
@@ -119,7 +119,7 @@ does not exist, and 1MB of identical numbers is a poor way to make that point.
 WHAT IS DERIVED HERE AND IS NOT A CITY PRODUCT
 ----------------------------------------------
 The eligibility flags are OURS. NYC Open Data publishes no City of Yes ADU
-eligibility layer - this was checked against the catalogue on 2026-08-31 and
+eligibility layer - this was checked against the catalog on 2026-08-31 and
 there is none. So the flags below are derived from the published rules in DCP's
 City of Yes for Housing Opportunity ADU guide, applied to MapPLUTO by us. That
 distinction is carried into the model card and it matters: a reader should not
@@ -150,11 +150,11 @@ from _common import env, original_dir, read_dbf  # noqa: E402
 QUEENS_BORO = "4"
 QUEENS_FIPS = ("36", "081")
 
-# --- the programme, as published ------------------------------------------
+# --- the program, as published ------------------------------------------
 # HPD / HCR Plus One ADU term sheet.
 # nyc.gov/assets/hpd/downloads/pdfs/services/adu-term-sheet.pdf
 # Every figure here is quoted from that document; verified 2026-08-31.
-PROGRAMME = {
+PROGRAM = {
     "source": "HPD Plus One ADU term sheet, nyc.gov/assets/hpd/downloads/pdfs/"
               "services/adu-term-sheet.pdf, read 2026-08-31",
     "loan_max": 220000,          # "$220,000 per borrower"
@@ -244,7 +244,7 @@ GAP_DETACHED_FT = 10.0   # and above this as detached
 # Not assumptions. Each was read off a published HPD product on 2026-09-01.
 HPD_BUDGET = {
     "source": "HPD ADU Budgeting Tool, housing.hpd.nyc.gov/adu/budget. The "
-              "defaults were read off the controls and the behaviour was "
+              "defaults were read off the controls and the behavior was "
               "measured by varying one control at a time at a $500,000 hard "
               "cost, on 2026-09-01.",
     "soft_cost_flat": 50000,
@@ -276,7 +276,7 @@ HPD_BUDGET = {
         "HPD IS RUNNING TWO DIFFERENT FINANCINGS FOR THE SAME BUILDING. The "
         "budgeting tool assumes a 7.5%, 20-year market loan; Plus One is 5% over "
         "15 years, extendable to 30. Both are HPD, on the same website. This "
-        "sandbox models Plus One, because Plus One is the programme it is about, "
+        "sandbox models Plus One, because Plus One is the program it is about, "
         "and the operating figures above are taken from the budgeting tool "
         "because Plus One's term sheet does not carry any."),
 }
@@ -335,7 +335,7 @@ ASSUMPTIONS = {
                 "instead. If an ADU may sit there, the one-third rule is not the "
                 "binding cap on deep lots and this map is too harsh. HPD's "
                 "guidebook and its eligibility tool both present the one-third "
-                "rule as THE size cap, so modelling it as the cap is defensible - "
+                "rule as THE size cap, so modeling it as the cap is defensible - "
                 "but it has not been checked against the lot coverage rules.",
     },
 }
@@ -685,7 +685,7 @@ def rear_yard_box(ring, cx, cy, lat, lon, dx, dy, hull_deg):
     ft_per_deg_lon = FT_PER_DEG_LAT * math.cos(math.radians(lat))
     px, py = -dy, dx                           # across the lot
 
-    # The polygon, in a frame centred on the lot centroid. Direction and
+    # The polygon, in a frame centered on the lot centroid. Direction and
     # polygon are now BOTH State Plane, so the old true-north/grid-north
     # mismatch (about a third of a degree) is gone with the old method.
     poly = ring - np.array([cx, cy])
@@ -714,7 +714,7 @@ def rear_yard_box(ring, cx, cy, lat, lon, dx, dy, hull_deg):
     if left is None or right is None:
         return "geometry"
 
-    # The centre of the box: halfway back, and halfway across.
+    # The center of the box: halfway back, and halfway across.
     off = (left - right) / 2.0
     return (mx + px * off, my + py * off, depth, left + right)
 
@@ -783,7 +783,7 @@ def read_income_limits(path):
     """Very Low (50%) limits by household size, and the area median income.
 
     HUD publishes 50% and 80% limits, not 100%. The 100% figure used for the
-    programme's rent cap is taken as twice the 50% limit for the same household
+    program's rent cap is taken as twice the 50% limit for the same household
     size, which is HUD's own construction - the 50% limit is the base from which
     the others are derived, and it already carries the caps and adjustments HUD
     applies. Doubling it is therefore closer to the published intent than
@@ -812,7 +812,7 @@ def read_income_limits(path):
 
 
 def ami_rent_cap(limits, bedrooms=1):
-    """The programme's 100%-AMI monthly rent cap.
+    """The program's 100%-AMI monthly rent cap.
 
     Household size is 1.5 persons per bedroom, so a one-bedroom is priced
     between the 1-person and 2-person limits. Rent is 30% of income, monthly.
@@ -975,7 +975,7 @@ def main():
               "no_coords": 0, "bad_units": 0, "multi_building": 0}
     # EVERY Queens lot's shapefile row, grouped by tax block - not only the
     # one-to-two-family ones. The frontage test needs both sides of a shared
-    # line, and the neighbour may be a corner store.
+    # line, and the neighbor may be a corner store.
     block_rows = {}
     # THE RECORD INDEX IS THE JOIN TO THE SHAPEFILE. Record i of the .dbf is
     # record i of the .shp; there is no key field to match on and none is
@@ -1106,7 +1106,7 @@ def main():
     #      flood maps, that has a one percent chance of flooding in a given
     #      year") - no ADU below the flood-resistant construction elevation.
     #      THIS IS NOT A BAN ON THE LOT. It is an elevation requirement, and
-    #      modelling it as an eligibility exclusion misreads it. It is flagged
+    #      modeling it as an eligibility exclusion misreads it. It is flagged
     #      here and deliberately kept OUT of the eligibility test.
     #
     #   2. In DEP's 10-YEAR RAINFALL FLOOD RISK AREA and COASTAL FLOOD RISK
@@ -1185,7 +1185,7 @@ def main():
             "and it is flagged but excluded from the eligibility test because "
             "that rule is an elevation requirement and not a ban. NYC's "
             "Stormwater Flood Maps (NYC Open Data 9i7c-xyvv) are the stormwater "
-            "modelling behind the rainfall half and were NOT substituted here: "
+            "modeling behind the rainfall half and were NOT substituted here: "
             "they are published as intensities, not return periods, and whether "
             "the 'moderate' 2.13 in/hr layer is the 10-year storm is unverified.")
     else:
@@ -1521,7 +1521,7 @@ def main():
 
     # The rear-yard box rides in its own file at Int16 - nothing in it is
     # precise to better than a foot, and four float32s per lot were 4MB of
-    # false precision. rear_box_x/y are the box centre in feet from the lot
+    # false precision. rear_box_x/y are the box center in feet from the lot
     # centroid (signed - a direction is in them); depth and width are the box.
     # (0, 0, 0, 0) means "could not site" and those lots are drawn flat.
     # frontage_count is the number of unshared street frontages the block test
@@ -1554,7 +1554,7 @@ def main():
         "lots": n,
         "start_year": 2027,
         "start_year_note": "The first year the permitting queue releases lots. "
-                           "A choice, not a finding - the programme has no start "
+                           "A choice, not a finding - the program has no start "
                            "date in it.",
         "bounds": [float(b) for b in bounds],
         "columns": ["lon", "lat", "lot_front", "required_rear_yard_depth",
@@ -1567,7 +1567,7 @@ def main():
         "rear_columns": ["rear_box_x_ft", "rear_box_y_ft",
                          "rear_box_depth_ft", "rear_box_width_ft",
                          "frontage_count"],
-        "rear_column_units": ["feet east of the lot centroid, to the centre of "
+        "rear_column_units": ["feet east of the lot centroid, to the center of "
                               "the open ground behind the house",
                               "feet north of the same",
                               "feet, its depth toward the back lot line",
@@ -1589,7 +1589,7 @@ def main():
                         "inputs to the answer, never the answer - the same rule "
                         "the rest of this pipeline follows.",
         "flags": {k: int(v) for k, v in FLAGS.items()},
-        "programme": PROGRAMME,
+        "program": PROGRAM,
         "assumptions": ASSUMPTIONS,
         "adu_sizing": {
             "method": "adu_sf = min(LotFront * required_rear_yard_depth / 3, 800), "
@@ -1696,7 +1696,7 @@ def main():
                                     "the rear lot line is NOT DRAWN, and the "
                                     "legend counts it. It still counts as "
                                     "eligible and it still pencils, because the "
-                                    "rule the programme applies is about the "
+                                    "rule the program applies is about the "
                                     "AREA of the required rear yard and not "
                                     "about whether a square fits behind the "
                                     "house. That gap between an area test and a "
@@ -1722,7 +1722,7 @@ def main():
         "plan_library": {k: v for k, v in papl.items() if k != "plans"},
         "rent_ami_monthly": round(rent_cap, 2),
         "rent_ami_note": (
-            f"The programme's 100%-AMI rent cap, for a "
+            f"The program's 100%-AMI rent cap, for a "
             f"{ASSUMPTIONS['adu_bedrooms']['value']}-bedroom at {persons} persons. "
             f"ONE NUMBER FOR THE WHOLE OF QUEENS, and indeed for eight counties: "
             f"HUD publishes income limits only for the New York, NY HUD Metro FMR "
@@ -1755,12 +1755,12 @@ def main():
                             "2026-09-01. Shipped as plans.json.",
             "budgeting_tool": "HPD ADU Budgeting Tool, "
                               "housing.hpd.nyc.gov/adu/budget. Defaults read off "
-                              "the controls, behaviour measured by varying one "
+                              "the controls, behavior measured by varying one "
                               "control at a time, 2026-09-01.",
             "eligibility": "DERIVED BY US from the Zoning Resolution itself, "
                            "with DCP's City of Yes ADU guide and HPD's guidebook "
                            "for the plain-language framing. NYC Open Data "
-                           "publishes no ADU eligibility layer - the catalogue "
+                           "publishes no ADU eligibility layer - the catalog "
                            "was searched on 2026-08-31 and there is none. These "
                            "flags are our reading of a published rule, not a city "
                            "determination. AND ONE OF THEM IS AN APPROXIMATION OF "

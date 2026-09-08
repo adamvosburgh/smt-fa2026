@@ -155,7 +155,7 @@ def schedule_defaults(flows):
     moves away from it knowingly. Median is the interpolated 50% crossing of
     the cumulative curve; spread is half the 16th-84th percentile range - a
     standard deviation if the peak were normal, which it is not, and the
-    control is a control precisely so that judgement is movable.
+    control is a control precisely so that judgment is movable.
 
     Both are computed over the COMMUTE WINDOW of each curve - arrivals before
     13:00, departures after 12:00 - because the counted curves are not split

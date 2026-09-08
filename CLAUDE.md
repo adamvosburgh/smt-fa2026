@@ -140,13 +140,29 @@ The course vocabulary collides with the discipline's, so these are load-bearing:
 - "Pithy two-sentence summary" and "gallery text" are the recurring deliverable
   phrasings, carried over from Methods.
 
+## Two kinds of tutorial
+
+`src/content/tutorials/` holds both the **weekly tutorials** (`01-setting-up`,
+`02-mapping-where`, `03-simulating-trees`, `04-notebook-to-sandbox`, ...) and
+the **sandbox dev notes** (`01-pencil` ... `05-bathtub`, frontmatter
+`devnotes: true`). The Tutorials tab lists only the weekly ones; dev notes are
+linked from each sandbox page. Weekly tutorials follow the Methods shape and
+voice (`utilities/writing-style-guide.md` § 2); dev notes follow the flat shape
+below. Images: `images/w<n>/` for weekly, `images/<nn>/` for dev notes.
+
+Assignments take uploads when their frontmatter says `submit: true`, with
+`accepts: [image, pdf, html]` and `due: "M/DD"`. Uploads go through the same
+`/api/submit` as sandbox forks with `manifest.kind = 'assignment'` and land under
+`src/submissions/<student>/<assignment-slug>/`; Student Work shows a section per
+assignment. See `src/lib/server/validate.js` (`validateAssignment`).
+
 ## Tutorial anchors are an API
 
 The build doctor points students at `#what-came-out` and `#the-parts`, and
 `FAILURE_MAP` in `src/lib/server/validate.js` hardcodes them. Renaming a
 tutorial heading breaks it silently.
 
-Every tutorial is "<sandbox title> dev notes" and has the same four `##`
+Every dev note is "<sandbox title> dev notes" and has the same four `##`
 sections in the same order, and nothing more: **The ambition** (what we set out
 to do, one short paragraph), **The parts** (bullets: dataset, then what is
 derived from it), **Roadblocks** (bullets, one sentence each), **What came out**
@@ -155,8 +171,9 @@ Challenge section. Keep them short - they are a works-cited and model card, not
 an essay - and put two or three images in each (the cover from `/covers/`, and
 charts or diagrams under `src/content/tutorials/images/<nn>/`).
 
-Every tutorial also states explicitly what the sandbox can do that the tutorial
-version won't - use the `.gap` callout. Don't hide it.
+Every dev note also states explicitly what the sandbox can do that a rebuild
+won't - use the `.gap` callout. Don't hide it. Weekly tutorials use the same
+callout for what the class version has that the student's won't.
 
 ## Sandbox prose
 

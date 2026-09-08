@@ -38,7 +38,7 @@
         "traffic",
         "growth",
         "unspoilt",
-        "centre",
+        "center",
         "police",
         "fire"
       ],
@@ -78,13 +78,13 @@
     },
     "land_value_centre_base": {
       "type": "integer",
-      "title": "Land value at the centre",
+      "title": "Land value at the center",
       "x-group": "the land value rule",
       "minimum": 0,
       "maximum": 100,
       "x-step": 1,
       "default": 34,
-      "description": "The value of land at the city centre, before distance is subtracted. The engine's 34 is shifted left twice (multiplied by four) in the code, so the real ceiling is 136. Raising this raises the whole land value surface without changing its shape."
+      "description": "The value of land at the city center, before distance is subtracted. The engine's 34 is shifted left twice (multiplied by four) in the code, so the real ceiling is 136. Raising this raises the whole land value surface without changing its shape."
     },
     "land_value_distance_divisor": {
       "type": "number",
@@ -95,7 +95,7 @@
       "x-step": 0.5,
       "default": 2,
       "x-emphasis": true,
-      "description": "The land value rule is: land value = 34 - distance from the city centre / 2. This is the 2: how fast value falls as you move away from the middle. Because the rule is written this way, no city the engine produces has two centres, and no place far from the middle can be expensive. Raising the divisor flattens the gradient, so the city gets richer and less centralised, but it still has one centre."
+      "description": "The land value rule is: land value = 34 - distance from the city center / 2. This is the 2: how fast value falls as you move away from the middle. Because the rule is written this way, no city the engine produces has two centers, and no place far from the middle can be expensive. Raising the divisor flattens the gradient, so the city gets richer and less centralised, but it still has one center."
     },
     "max_traffic_distance": {
       "type": "integer",
@@ -115,7 +115,7 @@
       "maximum": 8,
       "x-step": 1,
       "default": 3,
-      "description": "How a police station's influence spreads: the map of station positions is blurred this many times and the result is called coverage. That is the whole account of how a service reaches a neighbourhood. At 0, cover collapses to the stations themselves and crime rises everywhere else."
+      "description": "How a police station's influence spreads: the map of station positions is blurred this many times and the result is called coverage. That is the whole account of how a service reaches a neighborhood. At 0, cover collapses to the stations themselves and crime rises everywhere else."
     },
     "birth_rate": {
       "type": "number",

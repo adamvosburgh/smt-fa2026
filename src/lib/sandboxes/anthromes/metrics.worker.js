@@ -5,7 +5,7 @@
 // million cell-years. That never blocks the animation: this worker gets the
 // planes once, reclassifies the whole timeline on each parameter change
 // (debounced by the component), and posts back the per-year ledger. The
-// component greys the stale value while a new one is in flight.
+// component grays the stale value while a new one is in flight.
 //
 // Areas are computed with the REAL per-cell land area - the drawing is
 // equirectangular and badly exaggerates high latitudes, where most of what

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/pencil.json",
   "title": "ADU Forecast for Queens parameters",
-  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. Property order is the panel's reading order: the clock and the view first (what you are looking at), then the programme's own terms, then the market they land in, then the zoning rules that size and gate the unit. Every default that comes from the HPD Plus One ADU term sheet says so in its description; the ones that are ours say so too.",
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. Property order is the panel's reading order: the clock and the view first (what you are looking at), then the program's own terms, then the market they land in, then the zoning rules that size and gate the unit. Every default that comes from the HPD Plus One ADU term sheet says so in its description; the ones that are ours say so too.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -27,7 +27,7 @@
       "maximum": 2050,
       "x-step": 1,
       "default": 2035,
-      "description": "The year the map shows. Lots released in or before this year stand up as volumes; the rest stay flat. The queue starts in 2027, which is our choice; the programme has no start date in it."
+      "description": "The year the map shows. Lots released in or before this year stand up as volumes; the rest stay flat. The queue starts in 2027, which is our choice; the program has no start date in it."
     },
     "permits_per_year": {
       "type": "integer",
@@ -41,7 +41,7 @@
     },
     "tint": {
       "type": "string",
-      "title": "Colour by",
+      "title": "Color by",
       "x-group": "how it's drawn",
       "enum": [
         "margin",
@@ -56,7 +56,7 @@
         "eligible or not"
       ],
       "default": "margin",
-      "description": "What the colour means. \"Eligible or not\" is the map the city publishes, showing where a unit is allowed. The others show the arithmetic: the monthly margin, the return on the owner's money, and the year the queue releases the lot."
+      "description": "What the color means. \"Eligible or not\" is the map the city publishes, showing where a unit is allowed. The others show the arithmetic: the monthly margin, the return on the owner's money, and the year the queue releases the lot."
     },
     "volumes": {
       "type": "boolean",
@@ -68,7 +68,7 @@
     "grant_max": {
       "type": "number",
       "title": "Maximum grant",
-      "x-group": "the programme",
+      "x-group": "the program",
       "minimum": 0,
       "maximum": 250000,
       "x-step": 5000,
@@ -80,17 +80,17 @@
     "equity_share": {
       "type": "number",
       "title": "Homeowner's own money",
-      "x-group": "the programme",
+      "x-group": "the program",
       "minimum": 0,
       "maximum": 0.5,
       "x-step": 0.05,
       "default": 0,
-      "description": "How much of the cost the homeowner puts in themselves, as a share. The programme's default is nothing, which is unusual for a construction loan. Raising it shrinks the loan and the monthly payment, so more lots pass, but it also narrows the programme to people who have savings. The model doesn't know who those people are, so the map improves while the picture of who it serves gets worse."
+      "description": "How much of the cost the homeowner puts in themselves, as a share. The program's default is nothing, which is unusual for a construction loan. Raising it shrinks the loan and the monthly payment, so more lots pass, but it also narrows the program to people who have savings. The model doesn't know who those people are, so the map improves while the picture of who it serves gets worse."
     },
     "interest_rate": {
       "type": "number",
       "title": "Interest rate",
-      "x-group": "the programme",
+      "x-group": "the program",
       "minimum": 0,
       "maximum": 0.1,
       "x-step": 0.005,
@@ -100,7 +100,7 @@
     "term_months": {
       "type": "integer",
       "title": "Loan term",
-      "x-group": "the programme",
+      "x-group": "the program",
       "enum": [
         180,
         360
@@ -115,13 +115,13 @@
     "cushion": {
       "type": "number",
       "title": "Required monthly cushion",
-      "x-group": "the programme",
+      "x-group": "the program",
       "minimum": 0,
       "maximum": 1000,
       "x-step": 25,
       "default": 200,
       "x-unit": "$/mo",
-      "description": "The term sheet says loan payments \"will be set so that the household has at least $200 monthly cash flow available after household debt obligations are subtracted\". In the programme that is a test on the household, and it decides how much HPD will lend. Here it is used differently: as a build-or-don't-build test on the unit's own cash flow, because the sandbox has no household data. That substitution is the most important modelling choice in this sandbox, and the card explains it.",
+      "description": "The term sheet says loan payments \"will be set so that the household has at least $200 monthly cash flow available after household debt obligations are subtracted\". In the program that is a test on the household, and it decides how much HPD will lend. Here it is used differently: as a build-or-don't-build test on the unit's own cash flow, because the sandbox has no household data. That substitution is the most important modeling choice in this sandbox, and the card explains it.",
       "x-emphasis": true
     },
     "cost_per_sf": {
@@ -150,7 +150,7 @@
         "a flat figure"
       ],
       "default": "ami_cap",
-      "description": "What rent the unit gets. The programme requires it to be \"rented at or below 100% of the Area Median Income\". HUD publishes those income limits only for the New York, NY HUD Metro FMR Area, eight counties including Putnam, Rockland and Westchester, so the cap is one figure for all of Queens, about $3,181 a month. Market rent (HUD's Small Area Fair Market Rent) is published by ZIP code and varies across the borough. In most of Queens the cap sits above market rent, so switching between the two changes less than you might expect; the same switch in Manhattan would change a great deal."
+      "description": "What rent the unit gets. The program requires it to be \"rented at or below 100% of the Area Median Income\". HUD publishes those income limits only for the New York, NY HUD Metro FMR Area, eight counties including Putnam, Rockland and Westchester, so the cap is one figure for all of Queens, about $3,181 a month. Market rent (HUD's Small Area Fair Market Rent) is published by ZIP code and varies across the borough. In most of Queens the cap sits above market rent, so switching between the two changes less than you might expect; the same switch in Manhattan would change a great deal."
     },
     "rent_flat": {
       "type": "number",

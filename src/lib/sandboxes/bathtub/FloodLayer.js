@@ -2,13 +2,13 @@
 //
 // Two textures come in - ground elevation and spill elevation, both 16-bit
 // values packed into the red and green channels of an ordinary PNG. The shader
-// decodes them, compares each against the waterline, and colours the result.
+// decodes them, compares each against the waterline, and colors the result.
 // Moving a slider changes one uniform; nothing is refetched and nothing is
 // recomputed on the CPU. That is the entire reason the pipeline stores a spill
 // elevation per cell instead of a flood mask per scenario.
 //
 // The flood line is drawn by edge detection in the same pass: a cell is on the
-// line if it is wet and one of its four neighbours is dry. So the line is
+// line if it is wet and one of its four neighbors is dry. So the line is
 // visibly a by-product of the threshold rather than a separate published
 // object - and at high zoom you can see it is a staircase of grid cells, which
 // is what every smooth blue polygon on a published flood map is hiding.
@@ -53,7 +53,7 @@ in vec2 vTexCoord;
 in vec2 vTexPos;
 out vec4 fragColor;
 
-// The encoding the pipeline writes: metres = ((R * 256 + G) - 1000) / 10.
+// The encoding the pipeline writes: meters = ((R * 256 + G) - 1000) / 10.
 // This only decodes correctly under NEAREST sampling - interpolating the high
 // and low bytes independently across a 256 boundary yields nonsense.
 float decode(sampler2D t, vec2 uv) {
@@ -131,12 +131,12 @@ void main(void) {
 
   // Edge detect: wet next to dry. Drawn last so it sits over the fill.
   //
-  // The neighbour is always exactly one CELL away - that is what makes the line
+  // The neighbor is always exactly one CELL away - that is what makes the line
   // a property of the grid, and why it is a staircase. The line's WIDTH is a
   // separate question, and it is in screen pixels. Measured in texels, as it
   // was, the stroke grew with the zoom until a "contour" was a solid one-cell
   // black block sitting on top of the fill - which is the one thing a flood
-  // line must never look like. So: find which neighbours are dry, take the
+  // line must never look like. So: find which neighbors are dry, take the
   // distance to that cell edge, and convert it to pixels.
   if (flood.showLine > 0.5 && isWet) {
     vec2 t = flood.texel;

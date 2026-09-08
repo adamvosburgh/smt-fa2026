@@ -40,7 +40,11 @@
     layout = 'contained',
     params = $bindable({}),
     assets = {},
-    showChrome = true
+    showChrome = true,
+    // A gallery entry that runs a sandbox on a student's own uploaded model has
+    // nothing to submit - the file IS the submission - so the button comes off
+    // there and stays everywhere else.
+    submittable = true
   } = $props();
 
   let metrics = $state({});
@@ -171,7 +175,7 @@
 
       {#if mode === 'edit' && schema}
         <h3 class="section">Set it up</h3>
-        <ParamPanel {schema} bind:params {transport} />
+        <ParamPanel {schema} bind:params {transport} {assets} />
       {:else if mode === 'edit' && transport.external}
         <h3 class="section">Set it up</h3>
         <ParamPanel schema={null} bind:params {transport} />
@@ -184,7 +188,7 @@
         </div>
       {/if}
 
-      {#if mode === 'edit'}
+      {#if mode === 'edit' && submittable}
         <button class="submit" type="button" onclick={() => (submitting = true)}>Submit this state</button>
       {/if}
     </aside>

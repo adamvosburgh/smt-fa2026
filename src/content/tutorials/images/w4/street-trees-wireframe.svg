@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="1200" height="760" fill="#fff"/>
+  <!-- frame -->
+  <rect x="20" y="20" width="1160" height="720" fill="none" stroke="#000" stroke-width="1.5"/>
+  <text x="32" y="44" font-size="15" font-weight="bold">Street Trees, Run Forward  (working title)</text>
+  <text x="32" y="62" fill="#666">/sandboxes/street-trees/   .  one component, edit and view modes  .  reads static JSON exported from the Tutorial 3 notebook</text>
+
+  <!-- left: card -->
+  <rect x="32" y="80" width="250" height="640" fill="#fafaf8" stroke="#999"/>
+  <text x="44" y="102" font-weight="bold">card.md</text>
+  <g fill="#333">
+    <text x="44" y="128">What this is</text>
+    <text x="44" y="146" fill="#888" font-size="11">12,715 street trees in upper Manhattan,</text>
+    <text x="44" y="160" fill="#888" font-size="11">each run through one set of equations</text>
+    <text x="44" y="174" fill="#888" font-size="11">for rain caught and carbon stored, then</text>
+    <text x="44" y="188" fill="#888" font-size="11">grown forward year by year.</text>
+    <text x="44" y="216">What it's trying to show</text>
+    <text x="44" y="248">How it works</text>
+    <text x="44" y="280">What it assumes</text>
+    <text x="44" y="298" fill="#888" font-size="11">one crown equation for every species;</text>
+    <text x="44" y="312" fill="#888" font-size="11">LAI by health; 15% interception;</text>
+    <text x="44" y="326" fill="#888" font-size="11">4% biomass growth; no mortality</text>
+    <text x="44" y="340" fill="#888" font-size="11">unless you set one.</text>
+    <text x="44" y="372">What it can't see</text>
+    <text x="44" y="390" fill="#888" font-size="11">species, sidewalks, utilities, budgets,</text>
+    <text x="44" y="404" fill="#888" font-size="11">park trees, storms, who plants.</text>
+  </g>
+  <line x1="44" y1="430" x2="270" y2="430" stroke="#ccc"/>
+  <text x="44" y="452" font-weight="bold">What that gives you</text>
+  <g fill="#333" font-size="12">
+    <text x="44" y="476">trees alive</text><text x="270" y="476" text-anchor="end">12,715</text>
+    <text x="44" y="496">stormwater intercepted</text><text x="270" y="496" text-anchor="end">— gal/yr</text>
+    <text x="44" y="516">CO2 sequestered</text><text x="270" y="516" text-anchor="end">— kg/yr</text>
+    <text x="44" y="536">valued at</text><text x="270" y="536" text-anchor="end">$ —</text>
+    <text x="44" y="556">median per tree</text><text x="270" y="556" text-anchor="end">— gal/yr</text>
+    <text x="44" y="576">blocks with no trees</text><text x="270" y="576" text-anchor="end">—</text>
+    <text x="44" y="596">share of benefit in top 10% of blocks</text><text x="270" y="596" text-anchor="end">— %</text>
+  </g>
+  <text x="44" y="640" fill="#888" font-size="11">(every metric recomputed on every slider move)</text>
+
+  <!-- middle: map -->
+  <rect x="296" y="80" width="560" height="640" fill="#f2f2ee" stroke="#999"/>
+  <text x="308" y="102" font-weight="bold">viewport</text>
+  <!-- blocks -->
+  <g fill="#e4ede0" stroke="#bbb">
+    <rect x="330" y="130" width="110" height="70"/><rect x="450" y="130" width="130" height="70"/><rect x="590" y="130" width="100" height="70"/><rect x="700" y="130" width="130" height="70"/>
+    <rect x="330" y="210" width="110" height="70" fill="#cfe0c8"/><rect x="450" y="210" width="130" height="70" fill="#b8d3ae"/><rect x="590" y="210" width="100" height="70"/><rect x="700" y="210" width="130" height="70" fill="#cfe0c8"/>
+    <rect x="330" y="290" width="110" height="70" fill="#9fc493"/><rect x="450" y="290" width="130" height="70" fill="#cfe0c8"/><rect x="590" y="290" width="100" height="70" fill="#b8d3ae"/><rect x="700" y="290" width="130" height="70"/>
+    <rect x="330" y="370" width="110" height="70"/><rect x="450" y="370" width="130" height="70" fill="#9fc493"/><rect x="590" y="370" width="100" height="70" fill="#cfe0c8"/><rect x="700" y="370" width="130" height="70" fill="#b8d3ae"/>
+    <rect x="330" y="450" width="110" height="70" fill="#cfe0c8"/><rect x="450" y="450" width="130" height="70"/><rect x="590" y="450" width="100" height="70" fill="#9fc493"/><rect x="700" y="450" width="130" height="70" fill="#cfe0c8"/>
+  </g>
+  <!-- trees -->
+  <g fill="#2b6cb0" fill-opacity="0.7">
+    <circle cx="345" cy="205" r="3"/><circle cx="365" cy="205" r="5"/><circle cx="395" cy="205" r="4"/><circle cx="425" cy="205" r="6"/>
+    <circle cx="465" cy="205" r="4"/><circle cx="495" cy="205" r="7"/><circle cx="530" cy="205" r="3"/><circle cx="565" cy="205" r="5"/>
+    <circle cx="345" cy="285" r="6"/><circle cx="380" cy="285" r="7"/><circle cx="415" cy="285" r="5"/><circle cx="465" cy="285" r="3"/><circle cx="520" cy="285" r="4"/>
+    <circle cx="610" cy="285" r="5"/><circle cx="650" cy="285" r="4"/><circle cx="715" cy="285" r="3"/><circle cx="760" cy="285" r="6"/><circle cx="805" cy="285" r="4"/>
+    <circle cx="345" cy="365" r="8"/><circle cx="385" cy="365" r="7"/><circle cx="425" cy="365" r="6"/><circle cx="470" cy="365" r="4"/><circle cx="540" cy="365" r="3"/>
+    <circle cx="465" cy="445" r="7"/><circle cx="500" cy="445" r="8"/><circle cx="545" cy="445" r="6"/><circle cx="610" cy="445" r="4"/><circle cx="700" cy="445" r="3"/><circle cx="740" cy="445" r="5"/>
+    <circle cx="610" cy="525" r="7"/><circle cx="650" cy="525" r="8"/><circle cx="345" cy="525" r="3"/><circle cx="400" cy="525" r="4"/><circle cx="760" cy="525" r="4"/>
+  </g>
+  <!-- newly planted -->
+  <g fill="none" stroke="#c0392b" stroke-width="1.5">
+    <circle cx="620" cy="165" r="3"/><circle cx="640" cy="165" r="3"/><circle cx="660" cy="165" r="3"/><circle cx="740" cy="405" r="3"/><circle cx="800" cy="405" r="3"/>
+  </g>
+  <text x="308" y="560" fill="#555" font-size="11">blocks tinted by the selected metric  .  circles = trees, sized by DBH, coloured by per-tree value</text>
+  <text x="308" y="576" fill="#555" font-size="11">red rings = trees planted by the run, at the size and in the order the levers say</text>
+  <!-- timeline strip -->
+  <rect x="308" y="640" width="536" height="64" fill="#fff" stroke="#999"/>
+  <text x="320" y="662" font-weight="bold">2031</text>
+  <line x1="380" y1="672" x2="820" y2="672" stroke="#000"/>
+  <circle cx="612" cy="672" r="6" fill="#000"/>
+  <text x="380" y="695" font-size="11" fill="#666">2015</text><text x="820" y="695" font-size="11" fill="#666" text-anchor="end">2045</text>
+  <text x="700" y="662" font-size="11" fill="#666">play / pause  .  x-timeline: primary</text>
+
+  <!-- right: controls -->
+  <rect x="870" y="80" width="298" height="640" fill="#fafaf8" stroke="#999"/>
+  <text x="882" y="102" font-weight="bold">Set it up   (schema.json draws this)</text>
+  <g font-size="12" fill="#333">
+    <text x="882" y="128" font-weight="bold" fill="#000">1  clock</text>
+    <text x="896" y="146">year  2015 - 2045</text>
+
+    <text x="882" y="176" font-weight="bold" fill="#000">2  how it's drawn</text>
+    <text x="896" y="194">tint blocks by:  stormwater | CO2 | count | per tree</text>
+    <text x="896" y="212">draw:  trees | blocks | both</text>
+
+    <text x="882" y="242" font-weight="bold" fill="#000">3  main levers   (x-emphasis)</text>
+    <text x="896" y="260">trees planted per year   0 - 500   [0]</text>
+    <text x="896" y="278">where:  fewest trees first | lowest per tree | evenly</text>
+    <text x="896" y="296">size at planting, DBH   2 - 4 in   [3]</text>
+    <text x="896" y="314">biomass growth   0 - 8 %/yr   [4]   Nowak &amp; Crane 2002</text>
+    <text x="896" y="332">mortality   0 - 6 %/yr   [0]   ours, unsourced</text>
+
+    <text x="882" y="362" font-weight="bold" fill="#000">4  finer assumptions</text>
+    <text x="896" y="380">crown a   [1.22]   crown b   [0.65]   ours</text>
+    <text x="896" y="398">LAI good [4.0]  fair [2.5]  poor [1.0]   Nowak 1996</text>
+    <text x="896" y="416">interception fraction   [0.15]   i-Tree Eco range</text>
+    <text x="896" y="434">annual precipitation   [1.181 m]   NOAA 1991-2020</text>
+    <text x="896" y="452">social cost of carbon:  $51 | $190   x-enum-notes</text>
+  </g>
+  <line x1="882" y1="476" x2="1156" y2="476" stroke="#ccc"/>
+  <text x="882" y="498" font-size="11" fill="#666">every assumed number is a control, labelled with</text>
+  <text x="882" y="512" font-size="11" fill="#666">whose number it is. Defaults reproduce the notebook.</text>
+  <rect x="882" y="670" width="274" height="30" fill="#000"/>
+  <text x="1019" y="690" fill="#fff" text-anchor="middle" font-size="12">Submit this state</text>
+</svg>

@@ -47,6 +47,12 @@ For `after-five.py` (Sandbox 03):
 | `ny_wac_S000_JT00_2023.csv.gz` | LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs, 2023. One row per workplace census block: `C000` total primary jobs, `CNS01`-`CNS20` by NAICS sector. Joined to the districts on MapPLUTO's `BCTCB2020`, not by position. |
 | `DECENNIALDP2020.DP1_*/` | Also read by `after-five.py`, for resident counts by tract. Manhattan's tracts total 1,694,251, which is the published 2020 New York County figure - that total is the join's check. |
 
+For `sunlight.py` (the sunlight sandbox's example model):
+
+| File | Dataset |
+| --- | --- |
+| `DA_WISE_GML/DA_WISE_GMLs/DA12_3D_Buildings_Merged.gml` | The same CityGML as above. Read once more, streamed, for every building within 3,000 ft of 25 Water Street (BIN 1000007); every RoofSurface polygon is kept this time, not only its height, so the context is a stacked massing. DA19, DA11 and DA13 were scanned with the same box and hold nothing in it. Nothing else is read; `BUILDING_20260830.geojson` and `MapPLUTO.dbf` were used once, by hand, to confirm the subject's identity, and that check is recorded in the script's docstring. |
+
 Download URLs are deliberately not listed here: they have not been verified
 against what was actually fetched, and a stale URL that looks authoritative is
 worse than none. Add one only once you have re-downloaded from it and the

@@ -1,7 +1,7 @@
 // The two gates, over typed arrays.
 //
 // Same shape as sandbox 02: one pass on every parameter change, producing the
-// colours and the panel's numbers together so they cannot disagree.
+// colors and the panel's numbers together so they cannot disagree.
 //
 // A building converts in the first snapshot year where BOTH gates open:
 //   1. its convertibility score clears the threshold
@@ -81,7 +81,7 @@ function econ(manifest) {
  * The convertibility score: our weighted sum of four proxies for Gensler's
  * published criteria.
  *
- * The weights are NORMALISED by their own sum, so they are relative rather than
+ * The weights are NORMALIZED by their own sum, so they are relative rather than
  * absolute and moving one does not silently move the threshold's meaning as
  * well. All four at zero scores everything zero, which is the honest answer to
  * a question with nothing in it.
@@ -99,7 +99,7 @@ export function scoreOf(buildings, base, w) {
  *
  * The cap rate is an argument now, not a field read off p, because office and
  * residential no longer share one. A single 0.055 applied to both sides scaled
- * both and very nearly cancelled - and the gap between office and residential
+ * both and very nearly canceled - and the gap between office and residential
  * yields is a large part of why anyone converts anything. The two controls
  * default equal, so the change is provably neutral until a reader pulls them
  * apart.
@@ -110,9 +110,9 @@ function value(rentPerSf, capRate, p) {
 
 /**
  * Floor area per apartment at the reader's chosen unit floor, off the measured
- * ladder the pipeline ships. The cut is a judgement - 1,366 sf with no floor,
+ * ladder the pipeline ships. The cut is a judgment - 1,366 sf with no floor,
  * 907 at fifty units - and exposing it as a control is the cheapest way to
- * turn a buried judgement into a visible one. Only the six measured cuts are
+ * turn a buried judgment into a visible one. Only the six measured cuts are
  * offered; interpolating between them would be inventing filings.
  */
 function sfPerUnitAt(manifest, cut) {
@@ -258,8 +258,8 @@ export function compute(buildings, manifest, p) {
   };
 }
 
-/** Colour per building, from the same pass. */
-export function colours(result, buildings, p) {
+/** Color per building, from the same pass. */
+export function colors(result, buildings, p) {
   const n = result.state.length;
   const rgba = new Uint8Array(n * 4);
   for (let i = 0; i < n; i++) {

@@ -1,41 +1,30 @@
 ---
 title: "The Course Assistant"
-date: "2026-08-30"
+date: "2026-09-06"
 author: Adam Vosburgh
 sequence: 1
 cat: resource
 published: true
 ---
 
-There's an assistant on this site. It knows the five sandboxes and the tutorials.
-It's additive - every tutorial stands on its own, and no tutorial will ever tell
-you to go ask it instead of explaining something.
+There is an assistant on this site. It has the five sandboxes, their dev notes, and the weekly tutorials in its context. It is optional. Every tutorial stands on its own, and no tutorial will tell you to ask the assistant instead of explaining something.
 
-## What it will and won't do
+## What it does
 
-It directs rather than does. If you're stuck it walks you through adapting the
-worked example a step at a time, and if that isn't working it'll offer to write
-the thing outright - and say so when it does.
+The assistant is built to explain and to suggest changes. If you are stuck, it will walk you through adapting the worked example one step at a time. If that is not working, it will offer to write the code for you, and it will say so when it does.
 
-It won't produce data for you. Prompting an LLM for a dataset always results in
-fabricated data, and in this class in particular that's the exact failure we're
-looking at.
+It will not produce data for you. Prompting an LLM for a dataset always results in fabricated data, and in this class that is the specific failure we are studying.
+
+It is not the coding agent used in Tutorial 4. It cannot read or write files on your computer. To build a sandbox, use Claude Code or an equivalent, as the tutorial describes.
 
 ## The prompt
 
-Published, not hidden. It's in `src/lib/server/assistant-prompt.js` in the repo,
-and the version running right now is rendered below.
+The system prompt is published. It is in `src/lib/server/assistant-prompt.js` in the repository, and the version currently running is rendered below.
 
 **PLACEHOLDER — wire this page to render `systemPrompt()` verbatim.**
 
-## Limits, and why
+## Limits
 
-Students get a large daily allowance, unlocked by the same token you use to
-submit. Anyone else gets a small one - enough to see what the assistant is, not
-enough to be worth scripting. The site as a whole has a hard daily ceiling; when
-it trips the assistant says so and everything else keeps working.
+Students get a large daily allowance, unlocked by the same token you use to submit. Anyone else gets a small one, enough to see what the assistant is. The site as a whole has a daily ceiling; when it is reached the assistant says so and the rest of the site keeps working.
 
-Conversations are logged. I read them to find out which tutorial sections keep
-tripping people up, the same way I read the submission checker's output. If
-that's not something you want, don't use the assistant - nothing in the course
-requires it.
+Conversations are logged. I read them to find out which tutorial sections are confusing, the same way I read the submission checker's output. If you do not want your conversations read, do not use the assistant. Nothing in the course requires it.

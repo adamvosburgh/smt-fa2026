@@ -18,7 +18,7 @@ export function submissionDir(student, sandbox) {
   return path.join(config.submissionsDir, student, sandbox);
 }
 
-export async function write({ student, sandbox, manifest, files }) {
+export async function write({ student, sandbox, manifest, files, cover = null }) {
   const dir = submissionDir(student, sandbox);
   // Replace wholesale: a resubmission is the new state, not a merge.
   await rm(path.join(dir, 'assets'), { recursive: true, force: true });
@@ -32,6 +32,11 @@ export async function write({ student, sandbox, manifest, files }) {
     await mkdir(path.dirname(dest), { recursive: true });
     await writeFile(dest, f.buffer);
   }
+  // Assignment uploads arrive with their own cover, drawn in the browser from
+  // the uploaded image. Sandbox submissions get theirs from `npm run covers`,
+  // which screenshots the gallery page; that script also covers an assignment
+  // whose primary is a PDF or an HTML file, since the browser can't draw those.
+  if (cover) await writeFile(path.join(dir, 'cover.png'), cover);
   await writeFile(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
   return dir;
 }

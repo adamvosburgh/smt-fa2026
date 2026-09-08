@@ -2,9 +2,17 @@
   // Renders controls straight off the sandbox's JSON Schema. One schema does two
   // jobs: it draws this panel, and the server validates submitted params against
   // the same file. If a control is missing here, add it to the schema, not here.
-  let { schema, params = $bindable(), disabled = false, transport = null } = $props();
+  let { schema, params = $bindable(), disabled = false, transport = null, assets = {} } = $props();
 
-  const entries = $derived(Object.entries(schema?.properties ?? {}));
+  // x-hidden-when-asset names an asset whose presence removes the control
+  // outright, rather than greying it. The sunlight sandbox's "which floor of the
+  // example" control means nothing once a student has uploaded their own model,
+  // and a disabled slider would read as something they had failed to unlock.
+  const entries = $derived(
+    Object.entries(schema?.properties ?? {}).filter(
+      ([, p]) => !(p['x-hidden-when-asset'] && assets?.[p['x-hidden-when-asset']])
+    )
+  );
 
   function labelFor(prop, value) {
     const i = (prop.enum ?? []).indexOf(value);
@@ -25,6 +33,11 @@
   // integer-stepped schema written the obvious way still works.
   const stepOf = (prop) => prop['x-step'] ?? prop.multipleOf ?? 1;
 
+  // x-format "date" renders a day-of-year as a date. 2026 is not a leap year;
+  // any schema using this has to say which year its axis is in.
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
   function fmt(prop, value) {
     // x-format "clock" renders a fractional hour as HH:MM - the transport
     // readout for a time-of-day axis should read as a clock, not a decimal.
@@ -32,6 +45,11 @@
       const h = Math.floor(value) % 24;
       const m = Math.round((value - Math.floor(value)) * 60);
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    if (prop['x-format'] === 'date') {
+      const d = new Date(Date.UTC(2026, 0, 1));
+      d.setUTCDate(d.getUTCDate() + Math.round(value) - 1);
+      return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
     }
     if (prop.enum) return labelFor(prop, value);
     const step = stepOf(prop);
@@ -42,7 +60,7 @@
   // A control whose value is being decided by another control has no business
   // being draggable. x-disabled-when names the other controls and the values
   // that take it over; x-disabled-note says so in place of the readout, because
-  // a greyed slider on its own reads as broken rather than as overridden.
+  // a grayed slider on its own reads as broken rather than as overridden.
   //
   // A value may be an array, meaning any one of these takes the control over -
   // bathtub's `aep` has four storm levels and one "no storm", and it is the

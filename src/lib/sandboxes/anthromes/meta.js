@@ -14,7 +14,7 @@ export default {
     'the six fraction thresholds: used land (the one that moves the crossover), cropland, grazing, rice, irrigation, urban area',
     'the four density cutoffs: urban, dense settlement, residential, populated',
     'how many of the fifteen potential-vegetation classes count as forested',
-    'what colours the map: anthrome class, used fraction, population density, or disagreement with the published method at native resolution'
+    'what colors the map: anthrome class, used fraction, population density, or disagreement with the published method at native resolution'
   ],
   metrics: [
     'the crossover: the first time step at which used land exceeds wild, recomputed in a worker as the sliders move',
