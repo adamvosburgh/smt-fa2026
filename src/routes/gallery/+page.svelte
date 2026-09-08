@@ -34,10 +34,10 @@
 
 <style>
   .work-section { margin-bottom: 3.5rem; }
-  .work-section h2 { font-size: 0.9rem; margin: 0 0 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid #000; display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap; }
+  .work-section h2 { font-size: 0.9rem; margin: 0 0 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); display: flex; gap: 0.75rem; align-items: baseline; flex-wrap: wrap; }
   .work-section h2 a { color: inherit; text-decoration: none; }
-  .work-section h2 a:hover { text-decoration: underline; }
-  .seq { font-size: 0.68rem; color: #999; text-transform: uppercase; letter-spacing: 0.05em; }
-  .due { font-size: 0.68rem; color: #999; margin-left: auto; }
-  .empty { font-size: 0.78rem; color: #888; }
+  .work-section h2 a:hover { background: var(--hi); color: var(--hi-fg); }
+  .seq { font-size: 0.68rem; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .due { font-size: 0.68rem; color: var(--fg-dim); margin-left: auto; }
+  .empty { font-size: 0.78rem; color: var(--fg-dim); }
 </style>

@@ -5,7 +5,7 @@ author: Adam Vosburgh
 sequence: 3
 cat: tutorial
 devnotes: true
-published: true
+published: false
 ---
 
 Notes from building [A City Simulator, Opened Up](/sandboxes/coefficients/). No data pipeline. Component and vendored engine: `src/lib/sandboxes/coefficients/`; `NOTICE.md` there records every change to the engine.

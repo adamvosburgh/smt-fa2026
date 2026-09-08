@@ -157,7 +157,22 @@ function median(sorted) {
 }
 
 /**
- * Run the pro-forma on every lot.
+ * Run the three tests on every lot.
+ *
+ * Every lot goes through them in order and a lot that fails one is not tested
+ * further, so the counts nest: allowed >= has room >= works for the owner.
+ * The outcome is one byte per lot:
+ *
+ *   0  fails test 1 - not allowed under the rules
+ *   1  fails test 2 - allowed, but no room for a unit
+ *   2  fails test 3 - allowed, room, but it does not work for the owner
+ *   3  passes all three
+ *
+ * `room` is a second, non-cumulative pass of test 2 alone, run on every lot
+ * whatever its outcome. The 3D view needs it: a unit standing on a lot the
+ * rules exclude is the thing that view is for, and the cumulative rule would
+ * never have tested those lots. It is cheap - the same arithmetic - and the
+ * counting still uses the cumulative outcome.
  *
  * Returns typed arrays the layer reads directly, plus the panel's numbers.
  * Nothing is allocated per lot and nothing is recomputed twice.
@@ -166,40 +181,40 @@ export function compute(lots, rear, flags, manifest, p) {
   const n = flags.length;
   const margin = new Float32Array(n);
   const aduSf = new Float32Array(n);
-  const roe = new Float32Array(n);
-  const state = new Uint8Array(n);   // 0 ineligible, 1 fails, 2 over loan cap, 3 pencils
-  const releaseYear = new Int16Array(n).fill(-1);
+  const outcome = new Uint8Array(n);
+  const room = new Uint8Array(n); // test 2 alone, for the 3D view
 
   const loanMax = manifest.program.loan_max;
   const propertyTax = manifest.assumptions.property_tax.value;   // 0 - see the card
   const rentAmi = manifest.rent_ami_monthly;
 
-  // Soft cost is a FORMULA now, not a flat sum, and it is HPD's own - recovered
+  // Soft cost is a FORMULA, not a flat sum, and it is HPD's own - recovered
   // from their budgeting tool by moving one slider at a time:
   //   soft cost = $50,000 + 0.48 x hard cost
   // The tool's four exposed inputs account for 0.20 + 0.08 of hard cost plus
   // $50,000. The remaining 20% of hard cost is a term the tool never shows the
   // user, equal in size to the largest one it does. Probably GC overhead and
-  // profit; unlabelled anywhere in the interface. That is the finding, and it is
+  // profit; unlabeled anywhere in the interface. That is the finding, and it is
   // why this uses the measured output rather than adding up the published parts.
   const softFlat = manifest.hpd_budget.soft_cost_flat;
   const softShare = manifest.hpd_budget.soft_cost_share_of_hard;
 
   // Operating cost, also HPD's defaults rather than a rule of thumb: upkeep and
-  // management as shares of rent, insurance as a flat monthly sum. The old
-  // single opex_share of 0.25 was "a conventional small-landlord rule of thumb"
-  // and said so.
+  // management as shares of rent, insurance as a flat monthly sum.
   const op = manifest.hpd_budget.operating;
   const opexShare = op.upkeep_share + op.management_share;
   const insurance = op.insurance_monthly;
   const sizing = manifest.adu_sizing;
   const ratio = manifest.plan_library?.depth_to_width_ratio ?? 0.7;
-
-  const useAll = p.eligibility === 'all';
   const cushion = p.cushion;
 
-  let eligible = 0, pencils = 0, overCap = 0;
-  const passingRoe = [];
+  let allowed = 0, hasRoom = 0, works = 0;
+  // The two figures the dev note reports. `allowedWithArea` is what test 2 used
+  // to be - the one-third-of-the-rear-yard area clearing the habitability
+  // floor - and `hasRoom` is what it is now, with the requirement that a unit
+  // of that area actually fit behind the house. The gap between them is the
+  // change the 09-08 rebuild made.
+  let areaOnly = 0, allowedWithArea = 0;
   const passingIdx = [];
 
   for (let i = 0; i < n; i++) {
@@ -208,36 +223,46 @@ export function compute(lots, rear, flags, manifest, p) {
     const A = aduArea(lots, base, p, sizing);
     aduSf[i] = A;
 
-    // Eligibility. `all` prices an ADU on every one-to-two-family lot in Queens
-    // regardless of legality, so the difference between the two settings is
-    // exactly what the zoning rule costs.
-    const legal = (f & FLAG.eligible_backyard) !== 0;
-    const inSet = A > 0 && (useAll ? (f & FLAG.city_owned) === 0 : legal);
-    if (!inSet) { state[i] = 0; continue; }
+    // TEST 2, run on every lot for the 3D view. Two conditions, both required:
+    // the one-third-of-the-required-rear-yard area clears the habitability
+    // floor, AND a rectangle of that area at the plan library's proportion fits
+    // in the open ground behind the house after the setbacks. The second half
+    // used to be reported beside the count and is now part of the test.
+    const fits = A > 0 && siteUnit(lots, rear, i, A, p.side_setback_ft, ratio) !== null;
+    room[i] = fits ? 1 : 0;
+    if (A > 0) areaOnly += 1;
 
-    // THERE IS NO OWNER-OCCUPANCY CONTROL, deliberately.
+    // TEST 1: allowed under the rules. The eligibility flag the pipeline
+    // writes from building class, the historic districts, the flood areas and
+    // the excluded low-density districts outside the Greater Transit Zone.
+    // THERE IS NO "IGNORE THIS TEST" SWITCH any more: the three tests are what
+    // the sandbox is, and a switch that skipped the first one made the other
+    // two mean something different without saying so.
+    if ((f & FLAG.eligible_backyard) === 0) { outcome[i] = 0; continue; }
+    allowed += 1;
+    if (A > 0) allowedWithArea += 1;
+
+    // TEST 2, cumulatively.
+    if (!fits) { outcome[i] = 1; continue; }
+    hasRoom += 1;
+
+    // TEST 3: works for the owner. The pro forma, unchanged.
     //
-    // The program requires the owner to live at the property "no less than
-    // 270 days per year", and this model cannot represent that at all: there is
-    // no dataset of who lives in which house. An earlier version had the switch
-    // and it screened out city-owned lots, which the eligibility test above
-    // already excludes - so it was a control that changed nothing, which is a
-    // bug, and a worse one than a missing control because it implies the model
-    // knows something it does not. The requirement is named in the model card
-    // under what this cannot see.
-
-    eligible += 1;
-
+    // THERE IS NO OWNER-OCCUPANCY CONTROL, deliberately. The program requires
+    // the owner to live at the property "no less than 270 days per year", and
+    // this model cannot represent that at all: there is no dataset of who lives
+    // in which house. The requirement is named in the model card under what
+    // this cannot see.
     const hard = A * p.cost_per_sf;
     const C = hard + softFlat + softShare * hard;
     const S = Math.min(p.grant_max, C);
     const E = p.equity_share * C;
     const need = Math.max(0, C - S - E);
 
-    // A lot whose remaining cost exceeds the loan cap does not pencil, and the
-    // reason is reported separately from failing the cushion - they are
-    // different failures and a student should be able to tell them apart.
-    if (need > loanMax) { state[i] = 2; overCap += 1; continue; }
+    // A lot whose remaining cost exceeds the loan cap fails here, the same as
+    // one whose rent will not clear the cushion. Both are "does not work for
+    // the owner"; the reasons are different and neither is a separate test.
+    if (need > loanMax) { outcome[i] = 2; continue; }
 
     const D = payment(need, p.interest_rate, p.term_months);
 
@@ -251,67 +276,30 @@ export function compute(lots, rear, flags, manifest, p) {
     const M = Reff - O - propertyTax - D;
     margin[i] = M;
 
-    // Guard the divide: equity can legitimately be zero, and the program's
-    // own default is that the homeowner puts in nothing.
-    roe[i] = E > 0 ? (12 * M) / E : (M > 0 ? Infinity : 0);
-
     if (M >= cushion) {
-      state[i] = 3;
-      pencils += 1;
-      passingRoe.push(roe[i]);
+      outcome[i] = 3;
+      works += 1;
       passingIdx.push(i);
     } else {
-      state[i] = 1;
+      outcome[i] = 2;
     }
   }
 
-  // ---- time -------------------------------------------------------------
-  // Rank the passing lots by return on equity and release the top
-  // permits_per_year each year. The claim this makes is explicit: the binding
-  // constraint is permitting throughput, not demand. Nothing here represents a
-  // homeowner deciding anything, and the ranking is a stand-in for a decision.
-  passingIdx.sort((a, b) => {
-    const ra = roe[a], rb = roe[b];
-    if (ra === rb) return a - b;          // stable, so the map does not shimmer
-    return rb - ra;
-  });
-  const startYear = manifest.start_year ?? 2027;
-  const perYear = Math.max(1, p.permits_per_year);
-  for (let rank = 0; rank < passingIdx.length; rank++) {
-    releaseYear[passingIdx[rank]] = startYear + Math.floor(rank / perYear);
-  }
-
   // ---- metrics, from the same pass --------------------------------------
-  let builtByYear = 0, builtThisYear = 0;
-  const incomesOfBuilt = [];
+  //
+  // NO UPTAKE RATE, and no permitting queue. The count is every lot that
+  // passes all three tests, which is an upper bound and is labeled as one.
   const perTract = new Map();
-  for (let rank = 0; rank < passingIdx.length; rank++) {
-    const i = passingIdx[rank];
-    const y = releaseYear[i];
-    if (y > p.year) break;               // sorted by rank, so this is safe
-    builtByYear += 1;
-    if (y === p.year) builtThisYear += 1;
-    incomesOfBuilt.push(lots[i * STRIDE + TRACT_INCOME]);
+  const incomes = [];
+  for (const i of passingIdx) {
+    incomes.push(lots[i * STRIDE + TRACT_INCOME]);
     const t = lots[i * STRIDE + TRACT_IDX];
     perTract.set(t, (perTract.get(t) ?? 0) + 1);
   }
 
-  // CAN THE UNIT ACTUALLY GO ANYWHERE? The program's rule is about the AREA
-  // of the required rear yard, and an area is not a plan. A lot can clear the
-  // one-third test and still have no room behind the house for a rectangle the
-  // shape of a real published design. That gap is counted here rather than left
-  // to be noticed as an absence on the map.
-  let placeable = 0;
-  for (let rank = 0; rank < passingIdx.length; rank++) {
-    const i = passingIdx[rank];
-    const y = releaseYear[i];
-    if (y > p.year) break;
-    if (siteUnit(lots, rear, i, aduSf[i], p.side_setback_ft, ratio)) placeable += 1;
-  }
-
   const marginsOfPassing = passingIdx.map((i) => margin[i]).sort((a, b) => a - b);
   const sizesOfPassing = passingIdx.map((i) => aduSf[i]).sort((a, b) => a - b);
-  incomesOfBuilt.sort((a, b) => a - b);
+  incomes.sort((a, b) => a - b);
 
   // The concentration measure, defined here and stated in the card: tracts are
   // ranked by how many units they receive, and this is the share of all units
@@ -319,18 +307,16 @@ export function compute(lots, rear, flags, manifest, p) {
   const counts = [...perTract.values()].sort((a, b) => b - a);
   const topDecileTracts = Math.max(1, Math.ceil(counts.length / 10));
   const inTop = counts.slice(0, topDecileTracts).reduce((a, b) => a + b, 0);
-  const concentration = builtByYear > 0 ? inTop / builtByYear : 0;
+  const concentration = works > 0 ? inTop / works : 0;
 
   return {
-    margin, roe, state, releaseYear, aduSf,
+    margin, outcome, room, aduSf, perTract,
     metrics: {
-      eligible, pencils, overCap,
-      shareOfEligible: eligible > 0 ? pencils / eligible : 0,
-      builtByYear, builtThisYear,
+      allowed, hasRoom, works, areaOnly, allowedWithArea,
+      shareOfAllowed: allowed > 0 ? works / allowed : 0,
       medianMargin: median(marginsOfPassing),
       medianAduSf: median(sizesOfPassing),
-      placeable,
-      medianTractIncome: median(incomesOfBuilt),
+      medianTractIncome: median(incomes),
       concentration,
       tractsReceiving: counts.length
     }
@@ -338,70 +324,96 @@ export function compute(lots, rear, flags, manifest, p) {
 }
 
 /**
- * The color ramps, as pure functions of a normalized position.
+ * The three tests, in the order they run, with the color each is drawn in.
  *
- * EXPORTED SO THE LEGEND CAN DRAW THE ACTUAL GRADIENT. They used to be written
- * inline in the loop below, and the legend described them in a sentence -
- * "darker is a higher return" - which is not a key. A key a reader can hold
- * against the map has to be made of the same numbers the map is, so both come
- * from here now. Called once per lot; the call costs nothing next to the
- * upload.
- *
- * `v` and `t` run 0 to 1. Callers clamp.
+ * A lot draws in a test's color where it reached that test and passed it, red
+ * where it reached it and failed, and not at all where an earlier test had
+ * already removed it. The index is the outcome a lot needs to have PASSED the
+ * test, which is what makes `outcome >= index` the whole rule.
  */
-export const RAMP = {
-  roe: (v) => [245 - 215 * v, 240 - 160 * v, 230 - 90 * v],
-  marginAbove: (v) => [200 - 170 * v, 225 - 145 * v, 235 - 95 * v],
-  marginBelow: (v) => [235 - 26 * v, 215 - 146 * v, 210 - 149 * v],
-  releaseYear: (t) => [30 + 200 * t, 90 - 30 * t, 140 - 60 * t]
-};
+export const TESTS = [
+  { key: 'eligible', index: 1, label: 'allowed under the rules', color: [242, 194, 48] },
+  { key: 'feasible', index: 2, label: 'room for a unit', color: [63, 174, 90] },
+  { key: 'financial', index: 3, label: 'works for the owner', color: [43, 91, 215] }
+];
+export const FAIL_COLOR = [224, 49, 42];
 
-/** The span each ramp covers, in the units of the thing it colors. */
-export const RAMP_SPAN = { margin: 1200, roe: 0.4, releaseYear: 24 };
+/** The single-hue sequential ramp the tract choropleth uses, six classes. */
+export const TRACT_RAMP = [
+  [222, 235, 247],
+  [198, 219, 239],
+  [158, 202, 225],
+  [107, 174, 214],
+  [49, 130, 189],
+  [8, 81, 156]
+];
 
 /**
- * Color every lot, from the results of the same pass.
+ * Quantile breaks over the tract values that are above zero.
  *
- * Returns a Uint8Array of RGBA, which deck.gl reads without copying.
+ * Computed on the CURRENT values rather than fixed, because every assumption
+ * slider moves the whole distribution; a fixed set of breaks would make the
+ * map look unchanged while the numbers underneath it moved.
  */
-export function colors(result, lots, p, manifest) {
-  const n = result.state.length;
+export function quantileBreaks(values, classes = TRACT_RAMP.length) {
+  const v = values.filter((x) => x > 0).sort((a, b) => a - b);
+  if (!v.length) return [];
+  const breaks = [];
+  for (let i = 1; i < classes; i++) breaks.push(v[Math.floor((v.length * i) / classes)]);
+  return breaks;
+}
+
+export function rampIndex(value, breaks) {
+  let i = 0;
+  while (i < breaks.length && value >= breaks[i]) i++;
+  return i;
+}
+
+/**
+ * Color every lot for the lot view.
+ *
+ * A lot that failed an earlier test is not drawn at all - alpha zero - because
+ * the test being shown was never run on it. Returns a Uint8Array of RGBA,
+ * which deck.gl reads without copying.
+ */
+export function lotColors(result, testKey) {
+  const test = TESTS.find((t) => t.key === testKey) ?? TESTS[2];
+  const { outcome } = result;
+  const n = outcome.length;
   const rgba = new Uint8Array(n * 4);
-  const { state, margin, roe, releaseYear } = result;
-  const startYear = manifest.start_year ?? 2027;
+  const [pr, pg, pb] = test.color;
+  const [fr, fg, fb] = FAIL_COLOR;
 
   for (let i = 0; i < n; i++) {
     const o = i * 4;
-    const s = state[i];
-    let r = 214, g = 214, b = 210, a = 40;   // ineligible: pale, nearly invisible
-
-    if (s !== 0) {
-      if (p.tint === 'eligibility') {
-        [r, g, b, a] = s === 3 ? [30, 80, 140, 200] : [209, 69, 61, 120];
-      } else if (p.tint === 'release_year') {
-        if (releaseYear[i] < 0 || releaseYear[i] > p.year) {
-          [r, g, b, a] = [225, 225, 220, 60];
-        } else {
-          const t = clamp01((releaseYear[i] - startYear) / RAMP_SPAN.releaseYear);
-          const c = RAMP.releaseYear(t);
-          [r, g, b, a] = [Math.round(c[0]), Math.round(c[1]), Math.round(c[2]), 210];
-        }
-      } else if (p.tint === 'roe') {
-        const c = RAMP.roe(clamp01(roe[i] / RAMP_SPAN.roe));
-        [r, g, b, a] = [Math.round(c[0]), Math.round(c[1]), Math.round(c[2]), 190];
-      } else {
-        // margin, the default. Diverging around the cushion.
-        const m = margin[i];
-        if (m >= p.cushion) {
-          const c = RAMP.marginAbove(clamp01((m - p.cushion) / RAMP_SPAN.margin));
-          [r, g, b, a] = [Math.round(c[0]), Math.round(c[1]), Math.round(c[2]), 200];
-        } else {
-          const c = RAMP.marginBelow(clamp01((p.cushion - m) / RAMP_SPAN.margin));
-          [r, g, b, a] = [Math.round(c[0]), Math.round(c[1]), Math.round(c[2]), 170];
-        }
-      }
+    const s = outcome[i];
+    if (s >= test.index) {
+      rgba[o] = pr; rgba[o + 1] = pg; rgba[o + 2] = pb; rgba[o + 3] = 200;
+    } else if (s === test.index - 1) {
+      // Reached this test and failed it.
+      rgba[o] = fr; rgba[o + 1] = fg; rgba[o + 2] = fb; rgba[o + 3] = 170;
+    } else {
+      rgba[o + 3] = 0; // removed by an earlier test; not drawn
     }
-    rgba[o] = r; rgba[o + 1] = g; rgba[o + 2] = b; rgba[o + 3] = a;
   }
   return rgba;
+}
+
+/**
+ * The color of a unit in the 3D view.
+ *
+ * Only lots with room for one are drawn, whatever the other two tests said, so
+ * the view can show a unit standing on a lot the rules exclude - which is the
+ * one thing this view is for.
+ */
+export const VOLUME_COLOR = {
+  works: [43, 91, 215],       // passes all three
+  no_deal: [242, 194, 48],    // allowed, has room, does not work for the owner
+  not_allowed: [224, 49, 42]  // has room, but not allowed under the rules
+};
+
+export function volumeColor(outcomeValue) {
+  if (outcomeValue === 3) return VOLUME_COLOR.works;
+  if (outcomeValue === 2) return VOLUME_COLOR.no_deal;
+  return VOLUME_COLOR.not_allowed;
 }

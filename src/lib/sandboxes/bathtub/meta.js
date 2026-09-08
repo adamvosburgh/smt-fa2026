@@ -5,27 +5,29 @@ export default {
   slug: 'bathtub',
   title: 'Sea Level Flood Map',
   subtitle:
-    'A flood map of New York built one setting at a time: pick a date and a projection, get a water height, and every piece of ground below it is colored in.',
+    'A flood map of New York that shows the range in the city\'s sea level projections instead of picking one. Choose a storm, and the map draws where it reaches today and where it would reach under each of the four published projections for a future year.',
   status: 'reference',
   statusNote:
     'Built first, as the reference implementation of the sandbox contract. Everything in it is published data: the USGS terrain for New York, the NPCC4 projections, the tidal datums and storm levels from the gauge at the Battery, the city building footprints. Read this one before building any of the others.',
   kind: 'model',
   blurb:
-    "Flood maps usually arrive finished, with the date, the projection and the method already chosen. This one leaves those as controls. Pick a year and a projection, the sandbox works out one water height for the whole city, and every cell of ground below that height floods. The switch that matters most is hydraulic connectivity: off, the map floods inland dips the sea can't physically reach, which is a choice made silently in many published flood maps.",
+    "Flood maps usually arrive finished, with the date, the projection and the method already chosen. The city publishes four projections for each date and no middle one, so this map draws all four. Pick a storm and a year: the fill is the storm at today's sea level, and the four lines are where the same storm reaches under each projection. A second view draws every storm and every projection at once. The switch that matters most is hydraulic connectivity: off, the map floods inland dips the sea can't physically reach, which is a choice made silently in many published flood maps.",
   controls: [
-    'how far into the future, and which of the four published projections',
-    'how much the sea rises, in meters, if you would rather set it by hand',
-    'which storm, chosen by how often it happens, or a surge height set by hand',
+    'whether to draw one storm with its four projections, or every storm and every projection at once',
+    'which storm, chosen by how often it happens',
+    'how far into the future the four projection lines are drawn for',
     'which point in the tide cycle',
     'whether water has to be able to reach a place to flood it',
+    'a sea level rise or a surge height set by hand, in place of the published figures',
     'whether the flood is shaded by depth, and whether the flood line is drawn'
   ],
   metrics: [
-    'the water height the model is using',
-    'land that is dry today and under water in this scenario',
+    'one row per waterline: today and the four projections in the one-storm view, the four storms in the all-storms view',
+    'the water height of that row, in meters above NAVD88',
+    'land that is dry today and under water at that height',
     'buildings standing on that land',
     'homes in those buildings',
-    'people living in the census tracts it covers',
+    'people in the census tracts it covers',
     'land that only floods when connectivity is switched off'
   ],
   data: [
@@ -38,7 +40,7 @@ export default {
     'People: 2020 Census tract population (table DP1), on tract boundaries from NYC Open Data.'
   ],
   cannotSee:
-    "Water moving. There's no time in this model, so there's no rain, no drainage, no waves, no storm that arrives and then leaves, no pump, no sea wall someone builds in 2043. It is a line drawn where the ground meets a number, including when that number is a hundred-year storm, which arrives here as a still water surface with no waves in it. That is also, more or less, the model most cities publish.",
+    "Water moving. There is no time in this model, so there is no rain, no drainage, no waves, no storm that arrives and then leaves, no pump, no sea wall someone builds in 2043. It is a line drawn where the ground meets a number, including when that number is a hundred-year storm, which arrives here as a still water surface with no waves in it. That is also, more or less, the model most cities publish. It draws the range in the projections, but it cannot say which of the four is more likely, because the panel does not.",
   tutorial: '/tutorials/05-bathtub/',
   live: false
 };

@@ -1,13 +1,17 @@
 <script>
   // Sandbox 01 - ADU Forecast for Queens (slug pencil).
   //
-  // Every one-to-two-family lot in Queens, tested against the published terms of
-  // one real subsidy program and tinted by the monthly cash flow an ADU on it
-  // would produce.
+  // Every one-to-two-family lot in Queens, run through three tests taken from
+  // the published rules and numbers of one real subsidy program: whether a unit
+  // is allowed on the lot, whether there is room for one, and whether the loan
+  // and the rent would work for the owner. A lot that passes all three counts
+  // as one added home. There is no time in it; the count is an upper bound and
+  // the card says so.
   //
   // The contract, as bathtub sets it out:
   //   props in : params, assets, mode ('edit' | 'view'), dataBase
   //   props in : onmetrics(obj), onready(bool)  - supplied by SandboxFrame
+  //              This component never touches window.__metrics or
   //              data-cover-ready. It reports; the frame publishes.
   //
   // The arithmetic is in proforma.js and runs on every parameter change over
@@ -16,49 +20,35 @@
   import { onDestroy } from 'svelte';
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
-  import { compute, colors, STRIDE, RSTRIDE, COL, siteUnit, RAMP, RAMP_SPAN } from './proforma.js';
+  import {
+    compute, lotColors, volumeColor, siteUnit,
+    STRIDE, RSTRIDE, COL, TESTS, FAIL_COLOR, TRACT_RAMP,
+    quantileBreaks, rampIndex
+  } from './proforma.js';
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready } = $props();
 
   let container = $state(null);
+  let stageEl = $state(null);
   let error = $state(null);
   let loading = $state('reading the lots…');
   let manifest = $state(null);
   let basemapFailed = $state(false);
   let tileFailures = $state(0);
   let lastPassMs = $state(0);
-  let unsitedBuilt = $state(0);
   let zoom = $state(0);
   let stats = $state(null);
+  let hover = $state(null);
+  let tractLegend = $state(null);
+  let noTractShapes = $state(false);
 
+  // A lot mark scales with zoom: 2px at borough extent, 6px at block scale.
+  // deck.gl gives that directly as a pixel radius clamped at both ends, which
+  // is also what keeps a quarter of a million sub-pixel marks from turning
+  // into moire at borough zoom.
+  const LOT_MIN_PX = 2;
+  const LOT_MAX_PX = 6;
 
-  // The drawn footprint per lot.
-  //
-  // A square of the lot's true area does NOT work here, and the reason is worth
-  // keeping. A typical Queens lot is 3,000 square feet, so its equal-area square
-  // is about 17 meters on a side - but the lots themselves are 25 feet wide,
-  // about 7.6 meters apart along a block. Each square therefore covers its two
-  // neighbors, and a block of forty row houses fuses into one continuous
-  // 17-meter band. The borough came out as a field of diagonal streaks, which
-  // read as an artifact of the model and were an artifact of the drawing.
-  //
-  // So the square is scaled to the SPACING between lots rather than to their
-  // area: half the equal-area side, which puts the median lot at about 8 meters
-  // and lets a block resolve into houses. Bigger lots are still drawn bigger,
-  // so the size still carries information - it is just no longer to scale.
-  //
-  // It is also clamped. 0.6% of these lots are over 10,000 square feet and the
-  // largest is 1,106,431 - a genuine single-family house on a city-owned parcel
-  // off Church Road. At true area that one lot is a 208-meter square, and a
-  // handful of them painted over whole neighborhoods.
-  const FT2_TO_M = 0.3048;
-  const AREA_TO_SPACING = 0.5;
-  const MIN_SIDE_M = 5;
-  const MAX_SIDE_M = 15;
-  // ScatterplotLayer takes a radius; this is the flat view's mark only. The
-  // extruded view no longer uses it - a sited unit is drawn at its real
-  // footprint, so it needs no per-lot fudge.
-  const SIDE_TO_RADIUS = 1 / Math.SQRT2;
   // THE HEIGHT IS THE RULE'S, NOT A GUESS AND NOT AN EXAGGERATION.
   // ZR 23-341(b)(4) limits an ancillary unit beside a detached, zero lot line or
   // semi-detached house to "one story, not to exceed 15 feet". The volumes are
@@ -66,15 +56,17 @@
   // the published ceiling is the only figure available that is anybody's.
   const ADU_HEIGHT_M = 15 * 0.3048;
 
-  function footprintRadius(lotAreaSqFt) {
-    const side = Math.sqrt(Math.max(lotAreaSqFt, 0)) * FT2_TO_M * AREA_TO_SPACING;
-    return Math.min(MAX_SIDE_M, Math.max(MIN_SIDE_M, side)) * SIDE_TO_RADIUS;
-  }
-
-  let map, overlay, detachRedraw, SolidPolygonLayer, ScatterplotLayer;
+  let map, overlay, detachRedraw;
+  let SolidPolygonLayer, ScatterplotLayer, GeoJsonLayer;
   let lots, rear, flags, result;
+  let tracts = null, tractShapes = null, queens = null;
   let ready = false;
   let pending = 0;
+
+  const isTracts = $derived(params.view === 'tracts');
+  const isLots = $derived(params.view === 'lots');
+  const isVolumes = $derived(params.view === 'volumes');
+  const currentTest = $derived(TESTS.find((t) => t.key === params.test) ?? TESTS[2]);
 
   async function boot() {
     try {
@@ -84,43 +76,52 @@
       ]);
       SolidPolygonLayer = deckLayers.SolidPolygonLayer;
       ScatterplotLayer = deckLayers.ScatterplotLayer;
+      GeoJsonLayer = deckLayers.GeoJsonLayer;
       manifest = m;
 
       loading = 'reading 247,000 lots…';
-      const [lotsBuf, rearBuf, flagsBuf] = await Promise.all([
+      const [lotsBuf, rearBuf, flagsBuf, tractsJson, shapesRes, queensRes] = await Promise.all([
         fetch(`${dataBase}/lots.bin`).then((r) => r.arrayBuffer()),
         fetch(`${dataBase}/rear.bin`).then((r) => r.arrayBuffer()),
-        fetch(`${dataBase}/flags.bin`).then((r) => r.arrayBuffer())
+        fetch(`${dataBase}/flags.bin`).then((r) => r.arrayBuffer()),
+        fetch(`${dataBase}/tracts.json`).then((r) => r.json()),
+        fetch(`${dataBase}/tract_shapes.json`),
+        fetch(`${dataBase}/queens.json`)
       ]);
       lots = new Float32Array(lotsBuf);
       rear = new Int16Array(rearBuf);
       flags = new Uint8Array(flagsBuf);
+      tracts = tractsJson.tracts;
+      // Both are pipeline outputs that can legitimately be missing on a tree
+      // where only part of the pipeline has been re-run. The map says so
+      // rather than failing.
+      tractShapes = shapesRes.ok ? await shapesRes.json() : null;
+      queens = queensRes.ok ? await queensRes.json() : null;
+      noTractShapes = !tractShapes;
+
       if (lots.length !== flags.length * STRIDE || rear.length !== flags.length * RSTRIDE) {
         throw new Error(
           `lots.bin, rear.bin and flags.bin disagree: ${lots.length / STRIDE} / ` +
           `${rear.length / RSTRIDE} rows against ${flags.length}. ` +
           `Re-run data/scripts/pencil.py.`);
       }
+      // geoid -> index into tracts, so a tract polygon can find its numbers.
+      tractByGeoid = new Map(tracts.map((t, i) => [t.geoid, i]));
 
       const [w, s, e, n] = m.bounds;
       ({ map, overlay } = await createMap({
         container,
-        bounds: [[w, s], [e, n]],
+        // Queens with 5% padding.
+        bounds: [[w - (e - w) * 0.05, s - (n - s) * 0.05],
+                 [e + (e - w) * 0.05, n + (n - s) * 0.05]],
         interactive: mode === 'edit',
         onBasemapFail: () => { basemapFailed = true; },
         onTileFail: (k) => { tileFailures = k; }
       }));
-      // The study area is Queens, so the map is Queens: the camera is held
-      // near the lots' own bounding box, and the mask layer below blanks the
-      // basemap outside it. Without both, the crop is a suggestion.
-      const pw = (e - w) * 0.25, ph = (n - s) * 0.25;
-      try { map.setMaxBounds([[w - pw, s - ph], [e + pw, n + ph]]); } catch { /* not ready */ }
 
       loading = null;
       render();
       detachRedraw = attachRedraw(map, container, render);
-      // Tracked only so the legend can say what a mark IS at this zoom. It does
-      // not trigger a redraw - the layers do not depend on it.
       zoom = map.getZoom();
       map.on('zoom', () => { zoom = map.getZoom(); });
     } catch (err) {
@@ -129,117 +130,156 @@
     }
   }
 
+  let tractByGeoid = new Map();
+
+  // ---- the tract choropleth ---------------------------------------------
+  //
+  // Value per tract: the number of lots in it that pass all three tests, or
+  // that count divided by the homes the tract already has (MapPLUTO UnitsRes
+  // over every lot in it, all building classes, summed once in the pipeline).
+  // Breaks are quantiles over the CURRENT values, because every assumption
+  // slider moves the whole distribution and fixed breaks would leave the map
+  // looking unchanged while the numbers under it moved.
+  function tractValues() {
+    const added = new Float64Array(tracts.length);
+    for (const [idx, count] of result.perTract) {
+      if (idx >= 0 && idx < tracts.length) added[idx] = count;
+    }
+    const values = new Float64Array(tracts.length);
+    for (let i = 0; i < tracts.length; i++) {
+      if (params.tract_measure === 'share') {
+        const existing = tracts[i].units_res ?? 0;
+        values[i] = existing > 0 ? added[i] / existing : 0;
+      } else {
+        values[i] = added[i];
+      }
+    }
+    return { added, values };
+  }
+
   function render() {
     if (!overlay || !manifest || !lots) return;
 
     const t0 = performance.now();
     result = compute(lots, rear, flags, manifest, params);
-    const rgba = colors(result, lots, params, manifest);
     lastPassMs = performance.now() - t0;
 
-    const showVolumes = params.volumes === true;
-    // Volumes seen from directly overhead are just squares, so the map tilts
-    // only when there is something to see in three dimensions. Flat is the
-    // default: a quarter of a million columns at a shallow angle smear into
-    // each other at borough zoom, and the pattern is the point.
-    const wantPitch = showVolumes ? 35 : 0;
+    // The 3D view is the only one worth tilting for. Volumes seen from
+    // directly overhead are squares.
+    const wantPitch = isVolumes ? 45 : 0;
     if (map && Math.abs(map.getPitch() - wantPitch) > 1) {
       try { map.easeTo({ pitch: wantPitch, duration: 400 }); } catch { /* not ready */ }
     }
-    // TWO LAYERS, AND THE REASON IS THE PIXEL GRID.
-    //
-    // At borough zoom the whole of Queens is about 850 pixels wide, so a lot is
-    // roughly 0.2 of a pixel. A quarter of a million sub-pixel columns do not
-    // render as a map; they render as moire - diagonal streaks that look like a
-    // finding and are an artifact of the rasteriser. Making the squares bigger
-    // or smaller changes nothing, because the problem is that they are smaller
-    // than a pixel either way.
-    //
-    // So the flat view - the default, and the one the argument lives in - uses
-    // a scatterplot with a MINIMUM PIXEL RADIUS. Every lot is guaranteed at
-    // least a pixel and a bit, the pattern resolves cleanly, and zooming in
-    // takes over from the minimum smoothly.
-    //
-    // The extruded view keeps the column layer, because a scatterplot cannot be
-    // extruded. It is only legible zoomed in, which is what its control says.
-    // THE VOLUMES ARE THE UNITS, NOT THE LOTS, and that distinction is the
-    // whole reason this branch exists. The flat view draws one mark per lot at
-    // the lot's own center, which is the right place for a fact about a lot.
-    // The extruded view draws the proposed building, so it has to stand where
-    // the building would stand - in the back yard, five feet off the lot line,
-    // at its own floor area. It used to be drawn at the lot centroid, which is
-    // where the house already is, so every cottage sat on a roof.
-    //
-    // Only the units built by the selected year are given geometry, so this
-    // builds a few thousand squares rather than a quarter of a million.
-    //
-    // THE FLAT MARKS STAY ON WHEN THE VOLUMES COME UP, and that is a fix rather
-    // than a decoration. The two layers draw different populations: every lot
-    // that passes the pro-forma, against the far smaller set that the
-    // permitting queue has released AND that has room behind the house. When
-    // the volumes replaced the marks, the difference between those two numbers
-    // - about eight to one at the defaults - looked like units failing to draw.
-    // Drawn together, the queue and the placement are both visible, and the
-    // legend below counts all three populations rather than one.
-    const flat = new ScatterplotLayer({
-      id: 'lots-flat',
-      data: { length: flags.length },
-      pickable: false,
-      stroked: false,
-      radiusUnits: 'meters',
-      radiusMinPixels: 1.2,
-      radiusMaxPixels: 40,
-      // Held back under the volumes so a solid always reads on top of its own
-      // mark rather than fighting it.
-      opacity: showVolumes ? 0.55 : 1,
-      getPosition: (_, { index, target }) => {
-        const b = index * STRIDE;
-        target[0] = lots[b]; target[1] = lots[b + 1]; target[2] = 0;
-        return target;
-      },
-      getFillColor: (_, { index, target }) => {
-        const o = index * 4;
-        target[0] = rgba[o]; target[1] = rgba[o + 1];
-        target[2] = rgba[o + 2]; target[3] = rgba[o + 3];
-        return target;
-      },
-      getRadius: (_, { index }) => footprintRadius(lots[index * STRIDE + COL.LOT_AREA]),
-      updateTriggers: { getFillColor: [rgba] }
-    });
 
-    // The crop mask: page-colored, with the study area cut out of it, drawn
-    // under the marks as the ground. It ends the basemap at the edge of what
-    // the model actually covers - a map that runs on into Brooklyn implies the
-    // model does too, and it does not.
-    const [bw, bs, be, bn] = manifest.bounds;
-    const P = 8; // past the horizon even in the tilted volumes view
-    const mask = new SolidPolygonLayer({
-      id: 'crop-mask',
-      data: [{
-        p: [
-          [[bw - P, bs - P], [be + P, bs - P], [be + P, bn + P], [bw - P, bn + P]],
-          [[bw, bs], [be, bs], [be, bn], [bw, bn]]
-        ]
-      }],
-      getPolygon: (d) => d.p,
-      filled: true,
-      pickable: false,
-      // Unlit, or the tilted view shades the "page" like a surface in the scene.
-      material: false,
-      getFillColor: [244, 244, 242, 255]
-    });
+    const layers = [];
 
-    const layers = [mask, flat];
-    if (showVolumes) {
+    // THE MASK, NOT A CROP. The basemap is the whole metro; a white polygon at
+    // 75% opacity covers it with Queens cut out, so the borough reads at full
+    // strength and everything around it at a quarter. A crop hid where Queens
+    // is, which is half of what a map of one borough is for.
+    if (queens) {
+      const P = 8; // past the horizon even in the tilted 3D view
+      const [bw, bs, be, bn] = manifest.bounds;
+      const outer = [[bw - P, bs - P], [be + P, bs - P], [be + P, bn + P], [bw - P, bn + P]];
+      // Every ring of the borough becomes a hole. deck.gl takes one polygon as
+      // [outer, ...holes], so the multipolygon flattens into the hole list.
+      const holes = queens.geometry.coordinates.flatMap((poly) => [poly[0]]);
+      layers.push(new SolidPolygonLayer({
+        id: 'outside-queens',
+        data: [{ p: [outer, ...holes] }],
+        getPolygon: (d) => d.p,
+        filled: true,
+        pickable: false,
+        material: false, // unlit, or the tilted view shades it like a surface
+        getFillColor: [255, 255, 255, 191] // 75%
+      }));
+    }
+
+    if (isTracts && tractShapes) {
+      const { added, values } = tractValues();
+      const breaks = quantileBreaks([...values]);
+      const max = values.reduce((a, b) => (b > a ? b : a), 0);
+      tractLegend = { breaks, max, measure: params.tract_measure };
+      layers.push(new GeoJsonLayer({
+        id: 'tracts',
+        data: tractShapes,
+        stroked: true,
+        filled: true,
+        pickable: mode === 'edit',
+        getLineColor: [255, 255, 255, 60],
+        lineWidthMinPixels: 0.5,
+        getFillColor: (f) => {
+          const i = tractByGeoid.get(f.properties.geoid);
+          const v = i === undefined ? 0 : values[i];
+          // A tract with nothing added is left as the faded basemap.
+          if (!(v > 0)) return [0, 0, 0, 0];
+          return [...TRACT_RAMP[rampIndex(v, breaks)], 205];
+        },
+        onHover: ({ object, x, y }) => {
+          if (!object) { hover = null; return; }
+          const i = tractByGeoid.get(object.properties.geoid);
+          const existing = i === undefined ? 0 : (tracts[i].units_res ?? 0);
+          const n = i === undefined ? 0 : added[i];
+          hover = {
+            x, y,
+            geoid: object.properties.geoid,
+            added: n,
+            existing,
+            share: existing > 0 ? n / existing : null
+          };
+        },
+        updateTriggers: { getFillColor: [values, breaks] }
+      }));
+    } else {
+      tractLegend = null;
+    }
+
+    if (isLots) {
+      const rgba = lotColors(result, params.test);
+      layers.push(new ScatterplotLayer({
+        id: 'lots',
+        data: { length: flags.length },
+        pickable: mode === 'edit',
+        stroked: false,
+        radiusUnits: 'pixels',
+        getRadius: 4,
+        radiusMinPixels: LOT_MIN_PX,
+        radiusMaxPixels: LOT_MAX_PX,
+        getPosition: (_, { index, target }) => {
+          const b = index * STRIDE;
+          target[0] = lots[b]; target[1] = lots[b + 1]; target[2] = 0;
+          return target;
+        },
+        getFillColor: (_, { index, target }) => {
+          const o = index * 4;
+          target[0] = rgba[o]; target[1] = rgba[o + 1];
+          target[2] = rgba[o + 2]; target[3] = rgba[o + 3];
+          return target;
+        },
+        onHover: ({ index, x, y }) => {
+          hover = index >= 0
+            ? {
+                x, y,
+                lot: index,
+                outcome: result.outcome[index],
+                aduSf: result.aduSf[index],
+                income: lots[index * STRIDE + COL.TRACT_INCOME]
+              }
+            : null;
+        },
+        updateTriggers: { getFillColor: [rgba, params.test] }
+      }));
+    }
+
+    if (isVolumes) {
       layers.push(new SolidPolygonLayer({
         id: 'units-3d',
-        data: buildUnits(rgba),
+        data: buildUnits(),
         extruded: true,
         pickable: false,
         getPolygon: (d) => d.ring,
         getElevation: () => ADU_HEIGHT_M,
-        getFillColor: (d) => d.color,
-        updateTriggers: { getFillColor: [rgba] }
+        getFillColor: (d) => d.color
       }));
     }
 
@@ -249,16 +289,15 @@
     stats = mt;
     const pct = (x) => `${(x * 100).toFixed(1)}%`;
     onmetrics?.({
-      'lots that pencil': `${mt.pencils.toLocaleString()} of ${mt.eligible.toLocaleString()} (${pct(mt.shareOfEligible)})`,
-      'units built by this year': mt.builtByYear.toLocaleString(),
-      'units this year': mt.builtThisYear.toLocaleString(),
-      'margin at the median passing lot': `$${Math.round(mt.medianMargin).toLocaleString()}/mo`,
+      'homes added (lots passing all three tests)': mt.works.toLocaleString(),
+      'lots allowed under the rules': mt.allowed.toLocaleString(),
+      'lots with room for a unit': mt.hasRoom.toLocaleString(),
+      'share of allowed lots that work for the owner': pct(mt.shareOfAllowed),
       'unit size at the median passing lot': `${Math.round(mt.medianAduSf).toLocaleString()} sf`,
-      'of those, with room behind the house':
-        `${mt.placeable.toLocaleString()} (${pct(mt.builtByYear > 0 ? mt.placeable / mt.builtByYear : 0)})`,
-      'median tract income where units land':
+      'monthly margin at the median passing lot': `$${Math.round(mt.medianMargin).toLocaleString()}/mo`,
+      'median tract income where homes land':
         mt.medianTractIncome > 0 ? `$${Math.round(mt.medianTractIncome).toLocaleString()}` : '—',
-      'share of units in the top tenth of tracts': pct(mt.concentration)
+      'share of homes in the top tenth of tracts': pct(mt.concentration)
     });
 
     if (!ready) {
@@ -267,84 +306,31 @@
     }
   }
 
-  // The footprints of the units standing in the selected year.
+  // The footprints of the units, for the 3D view.
   //
-  // A lot is skipped when it has not been released yet, and when the pipeline
-  // could not work out which way its back garden faces - no building footprint
-  // on record, or a centroid outside its own polygon, which is what an L-shaped
-  // or flag lot does. Those are left flat rather than drawn somewhere invented.
-  // The count of them is on the legend, because a silently missing building is
-  // exactly the kind of absence this sandbox is supposed to make visible.
-  function buildUnits(rgba) {
+  // EVERY LOT WITH ROOM FOR ONE, whatever the other two tests said. A unit
+  // standing on a lot the rules exclude is what this view is for, so test 2 is
+  // evaluated on every lot rather than only on the ones that got that far.
+  // A lot the pipeline could not site - no footprint on record, or a centroid
+  // outside its own polygon, which is what an L-shaped or flag lot does - has
+  // no room by definition and is simply absent.
+  function buildUnits() {
     const out = [];
     const unitRatio = manifest.plan_library?.depth_to_width_ratio ?? 0.7;
-    let unsited = 0;
     for (let i = 0; i < flags.length; i++) {
-      const y = result.releaseYear[i];
-      if (y < 0 || y > params.year) continue;
+      if (!result.room[i]) continue;
       const ring = siteUnit(lots, rear, i, result.aduSf[i],
                             params.side_setback_ft, unitRatio);
-      if (!ring) { unsited += 1; continue; }
-      const o = i * 4;
-      out.push({ ring, color: [rgba[o], rgba[o + 1], rgba[o + 2], 235] });
+      if (!ring) continue;
+      out.push({ ring, color: [...volumeColor(result.outcome[i]), 235] });
     }
-    unsitedBuilt = unsited;
     return out;
   }
 
-  // ---- the legend ------------------------------------------------------
-  //
-  // The gradient is drawn from the SAME functions the map is colored with, so
-  // a reader holding the key against the map is holding the real thing. A
-  // sentence saying "darker is a higher return" is not a key.
-  const css = (c) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
-  function bar(fn, n = 14) {
-    const stops = [];
-    for (let i = 0; i < n; i++) stops.push(css(fn(i / (n - 1))));
-    return `linear-gradient(to right, ${stops.join(',')})`;
-  }
-  // Margin diverges around the cushion, and the step at the middle is real -
-  // that is where the deal stops covering itself.
-  function divergingBar(n = 8) {
-    const stops = [];
-    for (let i = 0; i < n; i++) stops.push(css(RAMP.marginBelow(1 - i / (n - 1))));
-    for (let i = 0; i < n; i++) stops.push(css(RAMP.marginAbove(i / (n - 1))));
-    return `linear-gradient(to right, ${stops.join(',')})`;
-  }
-  const money = (v) => `$${Math.round(v).toLocaleString()}`;
-  const startYear = $derived(manifest?.start_year ?? 2027);
-
-  const ramp = $derived.by(() => {
-    if (!manifest) return null;
-    if (params.tint === 'roe') {
-      return { style: bar(RAMP.roe), left: '0%', right: `${RAMP_SPAN.roe * 100}% and over`,
-               what: 'annual return on the money the owner put in' };
-    }
-    if (params.tint === 'release_year') {
-      return { style: bar(RAMP.releaseYear), left: String(startYear),
-               right: `${startYear + RAMP_SPAN.releaseYear} and later`,
-               what: 'the year the queue reaches this lot' };
-    }
-    if (params.tint === 'margin') {
-      return { style: divergingBar(), left: `${money(params.cushion - RAMP_SPAN.margin)}/mo`,
-               mid: `the ${money(params.cushion)} cushion`,
-               right: `+${money(params.cushion + RAMP_SPAN.margin)}/mo`,
-               what: 'what is left each month after the loan and the running costs' };
-    }
-    return null;   // eligibility is categorical; it keeps its swatches
-  });
-
-  // WHAT A MARK IS, AT THIS ZOOM.
-  //
-  // The scatterplot holds every lot to a minimum of 1.2 pixels of radius, which
-  // is the only reason a quarter of a million sub-pixel lots resolve into a
-  // pattern instead of moire. The cost of that floor is that below roughly zoom
-  // 14.5 the marks are wider than the lots under them and overlap their
-  // neighbors - so the reader is looking at a density of lots, not at lots.
-  // Above it the floor stops binding and the marks separate. Two different
-  // pictures, and nothing on the map said which one was on screen.
-  const PER_LOT_ZOOM = 14.5;
-  const perLot = $derived(zoom >= PER_LOT_ZOOM);
+  const css = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const tractRampStyle = `linear-gradient(to right, ${TRACT_RAMP.map(css).join(',')})`;
+  const fmtTract = (v) =>
+    params.tract_measure === 'share' ? `${(v * 100).toFixed(0)}%` : Math.round(v).toLocaleString();
 
   // 247,000 lots is a few milliseconds of arithmetic, but the color array and
   // deck.gl's upload are not free. Batch into a frame and tell the frame we are
@@ -366,12 +352,11 @@
   });
 
   $effect(() => {
-    void [params.grant_max, params.equity_share, params.interest_rate,
-          params.term_months, params.cost_per_sf, params.rent_basis,
-          params.rent_flat, params.vacancy, params.eligibility,
-          params.rear_yard_denominator, params.side_setback_ft,
-          params.cushion, params.permits_per_year,
-          params.year, params.tint, params.volumes];
+    void [params.view, params.tract_measure, params.test,
+          params.grant_max, params.equity_share, params.interest_rate,
+          params.term_months, params.cushion, params.cost_per_sf,
+          params.rent_basis, params.rent_flat, params.vacancy,
+          params.rear_yard_denominator, params.side_setback_ft];
     schedule();
   });
 
@@ -382,8 +367,35 @@
   });
 </script>
 
-<div class="wrap">
+<div class="wrap" bind:this={stageEl}>
   <div class="map" bind:this={container}></div>
+
+  <!-- The readout follows the pointer rather than sitting in the legend. Same
+       tooltip as the Anthromes map: 230px, clamped inside the stage, no pointer
+       events of its own so it never eats a drag. -->
+  {#if hover && stageEl}
+    <div
+      class="tip"
+      style="left:{Math.min(hover.x + 14, stageEl.clientWidth - 244)}px;
+             top:{Math.min(hover.y + 14, stageEl.clientHeight - 110)}px"
+    >
+      {#if hover.geoid}
+        <b>tract {hover.geoid}</b>
+        <span>{hover.added.toLocaleString()} homes added</span>
+        <span>{hover.existing.toLocaleString()} homes already there</span>
+        <i>{hover.share === null
+          ? 'no existing homes recorded'
+          : `${(hover.share * 100).toFixed(1)}% of what the tract has`}</i>
+      {:else}
+        <b>{hover.outcome >= 3 ? 'adds a home' : 'no home here'}</b>
+        <span>{hover.outcome >= 1 ? 'allowed under the rules' : 'not allowed under the rules'}</span>
+        <span>{hover.outcome >= 2 ? 'room for a unit' : 'no room for a unit'}</span>
+        <span>{hover.outcome >= 3 ? 'works for the owner' : 'does not work for the owner'}</span>
+        {#if hover.aduSf > 0}<i>{Math.round(hover.aduSf).toLocaleString()} sf under the rear yard rule</i>{/if}
+        {#if hover.income > 0}<i>tract median income ${Math.round(hover.income).toLocaleString()}</i>{/if}
+      {/if}
+    </div>
+  {/if}
 
   {#if error}
     <p class="err">Couldn't load the data for this one: {error}</p>
@@ -393,74 +405,54 @@
 
   {#if manifest && !error}
     <div class="key">
-      {#if ramp}
-        <div class="ramp">
-          <span class="what">{ramp.what}</span>
-          <div class="bar" style="background: {ramp.style}"></div>
-          <div class="ends">
-            <span>{ramp.left}</span>
-            {#if ramp.mid}<span class="mid">{ramp.mid}</span>{/if}
-            <span>{ramp.right}</span>
+      {#if isTracts}
+        {#if tractLegend}
+          <div class="ramp">
+            <span class="what">
+              {params.tract_measure === 'share'
+                ? 'homes added as a share of the homes the tract already has'
+                : 'homes added, by census tract'}
+            </span>
+            <div class="bar" style="background: {tractRampStyle}"></div>
+            <div class="ends">
+              <span>0</span>
+              <span>{fmtTract(tractLegend.max)}</span>
+            </div>
           </div>
-        </div>
+        {/if}
+        {#if noTractShapes}
+          <span class="warn">no tract outlines on disk - re-run data/scripts/pencil.py</span>
+        {/if}
+      {:else if isLots}
+        <span><i class="sw" style="background: {css(FAIL_COLOR)}"></i>fails this test</span>
+        <span>
+          <i class="sw" style="background: {css(currentTest.color)}"></i>{currentTest.label}
+        </span>
       {:else}
-        <span><i class="sw pass"></i>the deal clears the cushion</span>
-        <span><i class="sw fail"></i>eligible, but it doesn't pencil</span>
+        <span><i class="sw" style="background: rgb(43,91,215)"></i>allowed, and works for the owner</span>
+        <span><i class="sw" style="background: rgb(242,194,48)"></i>allowed, but does not work for the owner</span>
+        <span><i class="sw" style="background: rgb(224,49,42)"></i>not allowed under the rules</span>
+        <span class="note">Only lots with room for a unit are drawn.</span>
       {/if}
 
-      <!-- WHAT IS ON THE MAP, in populations, because the two layers draw
-           different ones and the gap between them is not a drawing failure. -->
-      {#if stats}
-        <span class="pops">
-          <b>{stats.pencils.toLocaleString()}</b> lots pencil
-          {#if params.volumes === true}
-            · <b>{stats.builtByYear.toLocaleString()}</b> released by {params.year}
-            · <b>{stats.placeable.toLocaleString()}</b> standing
-          {/if}
-        </span>
-      {/if}
+      <span class="note">Queens is drawn in full; the rest of the city is faded to 25%.</span>
 
-      <span class="note">
-        A mark is a TAX LOT, not a building: a two-family house is one mark.
-        {#if perLot}
-          One mark, one lot, at half the side of its equal-area square — so a
-          block of row houses resolves into houses rather than a band.
-        {:else}
-          At this zoom every mark is held to a minimum of a pixel and a bit, so
-          it is wider than its lot and overlaps its neighbors. You are reading
-          a density of lots, not lots. Zoom past {PER_LOT_ZOOM} for one mark per lot.
-        {/if}
-      </span>
-
-      {#if params.volumes === true}
-        <span class="note">
-          The solids are the units built by {params.year}, one per lot, at their
-          own floor area and the plan library's proportions, 15ft tall — the
-          rule's limit. Set behind the house, {params.side_setback_ft}ft off the
-          rear lot line. Which way is "back" is measured from the unshared lot
-          edge — the stretch of boundary no neighbor touches, which is the
-          street. On a corner lot the longest such run is taken as the front;
-          that rule is ours: see the card.
-        </span>
-        {#if unsitedBuilt > 0}
-          <span class="note">
-            {unsitedBuilt.toLocaleString()} built units not drawn: no room behind
-            the house for a unit this shape, or no footprint on record. The rule
-            tests the AREA of the rear yard, which is not the same as a plan.
-          </span>
-        {/if}
-      {/if}
-
-      {#if params.eligibility === 'all'}
-        <span class="warn">ignoring eligibility - pricing every lot in Queens</span>
-      {/if}
       {#if basemapFailed}
         <span class="warn">no basemap - the model still works</span>
       {:else if tileFailures > 3}
         <span class="warn">{tileFailures} basemap tiles blocked - the model still works</span>
       {/if}
       {#if mode === 'edit' && lastPassMs > 0}
-        <span class="note">{flags.length.toLocaleString()} lots recomputed in {lastPassMs.toFixed(0)}ms</span>
+        <!-- The two counts the dev note reports: what test 2 used to be (the
+             one-third area rule alone) and what it is now (a unit of that area
+             fitting behind the house). The gap between them is the change the
+             09-08 rebuild made, so it is measured on the map rather than
+             asserted in prose. -->
+        <span class="note">
+          {stats.allowedWithArea.toLocaleString()} allowed lots clear the area rule ·
+          {stats.hasRoom.toLocaleString()} of them fit a unit ·
+          {flags.length.toLocaleString()} lots recomputed in {lastPassMs.toFixed(0)}ms
+        </span>
       {/if}
     </div>
   {/if}
@@ -477,6 +469,8 @@
     padding: 0.4rem 0.7rem; z-index: 5;
   }
   .err { color: #a00; max-width: 70%; text-align: center; }
+  /* Bottom left: the top corners and the bottom center belong to the floating
+     panels, so the legend takes the one corner nothing else claims. */
   .key {
     position: absolute; left: 0.6rem; bottom: 0.6rem; z-index: 5;
     display: flex; flex-direction: column; gap: 0.2rem;
@@ -493,15 +487,16 @@
     margin-top: 0.15rem; color: #888; font-size: 0.58rem;
     font-variant-numeric: tabular-nums;
   }
-  .ramp .ends .mid { color: #444; }
-  .key .pops {
-    display: block; color: #444; border-top: 1px solid #e0e0dd;
-    margin-top: 0.2rem; padding-top: 0.25rem; font-variant-numeric: tabular-nums;
+  .tip {
+    position: absolute; width: 230px; pointer-events: none; z-index: 6;
+    background: rgba(255,255,255,0.95); border: 1px solid #000;
+    padding: 0.35rem 0.5rem; font-size: 0.62rem; line-height: 1.45;
+    display: flex; flex-direction: column; gap: 0.05rem;
   }
-  .key .pops b { font-weight: 700; color: #000; }
+  .tip b { font-size: 0.7rem; }
+  .tip span { color: #555; }
+  .tip i { color: #999; font-style: normal; }
   .sw { width: 9px; height: 9px; display: inline-block; flex: none; margin-top: 0.2em; }
-  .pass { background: rgb(30,80,140); }
-  .fail { background: rgb(209,69,61); }
   .note { color: #999; }
   .warn { color: #a00; font-weight: 700; }
 </style>

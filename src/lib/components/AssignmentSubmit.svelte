@@ -192,27 +192,32 @@
 </div>
 
 <style>
-  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 1100; }
+  .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1100; }
   .dialog {
     position: fixed; z-index: 1101; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: min(520px, calc(100vw - 2rem)); max-height: 86vh; overflow-y: auto;
-    background: #fff; border: 1px solid #000; padding: 1.5rem; font-size: 0.78rem;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--rule); padding: 1.5rem; font-size: 0.78rem;
   }
   h2 { font-size: 0.95rem; margin: 0 0 1.25rem; }
   label { display: block; margin-bottom: 0.9rem; font-size: 0.72rem; font-weight: 700; }
   input, textarea { display: block; width: 100%; font: inherit; font-size: 0.78rem; font-weight: 400;
-    margin-top: 0.3rem; padding: 0.4rem; border: 1px solid #ccc; }
-  .hint { font-size: 0.66rem; color: #888; margin: -0.5rem 0 1rem; }
-  .site { border: 1px solid #ddd; padding: 0.6rem 0.8rem 0.2rem; margin: 0 0 0.9rem; }
+    margin-top: 0.3rem; padding: 0.4rem; border: 1px solid var(--rule);
+    background: var(--code-bg); color: var(--fg); }
+  .hint { font-size: 0.66rem; color: var(--fg-dim); margin: -0.5rem 0 1rem; }
+  .site { border: 1px solid var(--rule); padding: 0.6rem 0.8rem 0.2rem; margin: 0 0 0.9rem; }
   .site legend { font-size: 0.7rem; font-weight: 700; padding: 0 0.3rem; }
   .site .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.6rem; }
   .site select { display: block; width: 100%; font: inherit; font-size: 0.78rem; font-weight: 400;
-    margin-top: 0.3rem; padding: 0.4rem; border: 1px solid #ccc; }
+    margin-top: 0.3rem; padding: 0.4rem; border: 1px solid var(--rule);
+    background: var(--code-bg); color: var(--fg); }
   .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
-  .actions button { font: inherit; font-size: 0.72rem; padding: 0.45rem 0.9rem; border: 1px solid #000; background: #fff; cursor: pointer; }
-  .actions .go { background: #000; color: #fff; }
+  .actions button { font: inherit; font-size: 0.72rem; padding: 0.45rem 0.9rem;
+    border: 1px solid var(--fg); background: transparent; color: var(--fg); cursor: pointer; }
+  .actions button:hover { background: var(--hi); color: var(--hi-fg); border-color: var(--hi); }
+  .actions .go { background: var(--fg); color: var(--bg); }
   .actions .go:disabled { opacity: 0.4; cursor: default; }
-  .ok { color: #060; }
-  .err, .errs { color: #a00; }
+  .actions .go:disabled:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .ok { color: var(--hi); }
+  .err, .errs { color: var(--fg); font-weight: 700; }
   .errs { padding-left: 1.1rem; font-size: 0.72rem; }
 </style>

@@ -16,6 +16,8 @@
 // src/ imported as a module gets served to the browser with a JSON MIME type,
 // which the module loader rejects - the page then dies at hydration. ?raw is the
 // same mechanism content.js uses for markdown, and it works anywhere.
+import { SHOW_UNPUBLISHED } from './visibility.js';
+
 const manifests = import.meta.glob('/src/submissions/*/*/manifest.json', { eager: true });
 const reviews = import.meta.glob('/src/submissions/*/*/review.json', { eager: true });
 
@@ -35,8 +37,12 @@ function parse(path, mod) {
   };
 }
 
+// `published: false` in a manifest holds a submission back - the placeholder
+// entries under _example are held back that way. SMT_SHOW_UNPUBLISHED=1 shows
+// them, the same switch that shows unpublished pages and sandboxes.
 export const all = Object.entries(manifests)
   .map(([p, mod]) => parse(p, mod))
+  .filter((s) => SHOW_UNPUBLISHED || s.published !== false)
   .sort((a, b) => (b.submitted ?? '').localeCompare(a.submitted ?? ''));
 
 export function bySandbox(slug) {

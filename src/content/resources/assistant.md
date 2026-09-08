@@ -4,7 +4,7 @@ date: "2026-09-06"
 author: Adam Vosburgh
 sequence: 1
 cat: resource
-published: true
+published: false
 ---
 
 There is an assistant on this site. It has the five sandboxes, their dev notes, and the weekly tutorials in its context. It is optional. Every tutorial stands on its own, and no tutorial will tell you to ask the assistant instead of explaining something.

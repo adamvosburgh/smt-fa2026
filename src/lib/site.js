@@ -17,6 +17,5 @@ export const nav = [
   { href: '/assignments/', label: 'Assignments' },
   { href: '/resources/', label: 'Resources' },
   { href: '/gallery/', label: 'Student Work' },
-  // External links get filled in once they exist.
-  { href: 'https://calendar.app.google/REPLACE', label: 'Office Hours', external: true }
+  { href: 'https://calendar.app.google/PswuYWWDUBSTaC4K7', label: 'Office Hours', external: true }
 ];

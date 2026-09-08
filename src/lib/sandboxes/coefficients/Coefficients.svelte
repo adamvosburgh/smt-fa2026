@@ -476,6 +476,53 @@
   {#if view}
     <canvas bind:this={viewCanvas} width={480} height={400} class="city-view"></canvas>
   {:else}
+    {#if params.show_rail !== false}
+      <div class="rail">
+        <div class="rail-head">
+          <button type="button" class:on={railTab === 'layers'} onclick={() => (railTab = 'layers')}>
+            every layer the simulation keeps
+          </button>
+          <button
+            type="button"
+            class:on={railTab === 'divergence'}
+            onclick={() => (railTab = 'divergence')}
+          >
+            same rules, different seed
+            {#if divergenceState === 'running'}<span class="tag">running…</span>
+            {:else if divergenceState === 'failed'}<span class="tag">failed</span>{/if}
+          </button>
+        </div>
+
+        <div class="layers" hidden={railTab !== 'layers'}>
+          {#each BLOCK_MAPS as meta (meta.key)}
+            <button
+              type="button"
+              class="layer"
+              class:scratch={meta.scratch}
+              class:active={activeKey === meta.key}
+              class:writing={litPhases.has(meta.phase)}
+              onclick={() => pinLayer(meta.key)}
+              title="{meta.note} — phase {meta.phase}, {meta.min}–{meta.max}. Click to wash it over the city."
+            >
+              <canvas bind:this={panelCanvases[meta.key]} width={104} height={88}></canvas>
+              <span class="layer-label"><b>{meta.label}</b> <i>ph {meta.phase}</i></span>
+            </button>
+          {/each}
+        </div>
+
+        <div class="divergence" hidden={railTab !== 'divergence'}>
+          <canvas bind:this={divCanvas} width={520} height={110}></canvas>
+          {#if tally}
+            <p class="tally">
+              Starting city: {tally.zones} zones, {tally.services} stations,
+              {tally.plants} power plants, {tally.roads} road and {tally.wires} wire
+              tiles. Identical on every run; only the seed differs.
+            </p>
+          {/if}
+        </div>
+      </div>
+    {/if}
+
     <div class="stage" bind:this={stageEl}>
       <canvas
         bind:this={displayCanvas}
@@ -544,50 +591,6 @@
       </p>
     </div>
 
-    <div class="rail">
-      <div class="rail-head">
-        <button type="button" class:on={railTab === 'layers'} onclick={() => (railTab = 'layers')}>
-          every layer the simulation keeps
-        </button>
-        <button
-          type="button"
-          class:on={railTab === 'divergence'}
-          onclick={() => (railTab = 'divergence')}
-        >
-          same rules, different seed
-          {#if divergenceState === 'running'}<span class="tag">running…</span>
-          {:else if divergenceState === 'failed'}<span class="tag">failed</span>{/if}
-        </button>
-      </div>
-
-      <div class="layers" hidden={railTab !== 'layers'}>
-        {#each BLOCK_MAPS as meta (meta.key)}
-          <button
-            type="button"
-            class="layer"
-            class:scratch={meta.scratch}
-            class:active={activeKey === meta.key}
-            class:writing={litPhases.has(meta.phase)}
-            onclick={() => pinLayer(meta.key)}
-            title="{meta.note} — phase {meta.phase}, {meta.min}–{meta.max}. Click to wash it over the city."
-          >
-            <canvas bind:this={panelCanvases[meta.key]} width={104} height={88}></canvas>
-            <span class="layer-label"><b>{meta.label}</b> <i>ph {meta.phase}</i></span>
-          </button>
-        {/each}
-      </div>
-
-      <div class="divergence" hidden={railTab !== 'divergence'}>
-        <canvas bind:this={divCanvas} width={520} height={110}></canvas>
-        {#if tally}
-          <p class="tally">
-            Starting city: {tally.zones} zones, {tally.services} stations,
-            {tally.plants} power plants, {tally.roads} road and {tally.wires} wire
-            tiles. Identical on every run; only the seed differs.
-          </p>
-        {/if}
-      </div>
-    </div>
   {/if}
 </div>
 
@@ -603,8 +606,13 @@
              display: block; cursor: grab; touch-action: none; }
   .display.grabbing { cursor: grabbing; }
 
+  /* Bottom left, not top right. The 09-08 reframe floats the assumptions and
+     representation panels over the top right of the map and the description
+     over the top left; the hero and the chips move to the two corners nothing
+     else claims. The metrics strip is centered and capped at 70%, so the
+     bottom corners stay clear. */
   .hero {
-    position: absolute; right: 0.5rem; top: 0.5rem; width: 240px;
+    position: absolute; left: 0.5rem; bottom: 0.5rem; width: 200px;
     border: 1px solid #000; background: #fff;
   }
   .hero canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
@@ -616,7 +624,7 @@
   .hero-caption span { color: #999; }
 
   .stage-chips {
-    position: absolute; left: 0.5rem; top: 0.5rem;
+    position: absolute; left: 50%; transform: translateX(-50%); top: 0.5rem;
     display: flex; gap: 0.4rem; align-items: center;
   }
   .chip-group { display: flex; border: 1px solid #ccc; background: #fff; }
@@ -653,7 +661,11 @@
   }
   .phase-now b { color: #000; }
 
-  .rail { border-top: 1px solid #000; background: #fbfbf9; }
+  /* A strip along the top of the city, toggled from the representation
+     panel. It was under the map until the 09-08 reframe; with the map now
+     filling the stage there is room for it above, where the fifteen
+     thumbnails are large enough to follow as they are written. */
+  .rail { border-bottom: 1px solid #000; background: #fbfbf9; flex: none; }
   .rail-head { display: flex; border-bottom: 1px solid #e4e4e0; }
   .rail-head button {
     font: inherit; font-size: 0.62rem; text-transform: lowercase;
@@ -665,7 +677,7 @@
   .tag { color: #a00; font-weight: 700; margin-left: 0.3rem; }
 
   .layers {
-    display: grid; grid-template-columns: repeat(8, 1fr); gap: 1px;
+    display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 1px;
     background: #e4e4e0; border-bottom: 1px solid #e4e4e0;
   }
   .layer {
@@ -691,8 +703,12 @@
                        background: #fff; border: 1px solid #e4e4e0; display: block; }
   .tally { margin: 0.35rem 0 0; font-size: 0.58rem; color: #999; line-height: 1.5; }
 
+  @media (max-width: 1400px) {
+    .layers { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  }
+
   @media (max-width: 900px) {
-    .layers { grid-template-columns: repeat(5, 1fr); }
+    .layers { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .hero { width: 160px; }
   }
 </style>

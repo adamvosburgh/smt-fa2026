@@ -1,6 +1,6 @@
 {
   "sandbox": "after-five",
-  "generated": "2026-09-01",
+  "generated": "2026-08-31",
   "districts": [
     "MN01",
     "MN05"
@@ -56,7 +56,7 @@
     "degrees",
     "degrees",
     "feet",
-    "storeys",
+    "stories",
     "sq ft",
     "sq ft",
     "sq ft",
@@ -67,7 +67,7 @@
     "0-1",
     "0-1",
     "units",
-    "storeys",
+    "stories",
     "year or 0",
     "sq ft",
     "index into districts"
@@ -82,146 +82,6 @@
   ],
   "household_size": 2.01,
   "household_size_source": "Census ACS 5-year 2023, B25010_001E, New York County. Used to turn units into residents. It is a borough average applied to every new unit, and new conversion units skew smaller than the borough's stock.",
-  "convertibility": {
-    "note": "OUR score of published criteria, not Gensler's algorithm. The four sub-scores ship as columns and the weighted sum is done in the browser, so the weights are controls rather than something baked in. These are the DEFAULTS the schema starts from.",
-    "weights": {
-      "floorplate_depth": 0.35,
-      "floor_to_floor": 0.25,
-      "floorplate_area": 0.2,
-      "age": 0.2
-    },
-    "dropped": {
-      "window_operability": "Not derivable from any dataset available. Dropped.",
-      "elevator_count": "Not in MapPLUTO. Dropped rather than invented from floor area.",
-      "structural_bay": "Not in any dataset here. It used to be folded into the age proxy, which does not measure it. Named as missing instead."
-    },
-    "proxies": {
-      "floorplate_depth": "BldgDepth halved, as a core-to-window estimate. Assumes a centred core and a rectangular plate; both are often wrong.",
-      "floor_to_floor": "Modelled height divided by NumFloors. Averages over mechanical floors and lobbies.",
-      "floorplate_area": "BldgArea / NumFloors.",
-      "age": "YearBuilt, standing in for facade type only. It no longer stands in for structural bay as well - see dropped."
-    },
-    "gensler_published_share": 0.25,
-    "gensler_share_note": "Gensler's published result: about 25% of the 1,300+ buildings they scored were suitable for conversion. The criteria are published, the scoring is not. This is a comparison, not a validation."
-  },
-  "convertibility_ranges": {
-    "floorplate_depth_ft": [
-      20,
-      70
-    ],
-    "floor_to_floor_ft": [
-      9,
-      16
-    ],
-    "floorplate_area_sf": [
-      5000,
-      40000
-    ],
-    "year_built": [
-      1900,
-      1990
-    ],
-    "note": "Ours. Each proxy is clamped to its range and normalised so that 1 means easier to convert."
-  },
-  "presence": {
-    "note": "How many people are AT WORK in each district, so that removing office floor area can remove jobs with it. Everything here is counted. What is NOT here is a schedule - see what_is_missing.",
-    "source": "LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs, 2023 (ny_wac_S000_JT00_2023.csv.gz). Primary jobs by workplace census block.",
-    "residents_source": "2020 decennial census, DP1 total population, summed over the census tracts the district's lots stand in. Manhattan's tracts total 1,694,251, which is the published New York County count exactly, and no tract falls in two districts.",
-    "homes_note": "MapPLUTO's UnitsRes, totalled per LOT and never pushed onto buildings - which is the bug that gave sandbox 07 eleven million homes in a city of three and a half. It is here as the cross-check that caught a mistake: UnitsRes times the borough household size makes Lower Manhattan about 98,000 people and the census counted 85,841. The counted number is the one used.",
-    "joined_on": "MapPLUTO BCTCB2020, the lot's 2020 census block, against the LODES 15-digit block GEOID. An ID join, not a spatial one.",
-    "office_using_sectors": {
-      "CNS09": "Information (NAICS 51)",
-      "CNS10": "Finance and insurance (52)",
-      "CNS11": "Real estate (53)",
-      "CNS12": "Professional, scientific and technical services (54)",
-      "CNS13": "Management of companies (55)",
-      "CNS14": "Administrative and support services (56)"
-    },
-    "office_using_note": "The standard real-estate reading of those sectors, and a broad one: it counts a bank teller and a lawyer alike and leaves out a hospital administrator.",
-    "county_jobs": 2504522,
-    "county_office_using_jobs": 1275280,
-    "districts": {
-      "MN01": {
-        "jobs": 357495,
-        "office_using_jobs": 198677,
-        "office_sq_ft": 97391292,
-        "sq_ft_per_office_job": 490,
-        "residents_2020": 85841,
-        "tracts": 17,
-        "homes": 48685,
-        "blocks": 283,
-        "blocks_with_no_lodes_row": 27
-      },
-      "MN05": {
-        "jobs": 1012317,
-        "office_using_jobs": 667498,
-        "office_sq_ft": 216564244,
-        "sq_ft_per_office_job": 324,
-        "residents_2020": 92438,
-        "tracts": 29,
-        "homes": 45816,
-        "blocks": 262,
-        "blocks_with_no_lodes_row": 1
-      }
-    },
-    "density_caveat": "Roughly one office job per 490 square feet in Lower Manhattan and per 324 in Midtown South. Both are well above the 150-250 square feet per worker that gets quoted for a fitted-out floor, and the difference is vacancy plus the fact that OfficeArea is gross floor area and LODES counts primary jobs only. The model uses the measured ratio rather than the rule of thumb, so a converted building displaces the jobs that were really recorded on that floor area.",
-    "what_is_missing": "THE HOURS. This gives the size of the two populations and nothing about when either of them is on the street, which is the thing the sandbox is named after. NHTS Table 8-1 is national, six bands wide, and its finest statement about the evening is that 28% of trips begin somewhere between 6pm and midnight. ACS B08302 is half-hour bands at tract level, but its universe is departures TO work, so it describes the morning only. There is no published table of when people leave Manhattan offices in the evening. So the counts are reported and no curve is drawn through them."
-  },
-  "incentive_467m": {
-    "source": "HPD 467-m requirements FAQ, read 2026-08-31",
-    "prior_use_nonresidential_share": 0.9,
-    "min_units": 6,
-    "min_preexisting_share": 0.5,
-    "affordable_share": 0.25,
-    "waami_cap_pct": 80,
-    "commence_after": "2022-12-31",
-    "commence_before": "2031-06-30",
-    "complete_by": "2039-12-31",
-    "benefit_schedule": "NOT VERIFIED - not carried in the FAQ. Modelled as a binary eligibility gate only, with no abatement value."
-  },
-  "dob": {
-    "datasets": {
-      "legacy": "ic3t-wcy2",
-      "certificates_of_occupancy": "pkdm-hqz6"
-    },
-    "job_type_mapping": {
-      "legacy": "job_type == 'A1' (change of use / occupancy)",
-      "certificates_of_occupancy": [
-        "Alteration CO",
-        "CO - New Building with Existing Elements to Remain"
-      ]
-    },
-    "co_filing_types_kept": [
-      "Initial",
-      "Final"
-    ],
-    "coverage": {
-      "legacy": "2000-01-01 to 2025-12-31",
-      "certificates_of_occupancy": "roughly 2022 to 2025"
-    },
-    "dataset_not_used": {
-      "id": "w9ak-ipjd",
-      "name": "DOB NOW: Build - Job Application Filings",
-      "why": "The build doc named this as the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every job filing number prefixed B, no Manhattan at all (checked 2026-08-31). It cannot repair the legacy dataset's Manhattan coverage, so it is not used."
-    },
-    "counts": {
-      "legacy_rows": 44754,
-      "legacy_conversions": 6558,
-      "co_rows": 406,
-      "co_conversions": 194,
-      "co_no_units": 117
-    },
-    "migration_warning": "Legacy Manhattan change-of-occupancy filings fall from 1,109 in 2020 to 237, 77 and 56 in 2021-2023. That is the migration to DOB NOW, not a policy effect. A time series off the legacy dataset alone would show conversions collapsing exactly when everyone says they accelerated.",
-    "renewal_warning": "Of 81,139 certificates of occupancy, 46,772 are 'Renewal Without Change' and 6,595 'Renewal With Change' - re-issued paperwork for buildings that converted years ago or never converted. Counting them would invent a wave of activity out of an administrative process. Only Initial and Final certificates are kept, earliest per building.",
-    "added_floors_note": "Added floors come from LEGACY filings only. The other source carries none: its a certificate of occupancy carries no height, stories or enlargement figure at all. So buildings recorded as converting after about 2021 convert WITHOUT GROWING, and that is a limit of the record rather than of the buildings."
-  },
-  "back_test": "CUT. The spec proposed validating against 421-g from 1995. The legacy dataset's earliest pre-filing date is 2000-01-01, so it cannot reach. The model is not validated against history and the card says so.",
-  "sources": {
-    "massing": "DCP NYC 3D Model by Community District (NYC Open Data u5j4-zxpn), EPSG:2263 feet. THE FILE CARRIES NO ATTRIBUTES - no BIN, no BBL, nothing - so identity is inferred by spatial match against NYC Building Footprints: 99.5% matched, median distance 2 feet.",
-    "pluto": "MapPLUTO 26v2, joined on the BBL recovered by that match.",
-    "dob": "DOB job filings, both systems, unioned."
-  },
-  "why_this_shape": "Per-building constants, both gates recomputed in the browser on every slider move. Same reasoning as sandbox 02: every control changes the arithmetic rather than the data, so there is nothing to precompute except what no parameter can move.",
   "economics": {
     "note": "Where a figure is published, it is cited and the browser reads it from here. Where it is a market convention or a choice, it is a control in schema.json and this is only its default.",
     "office_rent_base_psf_yr": 54,
@@ -246,7 +106,7 @@
       "ten or more proposed dwelling units",
       "total floor area over total units, not the median of the ratios"
     ],
-    "why_a_unit_floor": "proposed_zoning_sqft is the WHOLE BUILDING'S zoning floor area, not the converted part, so a filing that adds two apartments to a twenty-storey tower reports the whole tower against two units. Without a floor the number is inflated by exactly that.",
+    "why_a_unit_floor": "proposed_zoning_sqft is the WHOLE BUILDING'S zoning floor area, not the converted part, so a filing that adds two apartments to a twenty-story tower reports the whole tower against two units. Without a floor the number is inflated by exactly that.",
     "sensitivity_to_the_unit_floor": {
       "1": {
         "filings": 442,
@@ -287,10 +147,166 @@
     },
     "sensitivity_note": "The cut is ours and it moves the answer by 40%: 1,366 sf/unit with no floor, 907 if only conversions of fifty units or more count. The old unsourced 900 is what you get at the top of that ladder, which is a coincidence worth noticing rather than a vindication."
   },
+  "convertibility": {
+    "note": "OUR score of published criteria, not Gensler's algorithm. The four sub-scores ship as columns and the weighted sum is done in the browser, so the weights are controls rather than something baked in. These are the DEFAULTS the schema starts from.",
+    "weights": {
+      "floorplate_depth": 0.35,
+      "floor_to_floor": 0.25,
+      "floorplate_area": 0.2,
+      "age": 0.2
+    },
+    "dropped": {
+      "window_operability": "Not derivable from any dataset available. Dropped.",
+      "elevator_count": "Not in MapPLUTO. Dropped rather than invented from floor area.",
+      "structural_bay": "Not in any dataset here. It used to be folded into the age proxy, which does not measure it. Named as missing instead."
+    },
+    "proxies": {
+      "floorplate_depth": "BldgDepth halved, as a core-to-window estimate. Assumes a centered core and a rectangular plate; both are often wrong.",
+      "floor_to_floor": "Modeled height divided by NumFloors. Averages over mechanical floors and lobbies.",
+      "floorplate_area": "BldgArea / NumFloors.",
+      "age": "YearBuilt, standing in for facade type only. It no longer stands in for structural bay as well - see dropped."
+    },
+    "gensler_published_share": 0.25,
+    "gensler_share_note": "Gensler's published result: about 25% of the 1,300+ buildings they scored were suitable for conversion. The criteria are published, the scoring is not. This is a comparison, not a validation."
+  },
+  "convertibility_ranges": {
+    "floorplate_depth_ft": [
+      20,
+      70
+    ],
+    "floor_to_floor_ft": [
+      9,
+      16
+    ],
+    "floorplate_area_sf": [
+      5000,
+      40000
+    ],
+    "year_built": [
+      1900,
+      1990
+    ],
+    "note": "Ours. Each proxy is clamped to its range and normalized so that 1 means easier to convert."
+  },
   "gensler_calibration": {
     "MN01": 0.767,
     "MN05": 0.715
   },
   "gensler_calibration_note": "The threshold at which our score passes 25% of each district's office buildings, at the default weights. Gensler published that about a quarter of the 1,300+ buildings they scored were suitable and did not publish the scoring, so this is the one number our score and theirs can be held up against each other. It is a comparison and not a validation.",
-  "regenerated_note": "buildings.bin was widened from 15 columns to 18 on 2026-09-01 without re-running the CityGML read, which needs 13GB of source that is not kept in the repo. The four sub-scores are exact rearrangements of the composite that was already stored - no new information entered, and the migration asserted that recomposing them returns the stored float to within one ulp. A full re-run of after-five.py produces the same file."
+  "presence": {
+    "note": "How many people are AT WORK in each district, so that removing office floor area can remove jobs with it. Everything here is counted. What is NOT here is a schedule - see what_is_missing.",
+    "source": "LEHD LODES 8, Workplace Area Characteristics, New York State, all jobs, 2023 (ny_wac_S000_JT00_2023.csv.gz). Primary jobs by workplace census block.",
+    "residents_source": "2020 decennial census, DP1 total population, summed over the census tracts the district's lots stand in. Manhattan's tracts total 1,694,251, which is the published New York County count exactly, and no tract falls in two districts.",
+    "homes_note": "MapPLUTO's UnitsRes, totalled per LOT and never pushed onto buildings - which is the bug that gave sandbox 07 eleven million homes in a city of three and a half. It is here as the cross-check that caught a mistake: UnitsRes times the borough household size makes Lower Manhattan about 98,000 people and the census counted 85,841. The counted number is the one used.",
+    "joined_on": "MapPLUTO BCTCB2020, the lot's 2020 census block, against the LODES 15-digit block GEOID. An ID join, not a spatial one.",
+    "office_using_sectors": {
+      "CNS09": "Information (NAICS 51)",
+      "CNS10": "Finance and insurance (52)",
+      "CNS11": "Real estate (53)",
+      "CNS12": "Professional, scientific and technical services (54)",
+      "CNS13": "Management of companies (55)",
+      "CNS14": "Administrative and support services (56)"
+    },
+    "office_using_note": "The standard real-estate reading of those sectors, and a broad one: it counts a bank teller and a lawyer alike and leaves out a hospital administrator.",
+    "county_jobs": 2504522,
+    "county_office_using_jobs": 1275280,
+    "districts": {
+      "MN01": {
+        "jobs": 357495,
+        "office_using_jobs": 198677,
+        "office_sq_ft": 97391292,
+        "sq_ft_per_office_job": 490,
+        "residents_2020": 0,
+        "tracts": 0,
+        "homes": 48685,
+        "blocks": 283,
+        "blocks_with_no_lodes_row": 27
+      },
+      "MN05": {
+        "jobs": 1012317,
+        "office_using_jobs": 667498,
+        "office_sq_ft": 216564244,
+        "sq_ft_per_office_job": 324,
+        "residents_2020": 0,
+        "tracts": 0,
+        "homes": 45816,
+        "blocks": 262,
+        "blocks_with_no_lodes_row": 1
+      }
+    },
+    "density_caveat": "Roughly one office job per 490 square feet in Lower Manhattan and per 324 in Midtown South. Both are well above the 150-250 square feet per worker that gets quoted for a fitted-out floor, and the difference is vacancy plus the fact that OfficeArea is gross floor area and LODES counts primary jobs only. The model uses the measured ratio rather than the rule of thumb, so a converted building displaces the jobs that were really recorded on that floor area.",
+    "what_is_missing": "THE HOURS. This gives the size of the two populations and nothing about when either of them is on the street, which is the thing the sandbox is named after. NHTS Table 8-1 is national, six bands wide, and its finest statement about the evening is that 28% of trips begin somewhere between 6pm and midnight. ACS B08302 is half-hour bands at tract level, but its universe is departures TO work, so it describes the morning only. There is no published table of when people leave Manhattan offices in the evening. So the counts are reported and no curve is drawn through them."
+  },
+  "incentive_467m": {
+    "source": "HPD 467-m requirements FAQ, read 2026-08-31",
+    "prior_use_nonresidential_share": 0.9,
+    "min_units": 6,
+    "min_preexisting_share": 0.5,
+    "affordable_share": 0.25,
+    "waami_cap_pct": 80,
+    "commence_after": "2022-12-31",
+    "commence_before": "2031-06-30",
+    "complete_by": "2039-12-31",
+    "benefit_schedule": "NOT VERIFIED - not carried in the FAQ. Modeled as a binary eligibility gate only, with no abatement value."
+  },
+  "dob": {
+    "datasets": {
+      "legacy": "ic3t-wcy2",
+      "certificates_of_occupancy": "pkdm-hqz6"
+    },
+    "job_type_mapping": {
+      "legacy": "job_type == 'A1' (change of use / occupancy)",
+      "certificates_of_occupancy": [
+        "Alteration CO",
+        "CO - New Building with Existing Elements to Remain"
+      ]
+    },
+    "co_filing_types_kept": [
+      "Initial",
+      "Final"
+    ],
+    "coverage": {
+      "legacy": "2000-01-01 to 2025-12-31",
+      "certificates_of_occupancy": "roughly 2022 to 2025"
+    },
+    "dataset_not_used": {
+      "id": "w9ak-ipjd",
+      "name": "DOB NOW: Build - Job Application Filings",
+      "why": "The build doc named this as the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every job filing number prefixed B, no Manhattan at all (checked 2026-08-31). It cannot repair the legacy dataset's Manhattan coverage, so it is not used."
+    },
+    "counts": {
+      "legacy_rows": 44754,
+      "legacy_conversions": 6558,
+      "co_rows": 410,
+      "co_conversions": 195,
+      "co_no_units": 120
+    },
+    "migration_warning": "Legacy Manhattan change-of-occupancy filings fall from 1,109 in 2020 to 237, 77 and 56 in 2021-2023. That is the migration to DOB NOW, not a policy effect. A time series off the legacy dataset alone would show conversions collapsing exactly when everyone says they accelerated.",
+    "renewal_warning": "Of 81,139 certificates of occupancy, 46,772 are 'Renewal Without Change' and 6,595 'Renewal With Change' - re-issued paperwork for buildings that converted years ago or never converted. Counting them would invent a wave of activity out of an administrative process. Only Initial and Final certificates are kept, earliest per building.",
+    "added_floors_note": "Added floors come from LEGACY filings only. The other source carries none: its a certificate of occupancy carries no height, stories or enlargement figure at all. So buildings recorded as converting after about 2021 convert WITHOUT GROWING, and that is a limit of the record rather than of the buildings."
+  },
+  "day": {
+    "file": "day.json",
+    "note": "Two hourly curves. Office workers on the MTA's counted arrivals and departures at the district's complexes; residents on the ATUS at-home share. Both are weekday."
+  },
+  "sidewalk_grid": {
+    "file": "grid.json",
+    "cell_m": 10.0,
+    "reach_m": 50.0,
+    "sigma_m": 25.0,
+    "note": "10 m cells over the districts, with a per-building list of the sidewalk cells within 50 m of its footprint edge and a Gaussian weight on that distance, normalized per building."
+  },
+  "district_outlines": {
+    "file": "districts.json",
+    "source": "NYC Community Districts, NYC Open Data 5crt-au7u, BoroCD 101 and 105. The build doc named yfnk-k7r4, which does not exist on the portal."
+  },
+  "agents_removed": "The agent layer is gone as of 2026-09-08. agents.json, gateways.json, graph.bin, routes.bin and occupancy.json are still on disk and are no longer read by anything; the sidewalk heat map replaced them. flow.json IS still read - the MTA arrivals and departures are the office channel's curve. There are no gateways in the model any more, so nothing concentrates at a station exit except insofar as buildings stand near one.",
+  "back_test": "CUT. The spec proposed validating against 421-g from 1995. The legacy dataset's earliest pre-filing date is 2000-01-01, so it cannot reach. The model is not validated against history and the card says so.",
+  "sources": {
+    "massing": "DCP NYC 3D Model by Community District (NYC Open Data u5j4-zxpn), EPSG:2263 feet. THE FILE CARRIES NO ATTRIBUTES - no BIN, no BBL, nothing - so identity is inferred by spatial match against NYC Building Footprints: 99.5% matched, median distance 2 feet.",
+    "pluto": "MapPLUTO 26v2, joined on the BBL recovered by that match.",
+    "dob": "DOB job filings, both systems, unioned."
+  },
+  "why_this_shape": "Per-building constants, both gates recomputed in the browser on every slider move. Same reasoning as sandbox 02: every control changes the arithmetic rather than the data, so there is nothing to precompute except what no parameter can move.",
+  "regenerated_note": "buildings.bin was widened from 15 columns to 18 on 2026-09-01 without re-running the CityGML read. The four sub-scores are exact rearrangements of the composite that was already stored - no new information entered. On 2026-09-08 after-five.py WAS re-run end to end against the 13GB of CityGML in data/original/DA_WISE_GML, and the claim held: footprints.json came out byte-identical and buildings.bin differed only in the four sub-score columns, by at most 3e-7, which is one float32 ulp. One BIN with an all-zero filing record is no longer emitted (1,810 rather than 1,811), which changes nothing the model reads."
 }

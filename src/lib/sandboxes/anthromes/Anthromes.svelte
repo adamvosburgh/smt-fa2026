@@ -208,7 +208,7 @@
                  D.potveg, D.potvill, thresholds(), D.fracLand);
 
     const px = img.data;
-    const mode_ = params.colour_by ?? 'anthrome';
+    const mode_ = params.color_by ?? 'anthrome';
     const m32 = D.method32.subarray(y * nLand, (y + 1) * nLand);
     let usedArea = 0, wildArea = 0, totalArea = 0, agreeArea = 0;
     for (let i = 0; i < nLand; i++) {
@@ -328,7 +328,7 @@
   // The year and the drawing mode are the light path; the thresholds also
   // wake the worker for the all-years ledger, debounced.
   $effect(() => {
-    void [params.year, params.colour_by];
+    void [params.year, params.color_by];
     if (D) render();
   });
   $effect(() => {
@@ -387,7 +387,7 @@
 
   {#if !view && manifest}
     <div class="legend">
-      {#if (params.colour_by ?? 'anthrome') === 'anthrome'}
+      {#if (params.color_by ?? 'anthrome') === 'anthrome'}
         {#each FAMILIES as [name, codes] (name)}
           <div class="fam">
             <span class="fam-name">{name}</span>
@@ -397,7 +397,7 @@
             {/each}
           </div>
         {/each}
-      {:else if params.colour_by === 'disagreement'}
+      {:else if params.color_by === 'disagreement'}
         <span class="note"><i class="sw one" style="background:#aa2d20"></i>
           classified differently by the same cascade at native resolution -
           at the default thresholds this is purely what aggregation does to a

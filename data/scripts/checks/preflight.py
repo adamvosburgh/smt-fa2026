@@ -57,7 +57,7 @@ CHECKS = [
   ("DOB conversions", ORIG/"dob_manhattan_conversions.json", 10**6, True, "after-five.py measure_sf_per_unit"),
   ("2020 decennial DP1", ORIG/"DECENNIALDP2020.DP1_2026-08-30T202723/DECENNIALDP2020.DP1-Data.csv", 10**6, True, "after-five.py rglob"),
   ("LODES 8 WAC 2023 NY", ORIG/"ny_wac_S000_JT00_2023.csv.gz", 10**6, True, "after-five.py LODES join"),
-  ("CityGML delivery areas", ORIG/"DA_WISE_GML/DA_WISE_GMLs", 0, True, "afterfive_massing.py read_citygml - dir of DA*_3D_Buildings_Merged.gml"),
+  ("CityGML delivery areas", ORIG/"DA_WISE_GML/DA_WISE_GMLs", 0, True, "after-five.py via afterfive_massing.read_citygml - dir of DA*_3D_Buildings_Merged.gml; 13GB, delivery areas 12 and 19 are the ones read"),
 
   ("--- 02 After Five, the agent layer (NEW)", None, 0, None, None),
   ("MTA subway entrances", ORIG/"mta_subway_entrances_2024.csv", 50000, True, "fetch-sources-0904.sh #1"),
@@ -65,9 +65,14 @@ CHECKS = [
   ("MTA O-D departures", ORIG/"mta_od_departures_study_districts_2024.csv", 20000, True, "fetch-sources-0904.sh #2"),
   ("MTA evening destinations", ORIG/"mta_od_evening_destinations_2024.csv", 2000, False, "fetch-sources-0904.sh #2 - labels the animation, does not drive it"),
   ("MTA hourly entries (check)", ORIG/"mta_hourly_entries_lowermanhattan_oct2025.csv", 200, False, "fetch-sources-0904.sh #3 - cross-check only"),
-  ("NYC street centreline CSCL", ORIG/"nyc_street_centerline_cscl.geojson", 10**7, True, "fetch-sources-0904.sh #4 - the trip network"),
-  ("ATUS activity 2003-2025", ORIG/"atusact-0325.zip", 5*10**7, True, "fetch-sources-0904.sh #5 - TEWHERE occupancy curve"),
-  ("ATUS respondent 2003-2025", ORIG/"atusresp-0325.zip", 10**7, True, "fetch-sources-0904.sh #5 - TELFS/TEIO1OCD/TUFNWGTP"),
+  ("NYC street centerline CSCL", ORIG/"nyc_street_centerline_cscl.geojson", 10**7, False, "fetch-sources-0904.sh #4 - was the agent layer's trip network. The agents were removed on 2026-09-08 and nothing reads it now; kept as a warning rather than a blocker."),
+  ("ATUS activity 2003-2025", ORIG/"atusact-0325.zip", 5*10**7, True, "fetch-sources-0904.sh #5 - afterfive_day.resident_curve, the at-home curve"),
+  ("ATUS respondent 2003-2025", ORIG/"atusresp-0325.zip", 10**7, True, "fetch-sources-0904.sh #5 - TUDIARYDAY/TUFNWGTP/TUYEAR"),
+
+  ("--- the 09-08 reframe (NEW)", None, 0, None, None),
+  ("NYC borough boundaries", ORIG/"borough_boundaries.geojson", 10**6, True, "fetch-sources-0908.sh - pencil.py write_queens_polygon. The build doc's tqmj-j8zm does not exist; the script fetches gthc-hcne and says so."),
+  ("NYC community districts", ORIG/"community_districts.geojson", 10**6, True, "fetch-sources-0908.sh - afterfive_day.district_outlines. The build doc's yfnk-k7r4 does not exist; the script fetches 5crt-au7u and says so."),
+  ("bathtub tract outlines (derived)", REPO/"data/processed/bathtub/tracts.json", 10**5, True, "pencil.py reuses these for its own tract choropleth rather than refetching. Run bathtub.py first."),
 
   ("--- 04 Anthromes", None, 0, None, None),
   ("HYDE 3.2 raw-data.zip", ORIG/"anthromes-inputs/raw-data.zip", 8*10**8, True, "the six input grids + five supporting grids"),

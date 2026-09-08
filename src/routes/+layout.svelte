@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import { site, nav } from '$lib/site.js';
   import Assistant from '$lib/components/Assistant.svelte';
+  import MouseAgents from '$lib/components/MouseAgents.svelte';
   let { children } = $props();
   const isActive = (href) =>
     href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
@@ -36,9 +37,23 @@
 
 <main class="site-main" class:wide={page.data.wide} class:full={page.data.wide === 'full'}>
   {#if page.data.title && page.data.showTitle !== false}
-    <h1 class="page-title">{page.data.title}</h1>
+    <h1 class="page-title">
+      {page.data.title}{#if page.data.pending}<span class="pending">publishes {page.data.pending}</span>{/if}
+    </h1>
   {/if}
   {@render children()}
 </main>
 
 <Assistant />
+<MouseAgents />
+
+<style>
+  /* Shown only under SMT_SHOW_UNPUBLISHED=1: this page is not on the site yet. */
+  .pending {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--fg-dim);
+    margin-left: 0.75rem;
+    white-space: nowrap;
+  }
+</style>

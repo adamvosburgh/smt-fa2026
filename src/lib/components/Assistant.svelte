@@ -86,22 +86,26 @@
   .fab {
     position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 900;
     font: inherit; font-size: 0.72rem; padding: 0.5rem 0.85rem;
-    background: #000; color: #fff; border: 0; border-radius: 40px; cursor: pointer;
+    background: var(--fg); color: var(--bg); border: 0; border-radius: 40px; cursor: pointer;
+  }
+  .fab:hover {
+    background: var(--hi); color: var(--hi-fg);
   }
   .panel {
     position: fixed; right: 1.25rem; bottom: 4rem; z-index: 900;
     width: min(380px, calc(100vw - 2.5rem)); max-height: 60vh;
     display: flex; flex-direction: column;
-    background: #fff; border: 1px solid #000; padding: 0.9rem;
+    background: var(--bg); color: var(--fg); border: 1px solid var(--rule); padding: 0.9rem;
   }
-  .note { font-size: 0.62rem; color: #888; line-height: 1.5; margin: 0 0 0.75rem; }
+  .note { font-size: 0.62rem; color: var(--fg-dim); line-height: 1.5; margin: 0 0 0.75rem; }
   .log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.75rem; }
   .msg { line-height: 1.6; white-space: pre-wrap; }
-  .msg.user { color: #000; font-weight: 700; }
-  .msg.assistant { color: #333; }
-  .msg.error { color: #a00; }
-  .dim { color: #ccc; }
+  .msg.user { color: var(--fg); font-weight: 700; }
+  .msg.assistant { color: var(--fg-dim); }
+  .msg.error { color: var(--hi); }
+  .dim { color: var(--fg-dim); }
   form { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
-  textarea { flex: 1; font: inherit; font-size: 0.75rem; padding: 0.4rem; border: 1px solid #ccc; resize: none; }
-  form button { font: inherit; font-size: 0.7rem; padding: 0 0.7rem; background: #000; color: #fff; border: 0; cursor: pointer; }
+  textarea { flex: 1; font: inherit; font-size: 0.75rem; padding: 0.4rem; border: 1px solid var(--rule); background: var(--code-bg); color: var(--fg); resize: none; }
+  form button { font: inherit; font-size: 0.7rem; padding: 0 0.7rem; background: var(--fg); color: var(--bg); border: 0; cursor: pointer; }
+  form button:hover { background: var(--hi); color: var(--hi-fg); }
 </style>

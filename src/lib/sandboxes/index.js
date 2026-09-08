@@ -5,6 +5,7 @@
 // are eager - they are small, and the index page, the param panels and the
 // server-side submission validator all need them synchronously.
 
+import { SHOW_UNPUBLISHED } from '../visibility.js';
 import bathtub from './bathtub/meta.js';
 import bathtubSchema from './bathtub/schema.json';
 import coefficientsSchema from './coefficients/schema.json';
@@ -59,7 +60,7 @@ export const allSandboxes = [
 // What the site shows. `number` is assigned from position here, not read from
 // meta.js - unhiding a sandbox later renumbers the rest automatically.
 export const sandboxes = allSandboxes
-  .filter((s) => s.published !== false)
+  .filter((s) => SHOW_UNPUBLISHED || s.published !== false)
   .map((s, i) => ({ ...s, number: i + 1 }));
 
 // Published entries come second so their numbered copies win.

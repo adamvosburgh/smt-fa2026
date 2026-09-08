@@ -2,29 +2,104 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/bathtub.json",
   "title": "Sea Level Flood Map parameters",
-  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach, this sandbox's own _example submission among them. x-step draws the control; minimum and maximum do the validating. Property ORDER is the panel order and is deliberate: pick a future, get a water height, add what sits on top of it, then choose how the model tests it, then how it is drawn. x-group starts a new labelled section; x-disabled-when grays a control out while another control is making its decision for it, and its value may be a LIST, meaning any one of these takes the control over.",
+  "$comment": "Slider granularity is x-step, NOT multipleOf. multipleOf is checked by floating-point division, and 1.4 / 0.1 is 13.999999999999998 - so a schema declaring multipleOf 0.1 rejects 16 of the 51 positions its own slider can reach. x-step draws the control; minimum and maximum do the validating. x-panel splits the controls in two: representation is how the map is drawn, assumptions is what the model is made of. Property ORDER is the reading order inside each panel. x-shown-when removes a control that means nothing in the current state; x-disabled-when grays one whose value another control is deciding, and its value may be a LIST, meaning any one of these takes the control over.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "slr_m",
+    "view",
     "aep",
-    "surge_m",
+    "year",
     "tide",
-    "percentile",
     "connectivity"
   ],
   "properties": {
+    "view": {
+      "type": "string",
+      "title": "Show",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "enum": [
+        "one_storm",
+        "all"
+      ],
+      "x-enum-labels": [
+        "one storm, four projections",
+        "every storm, every projection"
+      ],
+      "default": "one_storm",
+      "description": "The first view fills in one storm at today's sea level and draws where it reaches under each of the four projections for the chosen year. The second draws all four storms and all sixteen lines at once, flat, so the whole published range is on one map."
+    },
+    "aep": {
+      "type": "string",
+      "title": "Storm, by how often",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "x-shown-when": {
+        "view": [
+          "one_storm"
+        ]
+      },
+      "x-disabled-when": {
+        "surge_by_hand": true
+      },
+      "x-disabled-note": "overridden by the surge set by hand",
+      "enum": [
+        "none",
+        "99",
+        "50",
+        "10",
+        "1"
+      ],
+      "x-enum-labels": [
+        "none",
+        "1-year",
+        "2-year",
+        "10-year",
+        "100-year"
+      ],
+      "default": "none",
+      "x-emphasis": true,
+      "description": "NOAA's exceedance levels for the Battery, published as the water level with a 99%, 50%, 10% and 1% chance of being exceeded in a given year. \"None\" is today's high tide, so the four lines then show sea level rise alone. The levels are still water with no waves; the 100-year level is about 8.2 ft above NAVD88, and Sandy reached about 11.3 ft at this gauge."
+    },
+    "basemap": {
+      "type": "string",
+      "title": "Shade by water depth",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "x-disabled-when": {
+        "view": [
+          "all"
+        ]
+      },
+      "x-disabled-note": "flat in this view",
+      "enum": [
+        "elevation",
+        "flat"
+      ],
+      "x-enum-labels": [
+        "by depth",
+        "flat"
+      ],
+      "default": "elevation",
+      "description": "Shading shows how deep the water is over each cell. The all-storms view is always flat, because four fills cannot each carry a depth."
+    },
+    "flood_line": {
+      "type": "boolean",
+      "title": "Flood line",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "default": true,
+      "description": "The edge of the fill, drawn as the wet cells next to dry ones. The four projection lines are always drawn."
+    },
     "year": {
       "type": "integer",
       "title": "How far ahead",
       "x-group": "the scenario",
-      "x-timeline": "primary",
-      "x-play-rate": 1,
-      "x-play-loop": false,
+      "x-panel": "assumptions",
       "x-disabled-when": {
-        "link_year": false
+        "slr_by_hand": true
       },
-      "x-disabled-note": "not driving the water",
+      "x-disabled-note": "overridden by the sea level set by hand",
       "enum": [
         2030,
         2050,
@@ -40,100 +115,14 @@
         "2150"
       ],
       "default": 2080,
-      "description": "The five dates the NPCC publishes projections for. The spread between projections grows faster than the water does: in the 2030s the four are within 18 cm of each other, and by 2150 they run from 1.0 m to 4.5 m. Past about 2080, which projection you pick matters more than which year."
-    },
-    "percentile": {
-      "type": "integer",
-      "title": "Which projection",
-      "x-group": "the scenario",
-      "x-disabled-when": {
-        "link_year": false
-      },
-      "x-disabled-note": "not driving the water",
-      "enum": [
-        10,
-        25,
-        75,
-        90
-      ],
-      "x-enum-labels": [
-        "10th",
-        "25th",
-        "75th",
-        "90th"
-      ],
-      "default": 75,
       "x-emphasis": true,
-      "description": "Sea level rise is published as a range, not a number. The New York City Panel on Climate Change gives four percentiles for each date and deliberately no middle value, so there is no single projection to draw. Every published flood map picked one of these on the reader's behalf, and most don't say which."
-    },
-    "link_year": {
-      "type": "boolean",
-      "title": "Take sea level from the projection",
-      "x-group": "the water",
-      "default": true,
-      "description": "On, the water height comes from the date and projection above and the slider below is set for you. Off, you set the height by hand, which is a good way to find out what the terrain does. A map made that way has no date attached to it."
-    },
-    "slr_m": {
-      "type": "number",
-      "title": "Sea level rise",
-      "x-group": "the water",
-      "minimum": 0,
-      "maximum": 5,
-      "x-step": 0.1,
-      "default": 0.8,
-      "x-unit": "m",
-      "x-disabled-when": {
-        "link_year": true
-      },
-      "x-disabled-note": "set by the projection",
-      "description": "How much higher the average sea sits than it does today. Everything below is added to this one number. The model raises the whole harbour by the same amount at once; there is no map of it."
-    },
-    "aep": {
-      "type": "string",
-      "title": "Storm, by how often",
-      "x-group": "the water",
-      "enum": [
-        "none",
-        "99",
-        "50",
-        "10",
-        "1"
-      ],
-      "x-enum-labels": [
-        "No storm",
-        "99% · 1 yr",
-        "50% · 2 yr",
-        "10% · 10 yr",
-        "1% · 100 yr"
-      ],
-      "default": "none",
-      "x-emphasis": true,
-      "description": "Pick a storm by how often it happens rather than by how high it is. These are NOAA's exceedance probability levels for the gauge at the Battery: the 1% level has a one-in-a-hundred chance of being reached in any given year, and it is 2.51 m above NAVD88, read for October 2025 (the levels ride the sea level trend, so they carry a date). Two things about them. They are fitted to the highest water level of each year, which happens at high tide, so the tide is already inside the number; that is why choosing one takes the tide control over instead of adding to it. And they are still-water levels with no waves. The 1% level is about 8.2 feet; Sandy reached about 11.3 feet at this gauge. Picking \"100-year\" and seeing less water than you remember is two definitions, not a bug."
-    },
-    "surge_m": {
-      "type": "number",
-      "title": "Storm surge, by hand",
-      "x-group": "the water",
-      "x-disabled-when": {
-        "aep": [
-          "99",
-          "50",
-          "10",
-          "1"
-        ]
-      },
-      "x-disabled-note": "set by the probability",
-      "minimum": 0,
-      "maximum": 4,
-      "x-step": 0.25,
-      "default": 0,
-      "x-unit": "m",
-      "description": "A surge height set by hand. Read off, from the control above, roughly how often the water gets that high. Either way it's added to the water height instantly and everywhere at once. A real surge arrives over hours, peaks, drains, and is higher in some places than others."
+      "description": "The five horizons NPCC4 publishes. All four projection lines are drawn for the chosen horizon."
     },
     "tide": {
       "type": "string",
       "title": "Tide state",
       "x-group": "the water",
+      "x-panel": "assumptions",
       "x-disabled-when": {
         "aep": [
           "99",
@@ -142,49 +131,74 @@
           "1"
         ]
       },
-      "x-disabled-note": "inside the storm level",
+      "x-disabled-note": "a storm level already includes high tide",
       "enum": [
         "mllw",
         "msl",
         "mhhw"
       ],
       "x-enum-labels": [
-        "Low tide",
-        "Mid tide",
-        "High tide"
+        "low tide",
+        "mean sea level",
+        "high tide"
       ],
       "default": "mhhw",
-      "description": "The sea isn't at one height. At the Battery it swings about a meter and a half between low and high tide. This picks which moment of that swing the map shows. Published flood maps usually use the average daily high tide, which is the cautious choice and the default here. The three values come from one gauge at the tip of Manhattan and are applied to the whole city; NOAA uses a tidal surface that varies from place to place. Choosing a storm probability disables this control, because an exceedance level already contains a high tide: NOAA states the 1% level as 1.82 m above mean higher high water, which is the same 2.51 m written the other way round."
+      "description": "The Battery's tidal datums: mean lower low water, mean sea level and mean higher high water, on the 1983-2001 epoch. A storm level already contains a high tide, so this control is taken over when a storm is chosen."
     },
     "connectivity": {
       "type": "boolean",
       "title": "Hydraulic connectivity",
       "x-group": "the model",
+      "x-panel": "assumptions",
       "default": true,
       "x-emphasis": true,
-      "description": "Whether water has to be able to reach a place to flood it. On: a cell floods only if there is an unbroken path of low ground between it and open water. Off: everything below the waterline floods, including inland dips the sea can't reach. The red patches on the map are the difference. Most published flood maps do apply connectivity, and are still bathtub models."
+      "description": "With connectivity on, a place floods only if water can reach it from open water at that waterline. With it off, every low place floods, including inland dips the sea cannot reach; those cells are drawn red. Many published maps make this choice without saying so."
     },
-    "basemap": {
-      "type": "string",
-      "title": "Shade by water depth",
-      "x-group": "how it's drawn",
-      "enum": [
-        "elevation",
-        "flat"
-      ],
-      "x-enum-labels": [
-        "Shaded",
-        "Flat"
-      ],
-      "default": "elevation",
-      "description": "Shaded colors the flood darker where the water is deeper, up to six meters. The threshold is the same either way; this only changes how it's drawn. Flat is closer to how most published flood maps look."
-    },
-    "flood_line": {
+    "slr_by_hand": {
       "type": "boolean",
-      "title": "Flood line",
-      "x-group": "how it's drawn",
-      "default": true,
-      "description": "The dark edge between wet and dry. It isn't a dataset. It's found by looking for wet cells that sit next to dry ones, which is how every flood boundary you've seen was made. Zoom right in and it turns into a staircase of grid cells."
+      "title": "Set sea level by hand",
+      "x-group": "by hand",
+      "x-panel": "assumptions",
+      "default": false,
+      "description": "Replaces the four projections with one number of your own. The four lines collapse to one."
+    },
+    "slr_m": {
+      "type": "number",
+      "title": "Sea level rise",
+      "x-group": "by hand",
+      "x-panel": "assumptions",
+      "x-shown-when": {
+        "slr_by_hand": true
+      },
+      "minimum": 0,
+      "maximum": 5,
+      "x-step": 0.05,
+      "default": 0.8,
+      "x-unit": "m",
+      "description": "How much higher the average sea sits than it does today. The model raises the whole harbor by the same amount at once; there is no map of it."
+    },
+    "surge_by_hand": {
+      "type": "boolean",
+      "title": "Set the surge by hand",
+      "x-group": "by hand",
+      "x-panel": "assumptions",
+      "default": false,
+      "description": "Replaces the published storm levels with a height of your own, added to the tide."
+    },
+    "surge_m": {
+      "type": "number",
+      "title": "Storm surge",
+      "x-group": "by hand",
+      "x-panel": "assumptions",
+      "x-shown-when": {
+        "surge_by_hand": true
+      },
+      "minimum": 0,
+      "maximum": 4,
+      "x-step": 0.1,
+      "default": 0,
+      "x-unit": "m",
+      "description": "A surge height set by hand, added to the tide. It arrives instantly and everywhere at once. A real surge arrives over hours, peaks, drains, and is higher in some places than others."
     }
   }
 }

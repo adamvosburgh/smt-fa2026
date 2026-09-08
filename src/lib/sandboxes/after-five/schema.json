@@ -2,240 +2,303 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/after-five.json",
   "title": "Office to Residential Conversion parameters",
-  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema. Property order is the panel's reading order: the place and its two clocks, then the view, then the street (segment counts, ground floors, the two-hour comparison), then the deal (the sourced office rent first, since it is the number the whole second gate turns on), then the two gates with the score's weights under the threshold they feed, then the crowd's settings. The office rent is an enum of four named stops with x-enum-notes; only the $54 stop has a source.",
+  "$comment": "Slider granularity is x-step, NOT multipleOf - see the bathtub schema for why. x-panel splits the controls in two: representation is how the map is drawn, assumptions is what the model is made of. The seven deal numbers are set together by `scenario` through x-scenario-values; moving any of them by hand writes `scenario` back to \"custom\", which is what x-scenario-of on each slider says. Every figure in x-scenario-values is cited in that scenario's note - do not change one without changing the other.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "conversion_cost_sf",
-    "convertibility_threshold",
-    "year",
-    "residential_rent",
     "district",
-    "opex_share",
-    "w_depth",
-    "w_f2f",
-    "w_area",
-    "w_age",
-    "office_rent",
-    "cap_rate_office",
-    "cap_rate_residential"
+    "view",
+    "hour",
+    "scenario",
+    "convertibility_threshold"
   ],
   "properties": {
     "district": {
       "type": "string",
       "title": "District",
-      "x-group": "the place and the clock",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
       "enum": [
         "mn01",
         "mn05",
         "both"
       ],
       "x-enum-labels": [
-        "Lower Manhattan",
-        "Midtown South",
+        "CD 1, Lower Manhattan",
+        "CD 5, Midtown",
         "both"
       ],
       "default": "mn01",
-      "description": "Manhattan Community District 1 is the Financial District, Battery Park City, Tribeca and Governors Island. District 5 is Midtown South, which has a newer, deeper and much larger office stock. Both are included and the map crops to the one selected; 'both' shows the pair and the mile and a half between them, since where a study area ends is a choice."
+      "description": "The two community districts covered by the survey. The chosen district is drawn in full and everything else on the map is faded to 25%."
+    },
+    "view": {
+      "type": "string",
+      "title": "Show",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "enum": [
+        "activity",
+        "population",
+        "convertibility"
+      ],
+      "x-enum-labels": [
+        "sidewalk activity",
+        "who is on the street",
+        "which buildings could convert"
+      ],
+      "default": "activity",
+      "description": "Sidewalk activity is the total traffic each patch of sidewalk carries in the chosen hour, from gray (none) through yellow to red (the busiest cell in the district's day). Who is on the street splits the same traffic into people from office buildings (blue) and people from homes (dark green). Which buildings could convert colors every office building by its convertibility score and marks the threshold."
     },
     "hour": {
       "type": "number",
       "title": "Hour of day",
-      "x-group": "the place and the clock",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
       "x-timeline": "primary",
-      "x-play-rate": 100,
+      "x-play-rate": 20,
       "x-play-loop": true,
       "x-play-auto": true,
       "x-format": "clock",
       "x-step-jump": 1,
+      "x-disabled-when": {
+        "view": [
+          "convertibility"
+        ]
+      },
+      "x-disabled-note": "no clock in this view",
       "minimum": 0,
       "maximum": 24,
-      "x-step": 0.001,
+      "x-step": 0.05,
       "default": 8,
-      "description": "The day's clock. Walkers move between the subway stations and the buildings on the measured schedule. Only one clock plays at a time: playing the year holds this one, and playing this one holds the year."
-    },
-    "year": {
-      "type": "integer",
-      "title": "Year",
-      "x-group": "the place and the clock",
-      "x-timeline": "secondary",
-      "x-play-rate": 1,
-      "x-play-loop": false,
-      "enum": [
-        2025,
-        2030,
-        2035,
-        2040,
-        2045,
-        2050
-      ],
-      "x-enum-labels": [
-        "2025",
-        "2030",
-        "2035",
-        "2040",
-        "2045",
-        "2050"
-      ],
-      "default": 2035,
-      "description": "The model tests the deal at each of six dates and a building converts at the first one where it clears. There is nothing between the dates, so the control steps rather than slides."
-    },
-    "colour_by": {
-      "type": "string",
-      "title": "Color by",
-      "x-group": "how it's drawn",
-      "enum": [
-        "use",
-        "convertibility",
-        "year_converted"
-      ],
-      "x-enum-labels": [
-        "use",
-        "convertibility",
-        "year converted"
-      ],
-      "default": "use",
-      "description": "What the color means. \"Use\" is the one to start with: blue is still office, red has become housing."
+      "description": "One weekday, from the MTA's October 2024 weekday counts and the time-use survey's weekday diaries. The map interpolates between the hourly counts. The clock runs an hour a second at 1x, so a day takes twenty-four seconds."
     },
     "added_floors": {
       "type": "boolean",
       "title": "Show added floors",
       "x-group": "how it's drawn",
+      "x-panel": "representation",
       "default": true,
-      "description": "Where a filing recorded stories being added, the roof is pushed up by that many. That is the amount of the change and not its shape: no setback, no courtyard, no new envelope. It only shows for buildings whose record came from the older filing system, because the newer source carries no heights."
+      "description": "A converted building is drawn with the floors it could add under the conversion rules, as plain boxes."
     },
-    "streets": {
-      "type": "boolean",
-      "title": "Streets by walkers",
-      "x-group": "the street",
-      "default": true,
-      "description": "Color and widen each street segment by how many walkers cross it in the selected hour. The counts come from the same routed trips as the dots, so they count trips the model sent down a street, not people observed on it. Clicking a segment puts the camera on it at eye height; the button under the map returns to the district view."
-    },
-    "ground_floor_p": {
-      "type": "number",
-      "title": "Active ground floors",
-      "x-group": "the street",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.5,
-      "description": "The chance that a converted building's ground floor becomes an active frontage (a shop, or a lobby with glass rather than a service wall). Converted buildings are edged in a warm line where the draw comes up active and a dark line where it doesn't. The probability is ours; no dataset here records what a ground floor is used for at building resolution."
-    },
-    "compare_hours": {
-      "type": "boolean",
-      "title": "Compare two hours",
-      "x-group": "the street",
-      "default": false,
-      "description": "Draw the crowd at two hours of the same day at once, in two colors, and color the streets by the difference in walkers between them. While this is on, the crowd is colored by hour rather than by role."
-    },
-    "hour_b": {
-      "type": "number",
-      "title": "Second hour",
-      "x-group": "the street",
-      "minimum": 0,
-      "maximum": 24,
-      "x-step": 0.25,
-      "x-format": "clock",
-      "default": 20,
-      "x-disabled-when": {
-        "compare_hours": false
+    "scenario": {
+      "type": "string",
+      "title": "Scenario",
+      "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-emphasis": true,
+      "enum": [
+        "asking_2024",
+        "downtown_b_2026",
+        "comptroller_2025",
+        "assessor_distressed",
+        "custom"
+      ],
+      "x-enum-labels": [
+        "published asking rent, 2024",
+        "Downtown Class B, effective rent, 2026",
+        "Comptroller pro forma, 2025",
+        "assessor's view, distressed sale",
+        "custom"
+      ],
+      "x-enum-notes": [
+        "Office rent $54 per square foot, the average asking rent for Manhattan Class B and C space in the NYC Comptroller's Spotlight of 14 May 2024 (CoStar). Residential rent $75, conversion cost $350, both capitalization rates 5.5% and both operating cost shares 35% are the sandbox's original defaults and have no source; the Comptroller's May 2024 report puts conversion cost \"in excess of $400 per square foot.\" At these numbers an office is valued at about $640 per square foot, and nothing converts.",
+        "Office rent $39: Cushman & Wakefield's Q1 2026 Downtown Class A asking rent of $61.77 divided by its reported 25.5% Class A premium gives $49 for Class B, times 0.80, the ratio of net effective to asking rent JLL reported for Manhattan Class A in 2024 (Commercial Observer, December 2024); no source gives a Class B effective rent directly. Residential rent $72: the Elliman Report's January 2026 Manhattan rental price of $96.35 per square foot per year, times the 0.75 ratio of rentable to gross area in the Comptroller's July 2025 fiscal note. Residential capitalization rate 5.25%, the midpoint of CBRE's H1 2026 range for stabilized New York multifamily. Conversion cost $400, the Comptroller's May 2024 figure. Office capitalization rate 5.5% and both operating cost shares 35% are carried over. Almost nothing converts.",
+        "From the NYC Comptroller's Fiscal Note 6-2025, \"Office-to-Residential Conversions in NYC\" (July 2025): conversion cost $500 per gross square foot including financing and excluding acquisition; residential rent $79 per gross square foot ($105 per rentable); residential operating costs $14 per gross square foot plus property tax of $2 with the 467-m exemption or $21 without, so 20% of rent with the exemption and 44% without; a 5.0% capitalization rate at stabilization; and Lower Manhattan office buildings bought for conversion at $218 per gross square foot. Office rent $54 is carried over from 2024, and the office capitalization rate is set at 16% so that $54 less 35% costs values an office at the $218 the Comptroller observed; it is a rate implied by sale prices, not a market rate. Most convertible buildings convert.",
+        "From the NYC Department of Finance FY2025 income-approach guidelines for Downtown Financial District Class B office: median income $46.84 per square foot, expense ratio 49%, capitalization rate 9.49% (the assessor's rates are believed to include the effective tax rate, which is why they run above market). Those three value an office at $252 per square foot, in line with the 2024 sale of 222 Broadway at $147.5 million for 770,416 square feet, or $191 per square foot, ahead of its conversion to 798 apartments. Conversion cost $374, the building's $288 million construction loan divided by its area, which is a floor on the cost rather than the cost. Residential rent $79, operating cost share 20% and capitalization rate 5.0% are carried from the Comptroller pro forma. Most convertible buildings convert.",
+        "The sliders as you have set them."
+      ],
+      "x-scenario-values": {
+        "asking_2024": {
+          "office_rent": 54,
+          "opex_office": 0.35,
+          "cap_rate_office": 0.055,
+          "residential_rent": 75,
+          "opex_residential": 0.35,
+          "cap_rate_residential": 0.055,
+          "conversion_cost_sf": 350
+        },
+        "downtown_b_2026": {
+          "office_rent": 39,
+          "opex_office": 0.35,
+          "cap_rate_office": 0.055,
+          "residential_rent": 72,
+          "opex_residential": 0.35,
+          "cap_rate_residential": 0.0525,
+          "conversion_cost_sf": 400
+        },
+        "comptroller_2025": {
+          "office_rent": 54,
+          "opex_office": 0.35,
+          "cap_rate_office": 0.16,
+          "residential_rent": 79,
+          "opex_residential": 0.2,
+          "cap_rate_residential": 0.05,
+          "conversion_cost_sf": 500
+        },
+        "assessor_distressed": {
+          "office_rent": 46.84,
+          "opex_office": 0.49,
+          "cap_rate_office": 0.0949,
+          "residential_rent": 79,
+          "opex_residential": 0.2,
+          "cap_rate_residential": 0.05,
+          "conversion_cost_sf": 374
+        }
       },
-      "x-disabled-note": "turn on the comparison",
-      "description": "The second hour for the comparison. Defaults to 20:00, so that the default comparison is the morning peak against the evening."
+      "default": "comptroller_2025",
+      "description": "Each scenario sets the seven numbers below from one set of published sources. Moving any slider afterwards switches the scenario to custom. The notes under each scenario say where every number comes from and which are carried over because no source gives them."
     },
     "office_rent": {
       "type": "number",
       "title": "Office rent",
       "x-group": "the deal",
-      "enum": [
-        54,
-        41,
-        32,
-        70
-      ],
-      "x-enum-labels": [
-        "$54",
-        "$41",
-        "$32",
-        "$70"
-      ],
-      "x-enum-notes": [
-        "The published asking rent: Manhattan Class B and C combined, NYC Comptroller, Spotlight: NYC's Office Market, 14 May 2024, CoStar data as of 30 April 2024. The only stop with a source. B and C are combined at source, so the sandbox doesn't separate them. At this stop nothing converts before 2050.",
-        "What a landlord might collect. Asking rent is a list price, and free months and fit-out allowances aren't published, so this stop applies a flat 25% discount. Ours.",
-        "A building in trouble: a 40% discount, standing for a half-empty Class C building signing short leases. Ours.",
-        "A repositioned building at the top of the B/C band. The Comptroller's Class A figure is roughly $100. Ours."
-      ],
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
+      "x-emphasis": true,
+      "minimum": 20,
+      "maximum": 120,
+      "x-step": 1,
       "default": 54,
       "x-unit": "$/sf/yr",
-      "description": "The office rent the deal is tested against, at four named stops. The note above the control says whose number the selected stop is. Only the $54 stop has a source.",
-      "x-emphasis": true
+      "description": "What the office earns per square foot of floor area each year. Asking rents overstate what tenants pay; the second scenario makes an estimate of the difference."
     },
-    "office_rent_trend": {
+    "opex_office": {
       "type": "number",
-      "title": "Office rent trend",
+      "title": "Office operating cost share",
       "x-group": "the deal",
-      "minimum": -0.05,
-      "maximum": 0.05,
-      "x-step": 0.005,
-      "default": -0.01,
-      "description": "How office rent changes each year from its starting figure. This is what moves the model through time: a building converts at the first date the residential deal beats the office income it gives up, so a falling office market opens the gate and a rising one holds it shut. The default is a mild decline, which is an assumption. At zero the map is the same in 2025 and 2050."
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
+      "minimum": 0.15,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.35
+    },
+    "cap_rate_office": {
+      "type": "number",
+      "title": "Office capitalization rate",
+      "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
+      "minimum": 0.03,
+      "maximum": 0.2,
+      "x-step": 0.0025,
+      "default": 0.16,
+      "description": "The value of a building is its net income divided by this rate. No broker publishes a Manhattan office capitalization rate; the third scenario derives one from observed sale prices and the fourth uses the assessor's."
     },
     "residential_rent": {
       "type": "number",
       "title": "Residential rent",
       "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
       "minimum": 30,
       "maximum": 150,
-      "x-step": 5,
-      "default": 75,
-      "x-unit": "$/sf/yr",
-      "description": "What the converted apartments rent for, per square foot per year. One figure for the whole district, so a basement studio and a corner unit forty floors up earn the same. It is turned into a building value with the residential capitalization rate, and it does not change over time."
+      "x-step": 1,
+      "default": 79,
+      "x-unit": "$/sf/yr"
+    },
+    "opex_residential": {
+      "type": "number",
+      "title": "Residential operating cost share",
+      "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
+      "minimum": 0.15,
+      "maximum": 0.6,
+      "x-step": 0.01,
+      "default": 0.2,
+      "description": "The Comptroller's pro forma puts operating costs at $14 per gross square foot plus property tax, and property tax at $2 with the 467-m exemption or $21 without. With the exemption that is 20% of an $79 rent; without it, 44%."
+    },
+    "cap_rate_residential": {
+      "type": "number",
+      "title": "Residential capitalization rate",
+      "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
+      "minimum": 0.03,
+      "maximum": 0.1,
+      "x-step": 0.0025,
+      "default": 0.05
     },
     "conversion_cost_sf": {
       "type": "number",
       "title": "Conversion cost",
       "x-group": "the deal",
+      "x-panel": "assumptions",
+      "x-scenario-of": "scenario",
       "minimum": 100,
-      "maximum": 600,
-      "x-step": 25,
-      "default": 350,
+      "maximum": 800,
+      "x-step": 5,
+      "default": 500,
       "x-unit": "$/sf",
-      "description": "What it costs to turn a square foot of office into a square foot of apartment: new plumbing risers, new windows where the code requires them, and a floor plan that has to reach daylight. No published series was verified for this, so it is an assumption. It scales with how badly the building scores, so an awkward building costs up to twice this figure."
+      "description": "The cost of the work per square foot of floor area, including soft costs and financing but not the purchase of the building. The Comptroller's 2025 pro forma uses $500; its two case studies came out at $525 to $765."
     },
-    "cap_rate_office": {
+    "convertibility_threshold": {
       "type": "number",
-      "title": "Cap rate, office",
-      "x-group": "the deal",
-      "minimum": 0.03,
-      "maximum": 0.1,
-      "x-step": 0.005,
-      "default": 0.055,
-      "description": "The rate that turns office income into a building value. Market convention rather than a measurement; no published NYC series was verified. It defaults equal to the residential rate, which makes the two sides of the comparison scale together. In reality office and residential buildings trade at different yields, and the gap is part of why anyone converts, so pulling the two apart is where this control does its work."
+      "title": "Convertibility threshold",
+      "x-group": "the convertibility score",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.5,
+      "x-emphasis": true,
+      "description": "The score a building must reach to be treated as convertible. The default is set so that about a quarter of the district's office buildings pass, which is Gensler's published share across the 1,300 buildings it scored."
     },
-    "cap_rate_residential": {
+    "w_depth": {
       "type": "number",
-      "title": "Cap rate, residential",
-      "x-group": "the deal",
-      "minimum": 0.03,
-      "maximum": 0.1,
-      "x-step": 0.005,
-      "default": 0.055,
-      "description": "The rate that turns residential income into a building value. Market convention rather than a measurement; no published NYC series was verified. Equal to the office rate by default."
-    },
-    "opex_share": {
-      "type": "number",
-      "title": "Operating cost",
-      "x-group": "the deal",
-      "minimum": 0.15,
-      "maximum": 0.55,
+      "title": "Weight: floor plate depth",
+      "x-group": "the convertibility score",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 1,
       "x-step": 0.05,
       "default": 0.35,
-      "description": "The share of gross rent that goes to running the building before any of it counts as income. Ours, and applied the same to an office tower and to the apartments it becomes, which is a simplification. No published NYC series was verified."
+      "description": "The four criteria Gensler names. The weights are ours; Gensler's are proprietary. Depth is weighted highest because a deep floor plate leaves interior rooms without windows."
+    },
+    "w_f2f": {
+      "type": "number",
+      "title": "Weight: floor-to-floor",
+      "x-group": "the convertibility score",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.25
+    },
+    "w_area": {
+      "type": "number",
+      "title": "Weight: floor plate area",
+      "x-group": "the convertibility score",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.2
+    },
+    "w_age": {
+      "type": "number",
+      "title": "Weight: age",
+      "x-group": "the convertibility score",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 1,
+      "x-step": 0.05,
+      "default": 0.2
+    },
+    "incentive_467m": {
+      "type": "boolean",
+      "title": "467-m eligibility rules",
+      "x-group": "the rules",
+      "x-panel": "assumptions",
+      "default": true,
+      "description": "With the switch on, only buildings that meet the exemption's eligibility rules can convert. The tax effect of the exemption is in the residential operating cost share, not here."
     },
     "min_units_for_conversion_sample": {
       "type": "integer",
       "title": "Unit floor in the conversion sample",
-      "x-group": "the deal",
+      "x-group": "the rules",
+      "x-panel": "assumptions",
       "enum": [
         1,
         2,
@@ -261,177 +324,7 @@
         "59 filings, 907 sf per apartment. Only conversions of fifty units or more."
       ],
       "default": 10,
-      "description": "Which real conversion filings the floor-area-per-apartment figure is measured from. A filing records the whole building's floor area rather than the converted part, so including small conversions pulls the average up. Only the six measured cuts are offered, because a value between them would be invented rather than measured. The choice moves the figure by 40%."
-    },
-    "convertibility_threshold": {
-      "type": "number",
-      "title": "Convertibility threshold",
-      "x-group": "the gates",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.5,
-      "x-emphasis": true,
-      "description": "How high a building's convertibility score has to be before conversion is considered. The score is ours: a weighted sum of the four proxies above, with three of the published criteria left out because nothing available measures them. The weights are relative (divided by their total), so what matters is which is heaviest. The legend marks where this threshold would sit for the score to call a quarter of the district convertible, the one figure the consultancy published, and that mark moves with the weights."
-    },
-    "w_depth": {
-      "type": "number",
-      "title": "Weight: floorplate depth",
-      "x-group": "the gates",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.35,
-      "description": "How much the depth from core to window counts in the convertibility score. It is the heaviest weight, which is our judgment. The proxy is MapPLUTO's building depth halved, which assumes a centered core and a rectangular floor plate."
-    },
-    "w_f2f": {
-      "type": "number",
-      "title": "Weight: floor-to-floor",
-      "x-group": "the gates",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.25,
-      "description": "How much ceiling height counts: the room to run new services under a floor and still have a room. The proxy is the modeled height divided by the number of stories, which averages lobbies and mechanical floors in with the rest."
-    },
-    "w_area": {
-      "type": "number",
-      "title": "Weight: floorplate area",
-      "x-group": "the gates",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.2,
-      "description": "How much a small floor plate counts. The proxy is floor area divided by stories."
-    },
-    "w_age": {
-      "type": "number",
-      "title": "Weight: age",
-      "x-group": "the gates",
-      "minimum": 0,
-      "maximum": 1,
-      "x-step": 0.05,
-      "default": 0.2,
-      "description": "How much a building's age counts, standing in for the kind of facade it has. Age used to also stand in for the structural bay, which it doesn't measure; that criterion is now listed as missing instead."
-    },
-    "incentive_467m": {
-      "type": "boolean",
-      "title": "467-m eligibility rules",
-      "x-group": "the gates",
-      "default": true,
-      "description": "The state tax exemption for office-to-residential conversion. Its published eligibility tests are applied when this is on: at least 90% non-residential before conversion, six or more units, a quarter of them affordable. Its benefit schedule (the exemption percentage and duration) is not published, so it can't be given a value and is treated as permission rather than money. Off, the tests aren't applied and no benefit is added either. The difference between the two settings is what the rules exclude, not what the money is worth."
-    },
-    "agent_count": {
-      "type": "integer",
-      "title": "Agents",
-      "x-group": "the crowd",
-      "minimum": 500,
-      "maximum": 30000,
-      "x-step": 500,
-      "default": 15000,
-      "description": "How many walkers stand in for the district's day. This is a sample for the eye, not a count: the measured flows are the same at any setting, and even the maximum is about a twelfth of the people the counts say pass through."
-    },
-    "schedule_source": {
-      "type": "string",
-      "title": "Schedule",
-      "x-group": "the crowd",
-      "enum": [
-        "measured",
-        "parametric"
-      ],
-      "x-enum-labels": [
-        "measured",
-        "parametric"
-      ],
-      "x-enum-notes": [
-        "Times drawn from the MTA origin-destination curves: October 2024 weekdays, counted at the turnstiles.",
-        "Times drawn from four bell curves shaped by the controls below. Their defaults are read off the measured curves, so this starts where the data is."
-      ],
-      "default": "measured",
-      "description": "Where each walker's arrival and departure times come from: the measured MTA curves, or four bell curves you can shape with the controls below."
-    },
-    "resident_schedule": {
-      "type": "string",
-      "title": "Residents' day",
-      "x-group": "the crowd",
-      "enum": [
-        "atus",
-        "mirrored"
-      ],
-      "x-enum-labels": [
-        "their own (ATUS)",
-        "mirror of the workers"
-      ],
-      "x-enum-notes": [
-        "Residents leave and return on curves from the American Time Use Survey's weekday diaries of people not employed, which puts them on the street through the day. A national survey, not a New York count.",
-        "Residents run the workers' commute in reverse: out in the morning, back in the evening. This is all the subway counts alone can say."
-      ],
-      "default": "atus",
-      "x-disabled-when": {
-        "schedule_source": "parametric"
-      },
-      "x-disabled-note": "the parametric schedule sets its own",
-      "description": "Where residents' times come from. The subway counts aren't split by who is riding, so the mirrored option treats residents as the workers' commute in reverse. The ATUS option gives residents their own day from a national time-use survey, not a New York count."
-    },
-    "arrival_median": {
-      "type": "number",
-      "title": "Arrival median",
-      "x-group": "the crowd",
-      "minimum": 4,
-      "maximum": 23,
-      "x-step": 0.1,
-      "default": 8.78,
-      "x-unit": "h",
-      "x-disabled-when": {
-        "schedule_source": "measured"
-      },
-      "x-disabled-note": "from the MTA curve",
-      "description": "The time by which half the morning's arrivals have happened. In the measured curve (October 2024 weekdays) it is 08:47."
-    },
-    "arrival_spread": {
-      "type": "number",
-      "title": "Arrival spread",
-      "x-group": "the crowd",
-      "minimum": 0.25,
-      "maximum": 6,
-      "x-step": 0.1,
-      "default": 1.96,
-      "x-unit": "h",
-      "x-disabled-when": {
-        "schedule_source": "measured"
-      },
-      "x-disabled-note": "from the MTA curve",
-      "description": "How wide the morning peak is, in hours."
-    },
-    "departure_median": {
-      "type": "number",
-      "title": "Departure median",
-      "x-group": "the crowd",
-      "minimum": 4,
-      "maximum": 23,
-      "x-step": 0.1,
-      "default": 17.46,
-      "x-unit": "h",
-      "x-disabled-when": {
-        "schedule_source": "measured"
-      },
-      "x-disabled-note": "from the MTA curve",
-      "description": "The time by which half the evening's departures have happened. In the measured curve it is 17:28."
-    },
-    "departure_spread": {
-      "type": "number",
-      "title": "Departure spread",
-      "x-group": "the crowd",
-      "minimum": 0.25,
-      "maximum": 6,
-      "x-step": 0.1,
-      "default": 2.83,
-      "x-unit": "h",
-      "x-disabled-when": {
-        "schedule_source": "measured"
-      },
-      "x-disabled-note": "from the MTA curve",
-      "description": "How wide the evening peak is, in hours."
+      "description": "The floor area per apartment is measured from completed Manhattan conversions with at least this many units. The choice moves the figure by about 40%."
     }
   }
 }

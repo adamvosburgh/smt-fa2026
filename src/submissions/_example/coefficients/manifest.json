@@ -1,6 +1,7 @@
 {
   "sandbox": "coefficients",
   "student": "_example",
+  "published": false,
   "title": "One Number, Doubled",
   "gallery_text": "The crime constant is 128 because someone typed 128 in 1989. Here it is at 220, with every other rule untouched, and the population falls - because the model makes cheap land cause crime and crime make land cheap.",
   "description": "<p>Two states, differing by exactly one changed value: <code>crime_base</code>, from the engine's own 128 to 220. Nothing else is altered - same seed, same starting city, same sixteen phases in the same order.</p><p>Average crime roughly doubles, which is unsurprising. Population falls, which is the part worth arguing about: the engine subtracts 20 from land value wherever crime exceeds 190, and the crime function reads land value back. The feedback is not emergent. It is two lines of code that were written to point at each other.</p>",

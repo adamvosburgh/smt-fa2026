@@ -36,3 +36,29 @@ if (problems.length) {
   process.exit(1);
 }
 console.log('freeze audit: clean. `SMT_MODE=archive npm run build` will prerender.');
+
+// Publishing is a build-time filter, not a runtime one: `isLive` in
+// src/lib/content.js runs against Date.now(), so the archive build freezes
+// whatever is live at the moment it runs. Anything still ahead of its
+// `publish:` date prerenders as its "publishes on" page and stays that way.
+// Listed here so a freeze run cannot quietly ship a stub as the final archive.
+const DST_ENDS_2026 = '2026-11-01';
+const startOfDayNY = (ymd) => Date.parse(`${ymd}T${ymd < DST_ENDS_2026 ? '04' : '05'}:00:00Z`);
+
+const pending = [];
+for (const section of ['tutorials', 'assignments']) {
+  const dir = path.join('src', 'content', section);
+  for (const name of await readdir(dir)) {
+    if (!name.endsWith('.md')) continue;
+    const src = await readFile(path.join(dir, name), 'utf8');
+    const m = /^publish:\s*["']?(\d{4}-\d{2}-\d{2})["']?\s*$/m.exec(src.split('---')[1] ?? '');
+    if (m && Date.now() < startOfDayNY(m[1])) pending.push(`${section}/${name.replace(/\.md$/, '')} publishes ${m[1]}`);
+  }
+}
+
+if (pending.length) {
+  console.log('\nnot live at this moment, so a freeze run right now would archive the stub:');
+  for (const p of pending) console.log('  ' + p);
+} else {
+  console.log('every tutorial and assignment is past its publish date.');
+}

@@ -1,4 +1,6 @@
-import { collection } from '$lib/content.js';
+import { collection, pendingLabel } from '$lib/content.js';
+
 export function load() {
-  return { items: collection('assignments'), title: 'Assignments' };
+  const items = collection('assignments').map((d) => ({ ...d, pending: pendingLabel(d) }));
+  return { items, title: 'Assignments' };
 }

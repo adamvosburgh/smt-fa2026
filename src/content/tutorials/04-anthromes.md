@@ -5,7 +5,7 @@ author: Adam Vosburgh
 sequence: 4
 cat: tutorial
 devnotes: true
-published: true
+published: false
 ---
 
 Notes from building the [Anthromes](/sandboxes/anthromes/) sandbox. Pipeline: `data/scripts/anthromes.py`. Component: `src/lib/sandboxes/anthromes/`.

@@ -2,17 +2,71 @@
   // Renders controls straight off the sandbox's JSON Schema. One schema does two
   // jobs: it draws this panel, and the server validates submitted params against
   // the same file. If a control is missing here, add it to the schema, not here.
-  let { schema, params = $bindable(), disabled = false, transport = null, assets = {} } = $props();
+  //
+  // TWO PANELS, ONE SCHEMA. Every property carries `x-panel`, either
+  // "assumptions" (it changes the underlying data or the model's numbers) or
+  // "representation" (it changes how that data is drawn). The frame renders this
+  // component once per panel and each draws only its own properties; the split
+  // is a fact about the control, so it lives in the schema rather than in a list
+  // here.
+  import { dev } from '$app/environment';
+
+  let {
+    schema,
+    params = $bindable(),
+    disabled = false,
+    transport = null,
+    assets = {},
+    panel = null
+  } = $props();
+
+  // A control whose value is being decided elsewhere is grayed by
+  // x-disabled-when and REMOVED by x-shown-when. The difference is whether it
+  // still means anything in the current state: an overridden slider is still a
+  // number the reader chose, and a control for a view that isn't showing is not
+  // a control at all.
+  function matches(when) {
+    return Object.entries(when).every(([k, v]) =>
+      Array.isArray(v) ? v.includes(params[k]) : params[k] === v
+    );
+  }
 
   // x-hidden-when-asset names an asset whose presence removes the control
   // outright, rather than greying it. The sunlight sandbox's "which floor of the
   // example" control means nothing once a student has uploaded their own model,
   // and a disabled slider would read as something they had failed to unlock.
   const entries = $derived(
-    Object.entries(schema?.properties ?? {}).filter(
-      ([, p]) => !(p['x-hidden-when-asset'] && assets?.[p['x-hidden-when-asset']])
-    )
+    Object.entries(schema?.properties ?? {})
+      .filter(([, p]) => !(p['x-hidden-when-asset'] && assets?.[p['x-hidden-when-asset']]))
+      .filter(([key, p]) => {
+        if (!panel) return true;
+        const declared = p['x-panel'];
+        if (!declared && dev) {
+          console.error(
+            `[ParamPanel] ${key} has no "x-panel". Every property needs one; it is being drawn under assumptions.`
+          );
+        }
+        return (declared ?? 'assumptions') === panel;
+      })
+      .filter(([, p]) => !p['x-shown-when'] || matches(p['x-shown-when']))
   );
+
+  // x-scenario-of names the enum control that sets this slider. Moving the
+  // slider by hand means the reader has left the published scenario, so the
+  // enum goes to "custom"; the enum's x-scenario-values writes every slider in
+  // one go when a stop is chosen. Nothing is written for "custom" - it is the
+  // sliders as they stand.
+  function writeScenario(prop, key, stop) {
+    params[key] = stop;
+    const values = prop['x-scenario-values']?.[stop];
+    if (!values) return;
+    for (const [k, v] of Object.entries(values)) params[k] = v;
+  }
+
+  function leaveScenario(prop) {
+    const key = prop['x-scenario-of'];
+    if (key && params[key] !== 'custom') params[key] = 'custom';
+  }
 
   function labelFor(prop, value) {
     const i = (prop.enum ?? []).indexOf(value);
@@ -71,9 +125,7 @@
   // state is how you get a reactive loop.
   function overridden(prop) {
     const when = prop['x-disabled-when'];
-    if (!when) return false;
-    return Object.entries(when).every(([k, v]) =>
-      Array.isArray(v) ? v.includes(params[k]) : params[k] === v);
+    return when ? matches(when) : false;
   }
 
   // x-group starts a labelled section. The heading is drawn when the group
@@ -103,9 +155,10 @@
 {/snippet}
 
 <div class="params">
-  {#if transport?.external}
+  {#if transport?.external && panel !== 'assumptions'}
     <!-- A sandbox whose clock is an engine, not a schema property. Same row,
-         run/pause/step of the simulation underneath. -->
+         run/pause/step of the simulation underneath. It is a representation
+         control like any other timeline, so it draws at the top of that panel. -->
     <div class="param">
       <div class="param-head">
         <label for="p-transport-external">{transport.external.label ?? 'the clock'}</label>
@@ -193,6 +246,20 @@
           onkeydown={() => prop['x-timeline'] && transport?.pause(key)}
           oninput={(e) => (params[key] = prop.enum[Number(e.currentTarget.value)])}
         />
+      {:else if prop['x-scenario-values']}
+        <!-- A scenario enum: one button per line rather than a segmented row,
+             because the labels are sentences. Choosing a stop writes every
+             slider it names. -->
+        <div class="stack" id="p-{key}">
+          {#each prop.enum as opt}
+            <button
+              type="button"
+              class:on={params[key] === opt}
+              disabled={off}
+              onclick={() => writeScenario(prop, key, opt)}>{labelFor(prop, opt)}</button
+            >
+          {/each}
+        </div>
       {:else if prop.enum}
         <div class="segmented" id="p-{key}">
           {#each prop.enum as opt}
@@ -217,6 +284,7 @@
           disabled={off}
           onpointerdown={() => prop['x-timeline'] && transport?.pause(key)}
           onkeydown={() => prop['x-timeline'] && transport?.pause(key)}
+          oninput={() => leaveScenario(prop)}
           bind:value={params[key]}
         />
       {/if}
@@ -300,6 +368,13 @@
   .speed:last-child { border-right: 1px solid #eee; }
   .speed.on { background: #000; border-color: #000; color: #fff; }
   .stop-note { font-style: italic; }
+  .stack { display: flex; flex-direction: column; border: 1px solid #ccc; }
+  .stack button {
+    padding: 0.35rem 0.5rem; font: inherit; font-size: 0.7rem; text-align: left;
+    background: #fff; border: 0; border-bottom: 1px solid #eee; cursor: pointer; color: #666;
+  }
+  .stack button:last-child { border-bottom: 0; }
+  .stack button.on { background: #000; color: #fff; }
   .segmented { display: flex; border: 1px solid #ccc; }
   .segmented button {
     flex: 1; padding: 0.3rem 0.4rem; font: inherit; font-size: 0.7rem;

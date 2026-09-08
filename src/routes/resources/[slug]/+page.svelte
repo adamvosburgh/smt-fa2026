@@ -10,5 +10,5 @@
 {/if}
 
 <style>
-  .byline { font-size: 0.75rem; color: #666; margin-top: 3rem; border-top: 1px solid #eee; padding-top: 1rem; }
+  .byline { font-size: 0.75rem; color: var(--fg-dim); margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
 </style>

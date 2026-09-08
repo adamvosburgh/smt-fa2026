@@ -8,10 +8,10 @@
       <a href={item.url}>
         {#if item.sequence !== undefined}<span class="sequence">{item.sequence}</span>{/if}
         {item.title}
-      </a>
+      </a>{#if item.pending}<span class="pending">publishes {item.pending}</span>{/if}
     </div>
   {:else}
-    <p class="content-article">Nothing here yet.</p>
+    <p class="content-article empty">Tutorials will be published one week before they are due.</p>
   {/each}
 </div>
 
@@ -23,5 +23,7 @@
 {/if}
 
 <style>
-  .devnotes-note { font-size: 0.75rem; color: #666; margin-top: 2.5rem; max-width: 60ch; }
+  .pending { font-size: 0.7rem; color: var(--fg-dim); margin-left: 0.6rem; }
+  .empty { max-width: 60ch; }
+  .devnotes-note { font-size: 0.75rem; color: var(--fg-dim); margin-top: 2.5rem; max-width: 60ch; }
 </style>

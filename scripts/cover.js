@@ -4,6 +4,9 @@
 // the state in manifest.cover; the screenshot waits on it. Without that, every
 // animated sandbox gets a half-loaded card.
 //
+// window.__hidePanels() takes the four floating panels off the map first, so
+// the shot is the map rather than the map with its controls over it.
+//
 // The same page load reads window.__metrics and collects console errors, failed
 // requests and uncaught exceptions - which is stage 2 of the build doctor, for
 // nearly nothing. Run it against a submission and you find out whether it runs
@@ -51,6 +54,10 @@ async function capture(browser, url, out) {
     // to its schema default and pause, then wait for the frame to say so and
     // for the sandbox to settle again after the reset moved its params.
     await page.evaluate(() => window.__transportReset?.());
+    // The four panels float OVER the map, and the shot is of the map. One call
+    // takes them off; nothing puts them back, because the page is thrown away
+    // right afterwards.
+    await page.evaluate(() => window.__hidePanels?.());
     await page.waitForSelector('[data-timeline-paused="true"]', { timeout: TIMEOUT });
     await page.waitForSelector('[data-cover-ready="true"]', { timeout: TIMEOUT });
     ready = true;
@@ -59,6 +66,10 @@ async function capture(browser, url, out) {
   const metrics = await page.evaluate(() => window.__metrics ?? null).catch(() => null);
   // A sandbox page has a viewport; an assignment upload marks what to shoot.
   const el = (await page.$('.sandbox .viewport')) ?? (await page.$('[data-cover-target]'));
+  // The frame always renders a .viewport once it is mounted, whether or not the
+  // map inside it loaded. Nothing to shoot therefore means the frame was never
+  // mounted, which on a sandbox route means the page is the unpublished stub.
+  const nothingToShoot = !el;
   let shot = false;
   if (el) {
     await mkdir(path.dirname(out), { recursive: true });
@@ -84,6 +95,7 @@ async function capture(browser, url, out) {
     ...problems,
     // Stage 2's verdict. Stage 3 only ever fires when this is false.
     shot,
+    nothingToShoot,
     ok: ready && rendered && shot && problems.exceptions.length === 0
   };
 }
@@ -110,14 +122,26 @@ if (args.submissions) {
     }
   }
 } else {
-  // Covers all sandboxes including hidden ones - a NotBuilt cover is harmless
-  // and means unhiding later needs no cover run.
+  // EVERY slug, including the ones held back. The list is hardcoded because
+  // importing the registry from plain node does not work - its meta.js files
+  // pull in schema.json, and a JSON import needs an import attribute node will
+  // not infer. The dynamic import is tried first anyway, so the list repairs
+  // itself the day that changes; keep the fallback in step with index.js.
+  //
+  // A sandbox with `published: false` renders a "not published yet" page with
+  // no viewport on it, so there is nothing to shoot. That is reported as SKIP
+  // rather than FAIL - the page is doing what it should - and its existing
+  // cover is left where it is.
   const mod = await import('../src/lib/sandboxes/index.js').catch(() => null);
   const slugs = mod?.allSandboxes
     ? mod.allSandboxes.map((s) => s.slug)
     : ['studio-twin', 'pencil', 'after-five', 'coefficients', 'sunlight', 'anthromes', 'bathtub'];
   for (const slug of slugs) {
     const r = await capture(browser, `${BASE}/sandboxes/${slug}/`, `static/covers/${slug}.png`);
+    if (r.nothingToShoot) {
+      console.log(`skip ${slug} - not published, no map on the page`);
+      continue;
+    }
     report.push(r);
     console.log(`${r.ok ? 'ok  ' : 'FAIL'} ${slug}`);
   }

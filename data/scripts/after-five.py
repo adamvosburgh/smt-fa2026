@@ -161,6 +161,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _common import env, original_dir, read_dbf     # noqa: E402
+import afterfive_day  # noqa: E402
 from afterfive_massing import (DELIVERY_AREAS, read_citygml, to_buildings,  # noqa: E402
                                to_wgs84)
 
@@ -984,6 +985,29 @@ def main():
     for k, v in sizes.items():
         print(f"write: {k} {v / 1e6:.2f}MB")
 
+    # ---- 5b. the day, the sidewalk grid, the district outlines ------------
+    #
+    # The 09-08 reframe: the agent layer came out and a sidewalk heat map went
+    # in. None of this needs the CityGML a second time, but it does need the
+    # footprints that were just built, so it runs here rather than in a script
+    # of its own. See afterfive_day.py.
+    #
+    # The worker curve is read back off flow.json, which after-five-agents.py
+    # writes from the MTA origin-destination aggregates. That is the one part of
+    # the agent layer the reframe kept: the arrivals and departures are counted
+    # taps and they are what the office channel runs on.
+    day_meta = grid_meta = outlines_meta = None
+    flow_path = out / "flow.json"
+    if flow_path.exists():
+        day_meta = afterfive_day.write_day(out, original,
+                                           json.loads(flow_path.read_text()))
+    else:
+        print("day: SKIPPED - no flow.json. Run data/scripts/after-five-agents.py "
+              "for the MTA arrival and departure curves.")
+    grid_meta = afterfive_day.write_grid(out, foot)
+    outlines_meta = afterfive_day.write_district_outlines(
+        out, original, args.districts)
+
     # Average household size, so "units created" can become "residents added".
     # ACS B25010_001E for the county, which is Manhattan. Published, not guessed.
     household_size = 0.0
@@ -1111,6 +1135,17 @@ def main():
                                  "is a limit of the record rather than of the "
                                  "buildings.",
         },
+        **({"day": day_meta} if day_meta else {}),
+        **({"sidewalk_grid": grid_meta} if grid_meta else {}),
+        **({"district_outlines": outlines_meta} if outlines_meta else {}),
+        "agents_removed":
+            "The agent layer is gone as of 2026-09-08. agents.json, "
+            "gateways.json, graph.bin, routes.bin and occupancy.json are still "
+            "on disk and are no longer read by anything; the sidewalk heat map "
+            "replaced them. flow.json IS still read - the MTA arrivals and "
+            "departures are the office channel's curve. There are no gateways "
+            "in the model any more, so nothing concentrates at a station exit "
+            "except insofar as buildings stand near one.",
         "back_test": "CUT. The spec proposed validating against 421-g from 1995. "
                      "The legacy dataset's earliest pre-filing date is "
                      "2000-01-01, so it cannot reach. The model is not validated "

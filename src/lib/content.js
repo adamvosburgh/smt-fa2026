@@ -12,6 +12,7 @@
 // component into it. See src/lib/components/SandboxMounts.svelte.
 
 import { load as parseYaml } from 'js-yaml';
+import { SHOW_UNPUBLISHED, isPublished } from './visibility.js';
 import MarkdownIt from 'markdown-it';
 import attrs from 'markdown-it-attrs';
 import anchor from 'markdown-it-anchor';
@@ -68,16 +69,86 @@ function parse(filepath, source) {
   };
 }
 
-const all = Object.entries(raw)
-  .map(([filepath, source]) => parse(filepath, source))
-  .filter((doc) => doc.published !== false);
+// NOT filtered here. `published: false` used to drop a document before anything
+// could see it, which meant SMT_SHOW_UNPUBLISHED could not show it either. The
+// filter is in isLive() now, so one switch reveals everything held back.
+const all = Object.entries(raw).map(([filepath, source]) => parse(filepath, source));
 
 const bySequence = (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0);
 
-export function collection(section) {
-  return all.filter((d) => d.section === section).sort(bySequence);
+// ------------------------------------------------------------------ //
+// Publishing.                                                         //
+// ------------------------------------------------------------------ //
+//
+// Every tutorial and assignment carries `publish: "YYYY-MM-DD"` and is on the
+// site from 00:00 America/New_York on that date. Dev notes (`devnotes: true`)
+// carry no date and are always live.
+//
+// This module runs in the browser as well as on the server, so the test is a
+// pure function of Date.now() with no library behind it. 2026's daylight saving
+// change is 1 November, so a course date before it is EDT (UTC-4) and one from
+// it on is EST (UTC-5). The course ends 19 November; the two-line rule covers
+// the whole term.
+const DST_ENDS_2026 = '2026-11-01';
+
+export function startOfDayNY(ymd) {
+  const offset = String(ymd) < DST_ENDS_2026 ? '04' : '05';
+  return Date.parse(`${ymd}T${offset}:00:00Z`);
 }
 
+// SMT_SHOW_UNPUBLISHED=1 makes everything live, so Adam can read what students
+// cannot. See src/lib/visibility.js; one switch covers documents, sandboxes and
+// submissions alike.
+export { SHOW_UNPUBLISHED };
+
+export function isLive(d, now = Date.now()) {
+  if (!d) return false;
+  if (SHOW_UNPUBLISHED) return true;
+  if (d.published === false) return false;
+  if (!d.publish) return true;
+  return now >= startOfDayNY(d.publish);
+}
+
+// True only under the dev flag: the item is showing but is not on the site.
+export function isPending(d, now = Date.now()) {
+  if (!d) return false;
+  if (d.published === false) return true;
+  return Boolean(d.publish) && now < startOfDayNY(d.publish);
+}
+
+// What the tag beside a pending item says. Two reasons an item can be held
+// back, and they are different facts: a date it is waiting for, or a decision.
+export function pendingLabel(d, now = Date.now()) {
+  if (!isPending(d, now)) return null;
+  if (d.published === false) return 'unpublished';
+  return `publishes ${publishDate(d)}`;
+}
+
+const WEEKDAY = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York',
+  weekday: 'long'
+});
+
+// "9/17" from "2026-09-17", with no timezone in the arithmetic.
+export function publishDate(d) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d?.publish ?? ''));
+  return m ? `${Number(m[2])}/${Number(m[3])}` : null;
+}
+
+export function publishWeekday(d) {
+  return d?.publish ? WEEKDAY.format(new Date(startOfDayNY(d.publish))) : null;
+}
+
+// The list of live documents in a section. Pass { all: true } where the caller
+// needs the unpublished ones too - prerender entries, for instance.
+export function collection(section, opts = {}) {
+  const items = all.filter((d) => d.section === section);
+  return (opts.all ? items : items.filter((d) => isLive(d))).sort(bySequence);
+}
+
+// Returns the document whether or not it is live. Callers that must not leak
+// unpublished prose - every page load - check isLive() themselves and render
+// the "publishes on" stub instead.
 export function doc(section, slug) {
   return all.find((d) => d.section === section && d.slug === slug) ?? null;
 }

@@ -4,36 +4,28 @@
 export default {
   slug: 'after-five',
   title: 'Office to Residential Conversion',
-  subtitle:
-    'Lower Manhattan in three dimensions. Office buildings turn into housing when a deal clears, a crowd walks between the subway stations and the buildings over a day, and the streets are colored by how many people are on them. An experiment in what conversion would do to a district, not in whether it pays.',
+  subtitle: 
+    "Lower Manhattan in 2040, after the state's conversion incentive has closed. Office buildings become housing when a conversion would be worth more than the office, and the sidewalks show how the district's day changes when they do.",
   status: 'built',
   statusNote:
     'The massing, the two gates, the clock, the crowd and the street layer are built. At the default settings nothing converts, because the office rent is the published asking rent and the residential deal never beats it before 2050. Workers run on counted subway ridership by hour and residents on a national time-use survey; the building each trip goes to and the route are assumed, and the canvas labels which is which.',
   kind: 'simulation',
-  blurb:
-    'Every building in Manhattan Community District 1 from the city\'s own 3D survey. An office building converts to housing when a convertibility score clears a threshold and the residential deal beats the office income given up. Six dates, an hour-of-day clock, and a crowd drawn from MTA ridership counts. Of the three figures in the deal, one has a source, and at that source nothing converts.',
+  blurb: 
+    "Two tests decide whether an office building becomes housing: whether its floor plate and age make it convertible at all, and whether the finished apartments would be worth more than the offices given up after paying for the work. The financial test can be set to one of four published scenarios - the 2024 asking rent, a 2026 effective rent, the Comptroller's 2025 pro forma, or the assessor's view of a distressed sale - or to numbers of your own. The sidewalks are then colored by how many people each building puts onto them at each hour of the day, offices on a commuter's schedule and homes on a resident's.",
   controls: [
-    'the hour of day, which plays by default and moves the crowd; playing the year holds it and playing it holds the year',
-    'whether streets are colored by how many walkers cross them in the selected hour; clicking a street puts the camera on it at eye height',
-    'the chance that a converted building\'s ground floor is active, drawn as a warm or dark edge at its base; the probability is ours',
-    'a two-hour comparison: the crowd at a second hour in a second color, and streets colored by the difference between the hours',
-    'the crowd: how many walkers stand in for the day, and whether their schedule is the measured MTA curve or four bell curves whose defaults are read off it',
-    'where residents\' times come from: the American Time Use Survey\'s diaries of people not employed, or a mirror of the workers\' commute',
-    'the year, one of six dates from 2025 to 2050',
-    'conversion cost per square foot',
-    'residential rent per square foot per year',
-    'how office rent drifts each year, which is what moves the model through time',
-    'the office rent, at four named stops: the published $54 asking figure and three of ours, each with its justification on the control',
-    'two capitalization rates, office and residential, defaulting equal, plus the operating-cost share; all market convention rather than measurement',
-    'which conversion filings the floor-area-per-apartment figure is measured from; six measured cuts, and the choice moves the figure by 40%',
-    'the four weights behind the convertibility score, one per criterion',
-    'the convertibility threshold',
-    'whether the state tax exemption\'s eligibility rules apply',
-    'whether added floors are drawn'
+    'which district: Lower Manhattan, Midtown, or both',
+    'whether the map shows sidewalk activity, who is on the street, or which buildings could convert',
+    'the hour of the day, which plays',
+    'whether a converted building is drawn with the floors it could add',
+    'which of four published scenarios sets the seven numbers in the deal, or your own',
+    'the office and residential rents, their operating cost shares and their capitalization rates',
+    'the cost of the conversion work per square foot',
+    'the convertibility threshold, and the weight on each of its four criteria',
+    "whether the 467-m eligibility rules apply, and which conversion filings the floor area per apartment is measured from"
   ],
   metrics: [
-    'who is mid-walk at this hour, workers against residents',
-    'units created',
+    'people on the sidewalks at this hour, from offices and from homes',
+    'homes created',
     'office floor area removed',
     'buildings converted, of the office buildings there are',
     'residents living there afterwards',
@@ -57,8 +49,8 @@ export default {
     'NYC Street Centerline (inkn-q76z), clipped to the districts and filtered to walkable segments: the graph the trips are routed on.',
     'ATUS 2003-2025 (BLS): the share of office-type workers at their workplace through the day, drawn as a check on the animation.'
   ],
-  cannotSee:
-    'Who any walker is. Station flows by hour are counted, but not split by who is riding, so treating morning arrivals as workers is the model\'s assumption; residents\' hours come from a national survey, not a New York count. The building each trip goes to (by jobs) and the route (shortest path) are assumed, so the street counts are counts of routed trips, not of people observed. Anyone arriving by ferry, bus, bike, car or on foot is invisible, because only the subway was counted. It cannot see who moves in, who is displaced, where a displaced job goes, or what a ground floor is used for; the active-or-dark frontage is a probability we chose. Conversion is instant, added floors have no form, and rents are uniform. Standing on a street is a camera move over the same assumptions.',
+  cannotSee: 
+    "Who any person is. Station flows by hour are counted, but not split by who is riding, so treating morning arrivals as workers is the model's assumption; residents' hours come from a national survey, not a New York count. Anyone arriving by ferry, bus, bike, car or on foot is invisible, because only the subway was counted, and so is anyone who works in the district's shops, hotels and restaurants. The sidewalk numbers are people a building sends out and takes in each hour, spread over the sidewalk near it, not people observed on a street. It cannot see who moves in, who is displaced, or where a displaced job goes. Conversion is instant, added floors have no form, and rents are uniform. The date is 2040 because the incentive closes in 2039; the model has no other clock.",
   tutorial: '/tutorials/02-after-five/',
   live: false
 };

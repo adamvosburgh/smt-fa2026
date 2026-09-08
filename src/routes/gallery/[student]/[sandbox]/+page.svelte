@@ -129,17 +129,18 @@
 <style>
   .sub-header { margin-bottom: 1.5rem; }
   h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
-  .who { font-size: 0.75rem; color: #666; margin: 0 0 1rem; }
+  .who { font-size: 0.75rem; color: var(--fg-dim); margin: 0 0 1rem; }
   .gallery-text { font-size: 0.95rem; line-height: 1.7; max-width: 60ch; margin: 0; }
   .desc { margin-top: 2rem; max-width: 60ch; }
   .params-dump { margin-top: 2.5rem; font-size: 0.72rem; }
-  .params-dump summary { cursor: pointer; color: #666; }
-  .params-dump pre { background: #f6f6f4; padding: 0.75rem; overflow-x: auto; margin-top: 0.5rem; }
-  .work { border: 1px solid #ddd; background: #f6f6f4; }
+  .params-dump summary { cursor: pointer; color: var(--fg-dim); }
+  .params-dump pre { background: var(--code-bg); padding: 0.75rem; overflow-x: auto; margin-top: 0.5rem; }
+  .work { border: 1px solid var(--rule); background: var(--code-bg); }
   .work img { display: block; width: 100%; height: auto; }
   .work object, .work iframe { display: block; width: 100%; height: min(80vh, 900px); border: 0; background: #fff; }
-  .work .open { font-size: 0.72rem; margin: 0; padding: 0.4rem 0.6rem; border-top: 1px solid #ddd; }
+  /* the embedded file is the student's own page; it keeps a white ground */
+  .work .open { font-size: 0.72rem; margin: 0; padding: 0.4rem 0.6rem; border-top: 1px solid var(--rule); }
   .download { font-size: 0.75rem; margin: 0.75rem 0 0; }
   .extras { list-style: none; padding: 0; margin: 1rem 0 0; font-size: 0.75rem; }
-  .extras span { color: #999; margin-left: 0.5rem; }
+  .extras span { color: var(--fg-dim); margin-left: 0.5rem; }
 </style>

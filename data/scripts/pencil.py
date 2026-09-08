@@ -942,6 +942,105 @@ def rasterise_floodplain(paths, bounds, size=2048):
 
 # --------------------------------------------------------------------------
 
+def geoid_of(bct):
+    """BCT2020 is a borough digit followed by a six-digit tract."""
+    bct = (bct or "").strip()
+    return f"36081{bct[1:]}" if len(bct) == 7 and bct[0] == QUEENS_BORO else None
+
+
+def write_queens_polygon(src, out, target_vertices=1000):
+    """Queens, simplified, for the mask that fades the rest of the metro.
+
+    The map is the whole metro on Carto Positron; a white polygon at 75%
+    opacity covers it with Queens cut out, so the borough reads at full
+    strength and everything else at a quarter. That needs one outline, and it
+    is a mask rather than a crop because a crop hides where the borough is.
+
+    Simplified by Visvalingam - drop the vertex whose triangle with its two
+    neighbors has the smallest area, repeatedly - because it is the one that
+    keeps the shape of a coastline rather than its length. Ring topology is not
+    checked afterwards: at about a thousand vertices for a borough this size
+    the tolerance is far below the width of any inlet.
+    """
+    if not src.exists():
+        print(f"queens: SKIPPED - {src} is not there. "
+              f"Run data/scripts/fetch-sources-0908.sh.")
+        return
+    fc = json.loads(src.read_text())
+    feats = [f for f in fc["features"]
+             if str(f["properties"].get("borocode", "")).strip() == "4"]
+    if not feats:
+        print(f"queens: SKIPPED - no borocode 4 in {src.name}")
+        return
+    geom = feats[0]["geometry"]
+    polys = (geom["coordinates"] if geom["type"] == "MultiPolygon"
+             else [geom["coordinates"]])
+
+    before = sum(len(r) for poly in polys for r in poly)
+    # Share the budget across the rings in proportion to how many vertices each
+    # already has, so a small island is not simplified into a triangle.
+    kept = []
+    for poly in polys:
+        rings = []
+        for ring in poly:
+            share = max(8, int(round(target_vertices * len(ring) / before)))
+            rings.append(_simplify_ring(ring, share))
+        kept.append(rings)
+    after = sum(len(r) for poly in kept for r in poly)
+
+    (out / "queens.json").write_text(json.dumps({
+        "type": "Feature",
+        "properties": {"boroname": "Queens", "borocode": 4},
+        "geometry": {"type": "MultiPolygon", "coordinates": kept}
+    }, separators=(",", ":")))
+    print(f"write: queens.json {after:,} vertices (from {before:,})")
+
+
+def _simplify_ring(ring, target):
+    """Visvalingam-Whyatt on a closed ring, down to about `target` vertices.
+
+    Thresholded rather than one-at-a-time. The textbook algorithm removes the
+    smallest triangle, recomputes its neighbors and repeats, which is O(n log n)
+    with a heap and O(n^2) without one; Queens is 36,089 vertices across 23
+    rings, so "without one" is not an option. Instead a threshold area is found
+    by bisection and every vertex under it is dropped in one sweep, with the
+    triangle recomputed against the last vertex KEPT so a run of small
+    triangles cannot cut a corner off wholesale.
+
+    The result is within a few vertices of the target, which is all a mask
+    needs; the tolerance at a thousand vertices for a borough this size is far
+    below the width of any inlet.
+    """
+    pts = ring[:-1] if ring[0] == ring[-1] else ring[:]
+    if len(pts) <= target:
+        return pts + [pts[0]]
+
+    def sweep(threshold):
+        kept = [pts[0]]
+        for i in range(1, len(pts) - 1):
+            a, b, c = kept[-1], pts[i], pts[i + 1]
+            area = abs((b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1])) / 2
+            if area >= threshold:
+                kept.append(b)
+        kept.append(pts[-1])
+        return kept
+
+    lo, hi = 0.0, 1.0
+    while len(sweep(hi)) > target and hi < 1e6:
+        hi *= 4
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if len(sweep(mid)) > target:
+            lo = mid
+        else:
+            hi = mid
+    out = sweep(hi)
+    # A ring needs three distinct points to be a polygon at all.
+    if len(out) < 4:
+        out = pts[:: max(1, len(pts) // 4)][:4]
+    return out + [out[0]]
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[1])
     ap.add_argument("--original", type=Path, default=None)
@@ -977,6 +1076,13 @@ def main():
     # one-to-two-family ones. The frontage test needs both sides of a shared
     # line, and the neighbor may be a corner store.
     block_rows = {}
+    # The homes each tract already has: MapPLUTO UnitsRes summed over every
+    # Queens lot in it, ALL building classes, not only the one-to-two-family
+    # ones this sandbox tests. It is the denominator of the tract view's
+    # "share of existing homes", so it has to count the apartment buildings
+    # too, and it is accumulated here because this is the only pass over the
+    # whole borough.
+    tract_existing_units = {}
     # THE RECORD INDEX IS THE JOIN TO THE SHAPEFILE. Record i of the .dbf is
     # record i of the .shp; there is no key field to match on and none is
     # needed. Kept per lot so the siting step can seek straight to the outline.
@@ -985,6 +1091,13 @@ def main():
             continue
         counts["queens"] += 1
         block_rows.setdefault(rec["block"], []).append(row)
+        g_all = geoid_of(rec["bct2020"])
+        if g_all:
+            try:
+                tract_existing_units[g_all] = (tract_existing_units.get(g_all, 0)
+                                               + int(rec["unitsres"] or 0))
+            except ValueError:
+                pass
         cls = rec["bldgclass"]
         is_ab = cls[:1] in ("A", "B")
         is_lu01 = rec["landuse"] == "01"
@@ -1083,10 +1196,6 @@ def main():
     # Cached into data/original, which is gitignored - it is a downloaded
     # response, not a processed output, and data/processed is committed.
     acs = fetch_acs(original / "acs_queens_tracts_2023.json", args.skip_census)
-
-    def geoid_of(bct):
-        # BCT2020 is a borough digit followed by a six-digit tract.
-        return f"36081{bct[1:]}" if len(bct) == 7 and bct[0] == QUEENS_BORO else None
 
     matched = sum(1 for l in lots if geoid_of(l["bct"]) in acs)
     print(f"acs: {matched:,} of {n:,} lots joined to a tract "
@@ -1490,12 +1599,43 @@ def main():
     tract_rows = [{"geoid": g,
                    "income": acs.get(g, {}).get("income", 0),
                    "owner_share": round(acs.get(g, {}).get("owner_share", 0), 4),
-                   "lots": int((tract_idx == i).sum())}
+                   "lots": int((tract_idx == i).sum()),
+                   # Homes the tract already has, from the same 26v2 table:
+                   # UnitsRes over every lot in the tract, all building
+                   # classes. The denominator of the tract view's share.
+                   "units_res": int(tract_existing_units.get(g, 0))}
                   for i, g in enumerate(order)]
     (out / "tracts.json").write_text(json.dumps({"tracts": tract_rows},
                                                 separators=(",", ":")))
     print(f"write: tracts.json {len(tract_rows):,} tracts "
-          f"({int((tract_idx < 0).sum()):,} lots with no tract)")
+          f"({int((tract_idx < 0).sum()):,} lots with no tract), "
+          f"{sum(r['units_res'] for r in tract_rows):,} existing homes in them")
+
+    # The tract choropleth needs outlines as well as numbers. REUSED, NOT
+    # REFETCHED: the bathtub pipeline already ships every 2020 tract boundary
+    # in the city, so the Queens ones are filtered out of its output rather
+    # than downloaded a second time from a source that might have moved on.
+    geo_src = Path("data/processed/bathtub/tracts.json")
+    if geo_src.exists():
+        allgeo = json.loads(geo_src.read_text())
+        wanted = set(order)
+        feats = [{"type": "Feature",
+                  "properties": {"geoid": f["properties"]["geoid"]},
+                  "geometry": f["geometry"]}
+                 for f in allgeo["features"]
+                 if f["properties"].get("geoid") in wanted]
+        (out / "tract_shapes.json").write_text(
+            json.dumps({"type": "FeatureCollection", "features": feats},
+                       separators=(",", ":")))
+        print(f"write: tract_shapes.json {len(feats):,} of {len(order):,} tracts "
+              f"(from {geo_src}, not refetched)")
+    else:
+        print(f"write: SKIPPED tract_shapes.json - {geo_src} is not there. "
+              f"Run the bathtub pipeline first; the tract view has no outlines "
+              f"without it.")
+
+    # The borough outline, for the mask that fades everything outside Queens.
+    write_queens_polygon(original / "borough_boundaries.geojson", out)
 
     # Building type ships as a column rather than a flag: it is a category with
     # four values, and the bitfield's eight bits are all spoken for.

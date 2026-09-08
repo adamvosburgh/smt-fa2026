@@ -3,9 +3,14 @@
 // Same shape as sandbox 02: one pass on every parameter change, producing the
 // colors and the panel's numbers together so they cannot disagree.
 //
-// A building converts in the first snapshot year where BOTH gates open:
+// A building converts when BOTH gates open:
 //   1. its convertibility score clears the threshold
 //   2. the residential deal beats the office income it gives up
+//
+// THERE IS NO YEAR. The 09-08 reframe took the snapshot years out: the state's
+// conversion incentive requires a project to finish by the end of 2039, so the
+// date is 2040 and everything that converts in this model has converted by
+// then. The only clock left is the hour of the day.
 //
 // Neither gate is a prediction. Together they are a statement of what a
 // conversion argument contains once it is written down.
@@ -104,8 +109,8 @@ export function scoreOf(buildings, base, w) {
  * default equal, so the change is provably neutral until a reader pulls them
  * apart.
  */
-function value(rentPerSf, capRate, p) {
-  return (rentPerSf * (1 - p.opex_share)) / capRate;
+function value(rentPerSf, capRate, opexShare) {
+  return (rentPerSf * (1 - opexShare)) / capRate;
 }
 
 /**
@@ -147,10 +152,9 @@ export const DISTRICT_INDEX = { mn01: 0, mn05: 1 };
 
 export function compute(buildings, manifest, p) {
   const n = buildings.length / STRIDE;
-  const years = manifest.snapshot_years;
   const A = econ(manifest);
-  const convertedIn = new Int16Array(n).fill(-1);
-  const state = new Uint8Array(n);   // 0 not office, 1 never converts, 2 converted
+  const converts = new Uint8Array(n);
+  const state = new Uint8Array(n);   // 0 not office, 1 stays office, 2 converted, 3 out of district
   const unitsOf = new Float32Array(n);
   const score = new Float32Array(n);
 
@@ -161,16 +165,15 @@ export function compute(buildings, manifest, p) {
   let residentsAdded = 0;
 
   const householdSize = manifest.household_size ?? 1.9;
-  // The office rent is a control of four named scenario stops, one sourced
-  // (the $54 published asking figure) and three ours, each carrying its own
-  // justification in the schema. The default is the sourced stop, at which
-  // nothing converts - that empty map is the sandbox's finding, and the other
-  // stops are what it costs to disagree. The old office_rent_discount form is
-  // still honoured so an earlier submission replays unchanged.
-  const officeRent =
-    p.office_rent ?? A.officeRentBase * (1 - (p.office_rent_discount ?? 0));
-  const capOffice = p.cap_rate_office ?? p.cap_rate ?? 0.055;
-  const capResidential = p.cap_rate_residential ?? p.cap_rate ?? 0.055;
+  // The seven deal numbers come from the scenario the reader picked, or from
+  // the sliders under it once one has been moved. Each scenario is a published
+  // set and its note says where every figure came from; the sandbox does not
+  // hold an opinion about which is right.
+  const officeRent = p.office_rent ?? A.officeRentBase;
+  const capOffice = p.cap_rate_office ?? 0.055;
+  const capResidential = p.cap_rate_residential ?? 0.05;
+  const opexOffice = p.opex_office ?? 0.35;
+  const opexResidential = p.opex_residential ?? 0.2;
   const sfPerUnit = sfPerUnitAt(manifest, p.min_units_for_conversion_sample ?? 10);
   const officeScores = [];
   const sfPerJob = jobDensity(manifest);
@@ -198,24 +201,22 @@ export function compute(buildings, manifest, p) {
     const unitsMade = Math.floor(office / sfPerUnit);
     if (p.incentive_467m && !qualifies467m(buildings, base, unitsMade)) continue;
 
-    // The deal, tested at each snapshot year. Office rent drifts; residential
-    // rent does not, which is itself an assumption and a strong one.
-    const resValue = value(p.residential_rent, capResidential, p);
+    // The deal. One test, at 2040: the apartments are worth more than the
+    // offices given up, after paying for the work. The cost is not flat across
+    // buildings - a badly shaped one costs more per foot, scaled by its own
+    // score - which is what makes this a per-building test rather than one
+    // district-wide answer.
+    const resValue = value(p.residential_rent, capResidential, opexResidential);
     const costSf = p.conversion_cost_sf * (1 + A.costPenalty * (1 - score[i]));
-    for (let y = 0; y < years.length; y++) {
-      const yr = years[y];
-      const drift = Math.pow(1 + p.office_rent_trend, yr - A.baseYear);
-      const officeValue = value(officeRent * drift, capOffice, p);
-      if (resValue - costSf > officeValue) {
-        convertedIn[i] = yr;
-        unitsOf[i] = unitsMade;
-        break;
-      }
+    const officeValue = value(officeRent, capOffice, opexOffice);
+    if (resValue - costSf > officeValue) {
+      converts[i] = 1;
+      unitsOf[i] = unitsMade;
     }
   }
 
   for (let i = 0; i < n; i++) {
-    if (convertedIn[i] < 0 || convertedIn[i] > p.year) continue;
+    if (!converts[i]) continue;
     const base = i * STRIDE;
     state[i] = 2;
     converted += 1;
@@ -249,7 +250,7 @@ export function compute(buildings, manifest, p) {
   const gensler = officeScores.length ? officeScores[Math.max(0, k - 1)] : null;
 
   return {
-    convertedIn, state, unitsOf, score, gensler,
+    converts, state, unitsOf, score, gensler,
     metrics: {
       officeBuildings, converted, unitsTotal, officeRemoved, residentsAdded,
       officeJobsHere, officeJobsRemoved, residentsHere,
@@ -259,35 +260,45 @@ export function compute(buildings, manifest, p) {
 }
 
 /** Color per building, from the same pass. */
+// The building palette, all views. Converted buildings are dark green rather
+// than the orange they used to be, because the population view draws people
+// from homes in that green and the two have to be the same claim.
+export const BUILDING_COLOR = {
+  office: [201, 211, 224],        // #c9d3e0, light blue-gray
+  converted: [31, 111, 63],       // #1f6f3f, dark green
+  existing_homes: [217, 201, 163], // #d9c9a3, tan
+  other: [189, 189, 189]          // #bdbdbd, gray
+};
+
+/** Color per building, from the same pass. */
 export function colors(result, buildings, p) {
   const n = result.state.length;
   const rgba = new Uint8Array(n * 4);
   for (let i = 0; i < n; i++) {
     const o = i * 4;
     const base = i * STRIDE;
-    let r = 176, g = 176, b = 172, a = 220;   // neither office nor converted
     if (result.state[i] === 3) {              // outside the selected district
       rgba[o] = 228; rgba[o + 1] = 228; rgba[o + 2] = 224; rgba[o + 3] = 70;
       continue;
     }
 
-    if (p.colour_by === 'convertibility') {
-      const v = Math.max(0, Math.min(1, result.score[i]));
-      r = Math.round(238 - 200 * v); g = Math.round(233 - 150 * v); b = Math.round(222 - 60 * v);
-    } else if (p.colour_by === 'year_converted') {
-      const y = result.convertedIn[i];
-      if (y < 0 || y > p.year) { r = 200; g = 200; b = 196; }
-      else {
-        const t = (y - 2025) / 25;
-        r = Math.round(40 + 200 * t); g = Math.round(110 - 40 * t); b = Math.round(160 - 90 * t);
+    let c;
+    if (p.view === 'convertibility') {
+      // The score, ramped, with the threshold marked in the legend. Only the
+      // office buildings carry a score; everything else is the flat other-gray.
+      if (result.state[i] === 0) {
+        c = buildings[base + RES_AREA] > 0
+          ? BUILDING_COLOR.existing_homes : BUILDING_COLOR.other;
+      } else {
+        const v = Math.max(0, Math.min(1, result.score[i]));
+        c = [Math.round(238 - 200 * v), Math.round(233 - 150 * v), Math.round(222 - 60 * v)];
       }
-    } else {
-      // use: office, residential, converted
-      if (result.state[i] === 2) { r = 205; g = 74; b = 60; }        // converted
-      else if (result.state[i] === 1) { r = 60; g = 92; b = 138; }   // still office
-      else if (buildings[base + RES_AREA] > 0) { r = 150; g = 160; b = 150; }
-    }
-    rgba[o] = r; rgba[o + 1] = g; rgba[o + 2] = b; rgba[o + 3] = a;
+    } else if (result.state[i] === 2) c = BUILDING_COLOR.converted;
+    else if (result.state[i] === 1) c = BUILDING_COLOR.office;
+    else if (buildings[base + RES_AREA] > 0) c = BUILDING_COLOR.existing_homes;
+    else c = BUILDING_COLOR.other;
+
+    rgba[o] = c[0]; rgba[o + 1] = c[1]; rgba[o + 2] = c[2]; rgba[o + 3] = 220;
   }
   return rgba;
 }

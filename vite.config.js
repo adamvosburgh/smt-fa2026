@@ -8,10 +8,18 @@ import { sveltekit } from '@sveltejs/kit/vite';
 // genuinely confusing way (clean 200 from the server, dead client).
 const SMT_MODE = process.env.SMT_MODE === 'archive' ? 'archive' : 'live';
 
+// SMT_SHOW_UNPUBLISHED=1 npm run dev shows tutorials and assignments that have
+// not reached their `publish:` date yet, each tagged with the date it goes live.
+// Exposed as a build-time constant for the same reason as SMT_MODE: a missing
+// PUBLIC_ variable would make $env/static/public throw at hydration on every
+// page, and a fresh clone has to run with no .env file at all.
+const SMT_SHOW_UNPUBLISHED = process.env.SMT_SHOW_UNPUBLISHED === '1';
+
 export default {
   plugins: [sveltekit()],
   define: {
-    __SMT_MODE__: JSON.stringify(SMT_MODE)
+    __SMT_MODE__: JSON.stringify(SMT_MODE),
+    __SMT_SHOW_UNPUBLISHED__: JSON.stringify(SMT_SHOW_UNPUBLISHED)
   },
   // Note: do NOT set server.fs.allow here. content/, submissions/ and static/
   // are all inside the project root, which Vite already allows - and setting

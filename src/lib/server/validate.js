@@ -6,7 +6,7 @@
 import Ajv from 'ajv/dist/2020.js';
 import manifestSchema from '../../../schemas/manifest.schema.json' with { type: 'json' };
 import { bySlug } from '../sandboxes/index.js';
-import { doc } from '../content.js';
+import { doc, isLive, publishDate } from '../content.js';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 const validateManifest = ajv.compile(manifestSchema);
@@ -98,6 +98,12 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   const a = doc('assignments', sandbox);
   if (!a || a.submit !== true) {
     add('assignment/not-open', `"${sandbox}" is not an assignment that takes uploads.`);
+    return;
+  }
+  // An assignment that has not reached its `publish:` date is not on the site,
+  // so it does not take uploads either. Same test as the pages use.
+  if (!isLive(a)) {
+    add('assignment/not-open', `"${a.title}" is not open yet. It publishes on ${publishDate(a)}.`);
     return;
   }
   if (!validateManifest(manifest)) {

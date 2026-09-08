@@ -5,7 +5,7 @@ author: Adam Vosburgh
 sequence: 6
 cat: tutorial
 devnotes: true
-published: true
+published: false
 ---
 
 <!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->

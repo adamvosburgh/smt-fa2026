@@ -49,7 +49,7 @@ This course sees the critical use of AI tools as a method of expanding the *tech
 
 ## Weekly Schedule, Readings, and Assignments
 
-All tutorials and assignments are on this website. Readings are listed under the week they are due and are on the course drive. Every assignment is submitted through its page here, and appears under [Student Work](/gallery/). Each week also links to a short list of projects to look at before class, on the [projects page](/resources/references/).
+All tutorials and assignments are on this website. Readings are listed under the week they are due and are in the [course folder](https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=pmst9bsd&dl=0). Every assignment is submitted through its page here, and appears under [Student Work](/gallery/). Each week also links to a short list of projects to look at before class, on the [projects page](/resources/references/).
 
 ### 9/10 | Week 1 | Introduction and Overview {#week-1}
 
@@ -143,7 +143,7 @@ Pin-up of the Assignment 4 sandboxes. Second half: data layers on physical space
 #### Readings due
 House, Brian. "Stalking the Smart City." *Urban Omnibus*, 2019.
 
-Halpern, Orit, Robert Mitchell, and Bernard Dionysius Geoghegan. "The Smartness Mandate: Notes toward a Critique." *Gray Room* 68 (2017).
+Halpern, Orit, Robert Mitchell, and Bernard Dionysius Geoghegan. "The Smartness Mandate: Notes toward a Critique." *Grey Room* 68 (2017).
 
 Weckert, Simon. "Google Maps Hacks." 2020. [Five minutes; browse the project.]
 
@@ -213,7 +213,7 @@ Steyerl, Hito. *Medium Hot: Images in the Age of Heat*. Verso, 2025. [Selections
 
 Wiener, Anna. "How Perfectly Can Reality Be Simulated?" *The New Yorker*, April 22, 2024.
 
-Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course drive]
+Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course folder](https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=pmst9bsd&dl=0)
 
 #### Assignment 6 due – extra credit, optional
 
@@ -261,23 +261,23 @@ After completing the course participants will:
 
 ## AI Policy
 
-This course makes use of AI tools as a method to expand the ambition of projects
-
-This course teaches you to build software with large language models, and it provides an assistant on this site that knows the sandboxes and tutorials. Used to understand, adapt, and build, AI is part of the method here, and learning to work with it critically is part of the course.
+This course makes use of AI tools as a method to expand the ambition of projects, and to make the technical portions of the course possible to those without a programming background. 
 
 The line this course draws is between assistance in understanding and substitution of authorship. Students are welcome to use AI tools, except for the purpose of:
 
 - Producing original writing that the student turns in as their own work. Your gallery texts, descriptions, and briefs must be yours.
 - Prompting a LLM to produce data. This will ALWAYS result in fabricated data. If the data you want doesn't exist, collect it, or scale the project to what does.
-- Generating an artifact you cannot explain. If you cannot say what your sandbox assumes, what data it runs on, and what rule it steps by, it is not your project, whoever typed it.
+- Generating an artifact you cannot explain. If you cannot say what your sandbox assumes, what data it runs on, and what rule it steps by, it is not your project.
 
-Work that uses AI in these ways, and in other ways that the instructor determines are counter to the objectives of the class, will not be awarded points. [Whether transcripts of your sessions with a coding agent are submitted alongside work: TBD before Assignment 3.]
+Work that uses AI in these ways, and in other ways that the instructor determines are counter to the objectives of the class, will not be awarded points. 
 
 ## Software
 
-Simulation is not a software. This course will not seek to provide proficiency in a particular platform.
+Simulation is not tied to any one particular software. The course privileges code over graphical user interface platforms (like Rhino,) because they are more flexible, more legible and editable to LLMs, and lend themselves to sharing work. 
 
-For the first three weeks we write Python in [Google Colab](https://colab.research.google.com/), which needs nothing installed; instructions for running the same code on your own computer are in [Resources](/resources/local-python/). From week four you will need a coding agent (Claude Code, Codex, Gemini CLI, or similar; one is fine, and the tutorials use Claude Code). Everything you make is a web page and lives on this site. Knowledge of 3D modeling software will be useful for some final projects but is not required.
+For the first three weeks we write Python in [Google Colab](https://colab.research.google.com/), which needs nothing installed; instructions for running the same code on your own computer are in [Resources](/resources/local-python/). 
+
+From week four a coding agent (Claude Code, Codex, Gemini CLI) is recommended, but not required. Everything you make is a web page and lives on this site. Knowledge of 3D modeling software will be useful for some final projects but is not required.
 
 ## Academic Integrity
 
@@ -306,7 +306,6 @@ Learning how to troubleshoot technical issues and locate relevant resources is c
 - a clear description of what you are trying to do, and what the problem is
 - a summary of the steps you have already taken to address the issue
 - screenshots or error messages (where applicable)
-- a link to at least one website you consulted for assistance before writing the email
 
 ## Student Work Is Public
 

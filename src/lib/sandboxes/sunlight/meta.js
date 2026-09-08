@@ -5,7 +5,7 @@
 //
 // `title` is a working title. Nothing depends on it.
 export default {
-  published: true,
+  published: false,
   slug: 'sunlight',
   title: 'Direct Sunlight in a Space',
   subtitle:

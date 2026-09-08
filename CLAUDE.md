@@ -31,12 +31,20 @@ npm install
 npm run sync      # mirror content images, submissions and data/processed into static/
                   #   (also runs automatically via predev / prebuild)
 npm run dev       # dev server
+SMT_SHOW_UNPUBLISHED=1 npm run dev
+                  # ...also showing everything held back: pages past a
+                  #   `publish:` date, anything with `published: false`
+                  #   (dev notes, the sunlight sandbox, the _example
+                  #   submissions), and hidden sandboxes. Each is tagged
+                  #   `unpublished` or `publishes 9/17` so a preview is never
+                  #   mistaken for the live site. See src/lib/visibility.js.
 npm run build     # production build (adapter-node)
 npm start         # run the built server
 npm run covers    # Playwright cover images + build-doctor stage 2
                   #   npm run covers -- --base http://localhost:5173
                   #   CHROMIUM_PATH=... to use an existing browser
 npm run audit:freeze
+node scripts/agent-frame-time.js --base http://localhost:5173   # mouse agents cost
 npm run tokens -- "Lastname, Firstname"
 ```
 
