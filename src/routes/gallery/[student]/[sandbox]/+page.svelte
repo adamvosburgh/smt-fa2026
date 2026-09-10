@@ -119,6 +119,17 @@
   <div class="content-article desc">{@html data.sub.description}</div>
 {/if}
 
+{#if isAssignment && data.sub.answers && (data.assignment?.questions ?? []).length}
+  <dl class="answers">
+    {#each data.assignment.questions as q (q.key)}
+      {#if data.sub.answers[q.key]}
+        <dt>{q.label}</dt>
+        <dd>{data.sub.answers[q.key]}</dd>
+      {/if}
+    {/each}
+  </dl>
+{/if}
+
 {#if !isAssignment || isModel}
   <details class="params-dump">
     <summary>Parameters as submitted</summary>
@@ -132,6 +143,9 @@
   .who { font-size: 0.75rem; color: var(--fg-dim); margin: 0 0 1rem; }
   .gallery-text { font-size: 0.95rem; line-height: 1.7; max-width: 60ch; margin: 0; }
   .desc { margin-top: 2rem; max-width: 60ch; }
+  .answers { margin-top: 2rem; max-width: 60ch; font-size: 0.9rem; }
+  .answers dt { font-size: 0.72rem; font-weight: 700; margin-top: 1.1rem; }
+  .answers dd { margin: 0.3rem 0 0; line-height: 1.6; white-space: pre-wrap; }
   .params-dump { margin-top: 2.5rem; font-size: 0.72rem; }
   .params-dump summary { cursor: pointer; color: var(--fg-dim); }
   .params-dump pre { background: var(--code-bg); padding: 0.75rem; overflow-x: auto; margin-top: 0.5rem; }

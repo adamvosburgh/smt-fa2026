@@ -1,0 +1,9 @@
+Student submissions land here, one folder per student:
+
+  src/submissions/<lastname-firstname>/<sandbox-or-assignment-slug>/
+
+/api/submit writes them; src/lib/submissions.js reads them. The folder is kept
+in git while it is empty so that scripts/sync-assets.js still has a source to
+mirror (and therefore to prune static/submissions from).
+
+There are deliberately no example submissions. Do not add one.

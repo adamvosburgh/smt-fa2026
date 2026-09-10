@@ -4,27 +4,25 @@ date: "2026-09-06"
 author: Adam Vosburgh
 sequence: 1
 cat: resource
-published: false
+published: true
+# Tells the resources page to print systemPrompt() under "The prompt" below.
+renders: assistant-prompt
 ---
 
-There is an assistant on this site. It has the five sandboxes, their dev notes, and the weekly tutorials in its context. It is optional. Every tutorial stands on its own, and no tutorial will tell you to ask the assistant instead of explaining something.
+There is an assistant in the corner of every page on this site. It has a short description of each sandbox, the section headings of every tutorial, and the full text of whichever page you have open. So it is most useful when you open it from the tutorial you are working through.
 
-## What it does
+## What it is for
 
-The assistant is built to explain and to suggest changes. If you are stuck, it will walk you through adapting the worked example one step at a time. If that is not working, it will offer to write the code for you, and it will say so when it does.
+Many of the assignments ask you to take a tutorial and change it, with your own data or toward your own project. If you get stumped somewhere in that, this is a place to ask. The assistant will walk you through the change a step at a time. If that isn't working, it will offer to write the code for you, and it will say so when it does.
 
-It will not produce data for you. Prompting an LLM for a dataset always results in fabricated data, and in this class that is the specific failure we are studying.
-
-It is not the coding agent used in Tutorial 4. It cannot read or write files on your computer. To build a sandbox, use Claude Code or an equivalent, as the tutorial describes.
+Two things it won't do. It won't make up a dataset for you (a language model asked for data will invent it, and this class is partly about that problem). And it can't see or change files on your computer. To build a sandbox, use Claude Code or something like it, as [Tutorial 4](/tutorials/04-notebook-to-sandbox/) describes.
 
 ## The prompt
 
-The system prompt is published. It is in `src/lib/server/assistant-prompt.js` in the repository, and the version currently running is rendered below.
-
-**PLACEHOLDER — wire this page to render `systemPrompt()` verbatim.**
+Everything the assistant is told is printed below. It lives in `src/lib/assistant-prompt.js` in the repository, and this is the version running as of this build. The text of the page you are on is added to it when you send a message.
 
 ## Limits
 
-Students get a large daily allowance, unlocked by the same token you use to submit. Anyone else gets a small one, enough to see what the assistant is. The site as a whole has a daily ceiling; when it is reached the assistant says so and the rest of the site keeps working.
+Each of you has a daily allowance of messages, tied to the same token you submit with. Visitors without a token get a smaller one. The site as a whole has a daily cap, and if it is reached the assistant will say so until the next day.
 
-Conversations are logged. I read them to find out which tutorial sections are confusing, the same way I read the submission checker's output. If you do not want your conversations read, do not use the assistant. Nothing in the course requires it.
+I keep a log of the conversations and read them to see which parts of the tutorials are giving people trouble. If you would rather I not read yours, skip the assistant; nothing in the class depends on it.

@@ -45,7 +45,8 @@ import { identify, sameOrigin } from '$lib/server/auth.js';
 import { reserve, record, status } from '$lib/server/budget.js';
 import { config } from '$lib/server/config.js';
 import { read, update } from '$lib/server/store.js';
-import { systemPrompt } from '$lib/server/assistant-prompt.js';
+import { systemPrompt } from '$lib/assistant-prompt.js';
+import { pageText } from '$lib/server/page-text.js';
 
 const SESSION_COOKIE = 'smt_sid';
 
@@ -69,10 +70,22 @@ export async function POST({ request, cookies, getClientAddress }) {
 
   // Context the page supplies about where the student is. It is a hint for the
   // prompt, not a capability - nothing here can widen what the assistant can do.
+  //
+  // The client sends `sandbox` from page.params.slug, which is the slug of
+  // whatever [slug] route it is on - a tutorial on /tutorials/01-setting-up/,
+  // not a sandbox. Trust it only under /sandboxes/, and take the slug from the
+  // path rather than from the body while we are here.
+  const page = String(body.page ?? '').slice(0, 200);
+  const onSandbox = /^\/sandboxes\/([^/]+)\/?$/.exec(page);
   const context = {
-    sandbox: String(body.sandbox ?? '').slice(0, 40),
-    page: String(body.page ?? '').slice(0, 200)
+    sandbox: onSandbox ? onSandbox[1] : '',
+    page
   };
+
+  // The text of the page itself. Server-side, from the site's own markdown -
+  // the client sends a pathname and nothing more, so this cannot be used to
+  // push text of someone's choosing into the prompt.
+  context.pageText = pageText(context.page);
 
   const who = await identify(request);
   let sid = cookies.get(SESSION_COOKIE);
@@ -139,9 +152,20 @@ export async function POST({ request, cookies, getClientAddress }) {
   }));
 
   await mkdir(path.join(config.stateDir), { recursive: true });
+  // The page text is NOT logged, only its length. The log is read to see which
+  // sections keep getting asked about; a copy of the tutorial on every line
+  // would bury that under megabytes of text the repository already holds.
+  const { pageText: text, ...logged } = context;
   await appendFile(
     path.join(config.stateDir, 'assistant-log.jsonl'),
-    JSON.stringify({ t: new Date().toISOString(), identityKey, context, message, reply, usage }) + '\n'
+    JSON.stringify({
+      t: new Date().toISOString(),
+      identityKey,
+      context: { ...logged, pageTextChars: text?.length ?? 0 },
+      message,
+      reply,
+      usage
+    }) + '\n'
   );
 
   return json({ ok: true, reply });

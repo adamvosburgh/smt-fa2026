@@ -28,7 +28,7 @@ export async function POST({ request }) {
       {
         ok: false,
         error:
-          'This needs your submission token. You were given one at the start of the semester - paste it once and the browser keeps it. Lost it? Email me and I will reissue.'
+          'This needs your submission token. Open the enrollment link I emailed you at the start of the semester and this browser will remember it, or paste the token itself into the box. Lost the email? Ask me and I will send a new one.'
       },
       { status: 401 }
     );

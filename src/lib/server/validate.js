@@ -27,6 +27,7 @@ export const FAILURE_MAP = {
   'assignment/not-open': '/assignments/',
   'assignment/no-file': '#submission',
   'assignment/bad-type': '#submission',
+  'assignment/missing-answer': '#requirements',
   // A model upload is the one assignment kind whose pointer goes to a SANDBOX
   // dev note rather than to the assignment page, because what went wrong is in
   // the file, not in the hand-in. The assignment's `sandbox_ref` frontmatter
@@ -113,6 +114,23 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   }
   if (!manifest.gallery_text?.trim()) {
     add('manifest/missing-gallery-text', 'The two-sentence gallery text is required.');
+  }
+
+  // Short-answer questions from the assignment's `questions:` frontmatter. Each
+  // one needs an answer, and only the keys the assignment asks for are kept.
+  const questions = Array.isArray(a.questions) ? a.questions.filter((q) => q?.key) : [];
+  if (questions.length) {
+    const given = manifest.answers && typeof manifest.answers === 'object' ? manifest.answers : {};
+    manifest.answers = Object.fromEntries(
+      questions.map((q) => [q.key, String(given[q.key] ?? '').trim().slice(0, 2000)])
+    );
+    for (const q of questions) {
+      if (!manifest.answers[q.key]) {
+        add('assignment/missing-answer', `"${q.label ?? q.key}" needs an answer.`);
+      }
+    }
+  } else {
+    delete manifest.answers;
   }
 
   const kinds = Array.isArray(a.accepts) && a.accepts.length ? a.accepts : ['image', 'pdf'];

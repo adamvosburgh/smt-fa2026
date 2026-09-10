@@ -37,9 +37,10 @@ function parse(path, mod) {
   };
 }
 
-// `published: false` in a manifest holds a submission back - the placeholder
-// entries under _example are held back that way. SMT_SHOW_UNPUBLISHED=1 shows
-// them, the same switch that shows unpublished pages and sandboxes.
+// `published: false` in a manifest holds a submission back.
+// SMT_SHOW_UNPUBLISHED=1 shows those, the same switch that shows unpublished
+// pages and sandboxes. There are no example submissions in the repo - the
+// gallery is empty until a student submits, and that is the intended state.
 export const all = Object.entries(manifests)
   .map(([p, mod]) => parse(p, mod))
   .filter((s) => SHOW_UNPUBLISHED || s.published !== false)

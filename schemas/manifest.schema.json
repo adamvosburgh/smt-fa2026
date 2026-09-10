@@ -50,6 +50,14 @@
       "type": "string",
       "maxLength": 20000
     },
+    "answers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 2000
+      },
+      "description": "Assignment submissions only: answers to the assignment's `questions:` frontmatter, keyed by question key. Shown on the gallery page under the question's label."
+    },
     "params": {
       "type": "object",
       "description": "Validated separately against the per-sandbox schema in src/lib/sandboxes/<slug>/schema.json."

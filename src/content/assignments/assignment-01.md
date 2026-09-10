@@ -9,21 +9,40 @@ publish: "2026-09-10"
 submit: true
 accepts: [image]
 due: "9/17"
+# The boxes on the upload form, in this order. Left out, an assignment gets
+# title, gallery_text, description, work, extras.
+form: [title, work, gallery_text]
+# Short-answer questions, asked on the form after the boxes above. The answers
+# travel with the submission and show on the student's gallery page.
+questions:
+  - key: program
+    label: The program you are enrolled in
+  - key: interest
+    label: Why you are interested in this class
+  - key: suggestions
+    label: Are there any additional demos, sandboxes, or tutorials that you think would be helpful towards the work you want to do in this class?
 ---
 
 ### Due: 9/17
 
 ### What
 
-Upload one image of something you have made, in any medium, with two sentences of gallery text.
-
-This assignment exists so that you use the submission form once before a real deadline. It also gives the class a first look at who is in the room.
+Say Hi! Upload one image of something you have made, in any medium, with two sentences of gallery text.
 
 ### Requirements
 
-- One image, PNG or JPG, under 15MB. A drawing, a photograph of a model, a render, a map, a screenshot of code, a loaf of bread (it doesn't have to be architecture...).
-- Two sentences of gallery text, written as if they were on the wall next to the work. The [V&A guide](https://www.vam.ac.uk/__data/assets/pdf_file/0009/238077/Gallery-Text-at-the-V-and-A-Ten-Point-Guide-Aug-2013.pdf) is the reference.
-- A title.
+On the submission form, please provide:
+
+- Your token
+- A Title (this can just be your name for this exercise)
+- One image, PNG or JPG, under 15MB. We will use these to introduce ourselves in class, so make it whatever you would like to talk about.
+- Two sentences of gallery text, written as if they were on the wall next to the work.
+
+And then, a few more things for my benefit:
+
+- The program you are enrolled in
+- Why you are interested in this class
+- Are there any additional demos, sandboxes, tutorials, that you think would be helpful towards the work you want to do in this class? I will use these to tailor the technical support I offer.
 
 ### Submission
 

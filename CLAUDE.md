@@ -16,6 +16,10 @@ match them rather than improving on them.
 
 - **Never `git commit` or `git push`.** Adam commits. Leave the working tree
   with your changes in it and say what you changed.
+- **No example submissions.** `src/submissions/` is empty until students submit,
+  and an empty gallery is the intended state. Older build docs in the vault ask
+  for a worked `_example/<slug>/` entry - that is out of date; never recreate
+  one, and never write a manifest under `src/submissions/` by hand.
 - **Never invent data.** No fabricated URLs, field names, figures, or datasets.
   If a source is unverified, say so in the file. There is a note in
   `utilities/constraints.md` in the Obsidian vault about which URLs in the
@@ -34,8 +38,8 @@ npm run dev       # dev server
 SMT_SHOW_UNPUBLISHED=1 npm run dev
                   # ...also showing everything held back: pages past a
                   #   `publish:` date, anything with `published: false`
-                  #   (dev notes, the sunlight sandbox, the _example
-                  #   submissions), and hidden sandboxes. Each is tagged
+                  #   (dev notes, the sunlight sandbox), and hidden
+                  #   sandboxes. Each is tagged
                   #   `unpublished` or `publishes 9/17` so a preview is never
                   #   mistaken for the live site. See src/lib/visibility.js.
 npm run build     # production build (adapter-node)

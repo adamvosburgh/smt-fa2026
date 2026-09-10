@@ -1,7 +1,7 @@
 // PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide.
 //
 // subtitle, controls and cannotSee are read verbatim into the course
-// assistant's prompt by src/lib/server/assistant-prompt.js, so they must agree
+// assistant's prompt by src/lib/assistant-prompt.js, so they must agree
 // with card.md.
 export default {
   slug: 'anthromes',

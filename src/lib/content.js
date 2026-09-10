@@ -52,19 +52,40 @@ function split(source) {
   return { data: parseYaml(m[1]) ?? {}, content: source.slice(m[0].length) };
 }
 
+// Section headings, read back out of the RENDERED html rather than out of the
+// markdown, so the ids are the ones markdown-it-anchor actually put on the page
+// and a heading listed here always matches a working anchor. The permalink
+// plugin wraps the heading text in an <a>, so the inner tags come off.
+//
+// The assistant's prompt carries this index for every live tutorial - see
+// src/lib/assistant-prompt.js - which is how it can name a section rather than
+// paraphrase one it has not read.
+const HEADING = /<h([23])\b[^>]*\bid="([^"]*)"[^>]*>([\s\S]*?)<\/h\1>/g;
+
+function headingsOf(html) {
+  const out = [];
+  for (const [, level, id, inner] of html.matchAll(HEADING)) {
+    const text = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (text) out.push({ level: Number(level), id, text });
+  }
+  return out;
+}
+
 function parse(filepath, source) {
   const { data, content } = split(source);
   const rel = filepath.replace(/^\/src\/content\//, '').replace(/\.md$/, '');
   const [section, ...rest] = rel.split('/');
   const slug = rest.join('/') || section;
+  // Rendered lazily-ish; cheap enough at this corpus size to do eagerly.
+  const html = md.render(content);
   return {
     ...data,
     section,
     slug,
     url: section === 'syllabus' ? '/' : `/${section}/${slug}/`,
     filepath,
-    // Rendered lazily-ish; cheap enough at this corpus size to do eagerly.
-    html: md.render(content),
+    html,
+    headings: headingsOf(html),
     excerpt: content.replace(/[#*`>\-\[\]]/g, '').trim().slice(0, 240)
   };
 }

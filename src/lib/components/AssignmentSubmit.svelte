@@ -21,6 +21,20 @@
   let { doc, onclose } = $props();
 
   const accepts = Array.isArray(doc.accepts) && doc.accepts.length ? doc.accepts : ['image', 'pdf'];
+
+  // Which boxes the form shows, and in what order, from the assignment's `form:`
+  // frontmatter. Title, gallery text and the work are always asked for, because
+  // the server requires them; an assignment can leave out description and extras.
+  const FORM_DEFAULT = ['title', 'gallery_text', 'description', 'work', 'extras'];
+  const form = [...(Array.isArray(doc.form) && doc.form.length ? doc.form : FORM_DEFAULT)];
+  for (const f of ['title', 'gallery_text', 'work']) if (!form.includes(f)) form.push(f);
+
+  // Short-answer questions from the assignment's `questions:` frontmatter, a
+  // list of { key, label }. They come after the boxes. The answers go in the
+  // manifest and the gallery page shows them under the same labels.
+  const questions = Array.isArray(doc.questions) ? doc.questions.filter((q) => q?.key && q?.label) : [];
+  let answers = $state(Object.fromEntries(questions.map((q) => [q.key, ''])));
+  const answered = $derived(questions.every((q) => answers[q.key]?.trim()));
   const EXT = { image: '.png,.jpg,.jpeg,.webp', pdf: '.pdf', html: '.html', model: '.glb' };
   const accept = accepts.map((k) => EXT[k]).filter(Boolean).join(',');
 
@@ -86,6 +100,7 @@
             }
           : {},
         primary: `assets/${primary.name}`,
+        answers: questions.length ? $state.snapshot(answers) : undefined,
         app_version: '0.1.0'
       })
     );
@@ -120,54 +135,69 @@
     <p class="hint">You were given this at the start of the semester. The browser keeps it.</p>
   {/if}
 
-  <label>Title<input bind:value={title} maxlength="140" /></label>
-  <label>
-    Gallery text
-    <textarea bind:value={galleryText} rows="3" maxlength="600"
-      placeholder="Two sentences. Text that might accompany a work of art."></textarea>
-  </label>
-  <label>
-    Description
-    <textarea bind:value={description} rows="5"
-      placeholder="Longer text. Sources, what you did, what it can't see."></textarea>
-  </label>
-  <label>
-    The work ({accepts.join(', ')})
-    <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
-  </label>
-  <p class="hint">
-    {#if isModel}This is the model the gallery runs. One <code>.glb</code>, in meters, under 15MB,
-    with the objects named the way the tutorial describes.{:else}This is the file the gallery
-    shows.{/if}
-    {#if accepts.includes('html')}An HTML file must be one self-contained file - styles, scripts
-    and data inline - because the gallery runs it in a sandboxed frame that can't fetch anything
-    else.{/if}
-  </p>
-
-  {#if isModel}
-    <fieldset class="site">
-      <legend>Where the model is</legend>
+  {#each form as f (f)}
+    {#if f === 'title'}
+      <label>Title<input bind:value={title} maxlength="140" /></label>
+    {:else if f === 'gallery_text'}
+      <label>
+        Gallery text
+        <textarea bind:value={galleryText} rows="3" maxlength="600"
+          placeholder="Two sentences. Text that might accompany a work of art."></textarea>
+      </label>
+    {:else if f === 'description'}
+      <label>
+        Description
+        <textarea bind:value={description} rows="5"
+          placeholder="Longer text. Sources, what you did, what it can't see."></textarea>
+      </label>
+    {:else if f === 'work'}
+      <label>
+        The work ({accepts.join(', ')})
+        <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
+      </label>
       <p class="hint">
-        The sandbox reads everything else out of the file. It can't work out where on earth your
-        model sits, so these four travel with it.
+        {#if isModel}This is the model the gallery runs. One <code>.glb</code>, in meters, under 15MB,
+        with the objects named the way the tutorial describes.{:else}This is the file the gallery
+        shows.{/if}
+        {#if accepts.includes('html')}An HTML file must be one self-contained file - styles, scripts
+        and data inline - because the gallery runs it in a sandboxed frame that can't fetch anything
+        else.{/if}
       </p>
-      <div class="grid">
-        <label>Latitude<input type="number" step="0.0001" bind:value={site.latitude} /></label>
-        <label>Longitude<input type="number" step="0.0001" bind:value={site.longitude} /></label>
-        <label>
-          Time zone
-          <select bind:value={site.timezone}>
-            {#each zones as z, i (z)}<option value={z}>{zoneLabels[i] ?? z}</option>{/each}
-          </select>
-        </label>
-        <label>North offset<input type="number" step="1" bind:value={site.north_deg} /></label>
-      </div>
-    </fieldset>
-  {/if}
-  <label>
-    Anything else (optional, 15MB total)
-    <input type="file" multiple onchange={(e) => (extras = [...e.currentTarget.files])} />
-  </label>
+
+      {#if isModel}
+        <fieldset class="site">
+          <legend>Where the model is</legend>
+          <p class="hint">
+            The sandbox reads everything else out of the file. It can't work out where on earth your
+            model sits, so these four travel with it.
+          </p>
+          <div class="grid">
+            <label>Latitude<input type="number" step="0.0001" bind:value={site.latitude} /></label>
+            <label>Longitude<input type="number" step="0.0001" bind:value={site.longitude} /></label>
+            <label>
+              Time zone
+              <select bind:value={site.timezone}>
+                {#each zones as z, i (z)}<option value={z}>{zoneLabels[i] ?? z}</option>{/each}
+              </select>
+            </label>
+            <label>North offset<input type="number" step="1" bind:value={site.north_deg} /></label>
+          </div>
+        </fieldset>
+      {/if}
+    {:else if f === 'extras'}
+      <label>
+        Anything else (optional, 15MB total)
+        <input type="file" multiple onchange={(e) => (extras = [...e.currentTarget.files])} />
+      </label>
+    {/if}
+  {/each}
+
+  {#each questions as q (q.key)}
+    <label>
+      {q.label}
+      <textarea bind:value={answers[q.key]} rows="3" maxlength="2000"></textarea>
+    </label>
+  {/each}
 
   {#if result}
     {#if result.ok}
@@ -185,7 +215,7 @@
 
   <div class="actions">
     <button type="button" onclick={onclose}>close</button>
-    <button type="button" class="go" disabled={busy || !title || !galleryText || !primary} onclick={submit}>
+    <button type="button" class="go" disabled={busy || !title || !galleryText || !primary || !answered} onclick={submit}>
       {busy ? 'sending…' : 'submit'}
     </button>
   </div>

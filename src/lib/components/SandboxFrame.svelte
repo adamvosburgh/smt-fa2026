@@ -57,6 +57,12 @@
   let ready = $state(false);
   let submitting = $state(false);
 
+  // SUBMISSIONS ARE OFF. The "Submit this state" button is off every sandbox
+  // for now; Adam is redesigning the flow. The button, the dialog and
+  // /api/submit are all still here and still wired to each other - flip this to
+  // true and the button comes back in both layouts. Nothing else changes.
+  const SUBMIT_ENABLED = false;
+
   const full = $derived(layout === 'full' && showChrome);
   // A metrics object carrying `rows` is a table (bathtub reports one row per
   // waterline); anything else is the flat list every other sandbox reports.
@@ -450,7 +456,7 @@
             {#if mode === 'edit' && schema}
               <ParamPanel {schema} bind:params {transport} {assets} panel="assumptions" />
             {/if}
-            {#if mode === 'edit' && submittable}
+            {#if mode === 'edit' && submittable && SUBMIT_ENABLED}
               <button class="submit" type="button" onclick={() => (submitting = true)}
                 >Submit this state</button
               >
@@ -522,7 +528,7 @@
         {@render metricList()}
       </div>
 
-      {#if mode === 'edit' && submittable}
+      {#if mode === 'edit' && submittable && SUBMIT_ENABLED}
         <button class="submit" type="button" onclick={() => (submitting = true)}
           >Submit this state</button
         >
