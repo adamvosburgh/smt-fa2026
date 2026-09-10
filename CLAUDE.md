@@ -185,12 +185,17 @@ callout for what the class version has that the student's won't.
 
 ## Sandbox prose
 
-Every sandbox carries `card.md` with five `##` sections in this order: What this
-is / What it's trying to show / How it works / What it assumes / What it can't
-see. Sources are footnotes on the sentences that use them, each carrying the
-citation plus one specific thing about that dataset. `cards.js` renders each
-section separately, so a footnote must be defined inside the section that
+Every sandbox carries `card.md` with two `##` sections in this order:
+**Description** (two or three short paragraphs) and **Assumptions +
+Limitations** (one flat bullet list). Sources are footnotes on the sentences
+that use them, each carrying the citation plus one specific thing about that
+dataset, and a markdown link wherever the source has a URL. `cards.js` renders
+each section separately, so a footnote must be defined inside the section that
 references it.
+
+Links in a card, and in a schema `description` or `x-enum-note`, open in a new
+tab - `src/lib/markdown-links.js` sets that on the token, and the panel's fold
+renders its prose as inline markdown through `src/lib/inline-markdown.js`.
 
 The register, for cards, `meta.js`, schema `description` fields and tutorials
 alike: purely explanatory, written for someone who has never seen the work, as

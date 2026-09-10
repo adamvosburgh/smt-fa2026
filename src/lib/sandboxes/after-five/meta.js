@@ -6,33 +6,32 @@
 export default {
   slug: 'after-five',
   title: 'Office to Residential Conversion',
-  subtitle: 
-    "Lower Manhattan in 2040, after the state's conversion incentive has closed. Office buildings become housing when a conversion would be worth more than the office, and the sidewalks show how the district's day changes when they do.",
+  subtitle:
+    'Visualization of street-level activity under different scenarios of office to residential conversions.',
   status: 'built',
   statusNote:
-    'The massing, the two gates, the clock, the crowd and the street layer are built. The default is the Comptroller pro forma, at which 137 of the 381 office buildings in CD1 convert; at the published asking rent nothing does, and the four scenarios are that difference written out. Workers run on counted subway ridership by hour and residents on a national time-use survey; the building each trip goes to and the route are assumed, and the canvas labels which is which.',
+    'The massing, the two gates, the clock, the crowd and the street layer are built. The default is the Comptroller pro forma, at which 137 of the 381 office buildings in CD1 convert; at the published asking rent nothing does, and the four scenarios are that difference written out. Workers run on counted subway ridership by hour and residents on a national time-use survey.',
   kind: 'simulation',
-  blurb: 
-    "Two tests decide whether an office building becomes housing: whether its floor plate and age make it convertible at all, and whether the finished apartments would be worth more than the offices given up after paying for the work. The financial test can be set to one of four scenarios - the 2024 asking rent, a 2026 effective rent, the Comptroller's 2025 pro forma, or a program generous enough to reach everything - or to numbers of your own. The first three are published; the fourth is not, and its note says so. The sidewalks are then colored by how many people each building puts onto them at each hour of the day, offices on a commuter's schedule and homes on a resident's.",
+  blurb:
+    'A visualization of street-level activity in two central business districts under different scenarios of office to residential conversion. A commercial building converts when two tests pass: its floor plate and age make it convertible, and the finished apartments would be worth more than the offices given up after paying for the work. The sidewalks are then colored by how many people each building sends onto them at each hour of the day, offices on a commuter\'s schedule and homes on a resident\'s. Everything is set in 2040, the year after the deadline in the state\'s conversion incentive.',
   controls: [
-    'which district: Lower Manhattan, Midtown, or both',
-    'whether the map shows sidewalk activity, who is on the street, or which buildings could convert',
-    'the hour of the day, which plays',
-    'whether a converted building is drawn with the floors it could add',
-    'which of four scenarios sets the seven numbers in the deal and the convertibility threshold, or your own; three are published and the fourth is not',
-    'the office and residential rents, their operating cost shares and their capitalization rates',
-    'the cost of the conversion work per square foot',
-    'the convertibility threshold, and the weight on each of its four criteria',
-    "whether the 467-m eligibility rules apply, and which conversion filings the floor area per apartment is measured from"
+    'District: CD 1 Lower Manhattan, CD 5 Midtown, or both',
+    'Show: sidewalk activity, who is on the street, or which buildings could convert',
+    'Hour of day, which plays',
+    'Scenario: which of four sets the seven deal numbers and the convertibility threshold, or custom; three are published and the fourth is not',
+    'Office rent, its operating cost share and its capitalization rate',
+    'Residential rent, its operating cost share and its capitalization rate',
+    'Conversion cost per square foot',
+    'Convertibility threshold',
+    'The weight on each of the four convertibility criteria: floor plate depth, floor-to-floor, floor plate area, age',
+    'Whether the 467-m eligibility rules apply'
   ],
   metrics: [
-    'people on the sidewalks at this hour, from offices and from homes',
+    'people on the sidewalks at this hour, from offices / from homes',
     'homes created',
     'office floor area removed',
     'buildings converted, of the office buildings there are',
-    'residents living there afterwards',
-    'office jobs displaced',
-    'the share of office buildings that converted'
+    'share of office buildings that converted'
   ],
   data: [
     'DCP 3-D Building Model as CityGML (NYC Open Data tnru-abg2), delivery areas 12 and 19: 1,159 buildings in CD1, each with its BIN, its ground outline and every roof surface at its own height.',
@@ -51,8 +50,8 @@ export default {
     'NYC Street Centerline (inkn-q76z), clipped to the districts and filtered to walkable segments: 7,413 lines, and the sidewalk is the 15 m band around them that is not inside a building.',
     'ATUS 2003-2025 (BLS): the share of office-type workers at their workplace through the day, drawn as a check on the animation.'
   ],
-  cannotSee: 
-    "Who any person is. Station flows by hour are counted, but not split by who is riding, so treating morning arrivals as workers is the model's assumption; residents' hours come from a national survey, not a New York count. Anyone arriving by ferry, bus, bike, car or on foot is invisible, because only the subway was counted, and so is anyone who works in the district's shops, hotels and restaurants. The sidewalk numbers are people a building sends out and takes in each hour, spread over the sidewalk near it, not people observed on a street. There is no sidewalk dataset: a cell counts as sidewalk when it is within 15 m of a walkable street centerline and not inside a building, which is roughly a curb-to-building depth plus a lane on a side street and still too narrow for a wide avenue, and the 15 m is ours. Ground away from a street is not in the model at all, which is why nobody stands on the World Trade Center memorial plaza. A building's people are spread evenly around its perimeter, so the map is people per 10 m of street rather than people in a building. It cannot see buildings the 2014 survey is missing: floor area is divided across the buildings on a lot, so a lot whose survey is incomplete hands the missing buildings' area to the ones it has, which is why 1 WTC carries the floor area of 3 WTC, 4 WTC and the Oculus as well as its own. A cap holds every building to what its own outline could contain, but that bounds the error rather than removing it. It cannot see who moves in, who is displaced, or where a displaced job goes. Conversion is instant, added floors have no form, and rents are uniform. The date is 2040 because the incentive closes in 2039; the model has no other clock.",
+  cannotSee:
+    "Who any person is. Station flows are counted by hour but not split by who is riding, so treating morning arrivals as workers is the model's assumption, and residents' hours come from a national survey, not a New York count. Anyone who is not a subway rider or a resident of the district is not counted: ferry, bus, bike, car and foot commuters, visitors, and people who work in the district's shops, hotels and restaurants. The sidewalk numbers are people a building sends out and takes in each hour, spread over the street within 50 m of it, not people observed on a street. There is no sidewalk dataset; the 15 m band around each street centerline is our choice, and ground away from a street, such as the World Trade Center memorial plaza, is not in the model. Where the 2014 survey is missing a building on a lot, the lot's floor area goes to the buildings it has, so 1 WTC carries more floor area than it has; the cap that holds each building to its own outline bounds that error without removing it. Conversion is instant, every apartment is occupied, rents are uniform, no height is added, and the incentive is a gate and a tax figure with no time value of money. It cannot see who moves in, who is displaced, or where a displaced job goes. The date is 2040 because the incentive requires completion by the end of 2039; the model has no other clock.",
   tutorial: '/tutorials/02-after-five/',
   live: false
 };

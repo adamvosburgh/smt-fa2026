@@ -80,13 +80,13 @@ A district in 3D in 2040, with the buildings the deal converts drawn in green, a
 
 The Comptroller's 2025 pro forma, the population view at five o'clock:
 
-<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","view":"population","hour":17,"added_floors":true,"scenario":"comptroller_2025","office_rent":54,"opex_office":0.35,"cap_rate_office":0.16,"residential_rent":79,"opex_residential":0.2,"cap_rate_residential":0.05,"conversion_cost_sf":500,"convertibility_threshold":0.5,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"min_units_for_conversion_sample":10}'></div>
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","view":"population","hour":17,"scenario":"comptroller_2025","office_rent":54,"opex_office":0.35,"cap_rate_office":0.16,"residential_rent":79,"opex_residential":0.2,"cap_rate_residential":0.05,"conversion_cost_sf":500,"convertibility_threshold":0.5,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true}'></div>
 
 The 2024 asking rent, where nothing converts:
 
-<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","view":"population","hour":17,"added_floors":true,"scenario":"asking_2024","office_rent":54,"opex_office":0.35,"cap_rate_office":0.055,"residential_rent":75,"opex_residential":0.35,"cap_rate_residential":0.055,"conversion_cost_sf":350,"convertibility_threshold":0.5,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"min_units_for_conversion_sample":10}'></div>
+<div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","view":"population","hour":17,"scenario":"asking_2024","office_rent":54,"opex_office":0.35,"cap_rate_office":0.055,"residential_rent":75,"opex_residential":0.35,"cap_rate_residential":0.055,"conversion_cost_sf":350,"convertibility_threshold":0.5,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true}'></div>
 
-- The four scenarios in CD1: published asking rent 2024 converts **0 of 381** office buildings and creates no homes; Downtown Class B effective rent 2026 converts **1**, 26 homes; the Comptroller's 2025 pro forma converts **137**, 9,439 homes; the program that reaches everything converts **199**, 35,907 homes. The fourth is the only one that moves the convertibility threshold, from 0.5 to 0.3, and that is the whole difference between it and the third.
+- The four scenarios in CD1: published asking rent 2024 converts **0 of 381** office buildings and creates no homes; Downtown Class B effective rent 2026 converts **1**, 26 homes; the Comptroller's 2025 pro forma converts **137**, 9,439 homes; maximum housing converts **199**, 35,907 homes. The fourth is the only one that moves the convertibility threshold, from 0.5 to 0.3, and that is the whole difference between it and the third.
 - Moving any of the seven deal sliders, or the convertibility threshold, switches the scenario button to `custom`, and nothing else changes with it.
 - Hovering a building gives its floor area, its convertibility score against the threshold, its jobs or residents, the people it puts onto the street this hour, and - where it stands on a shared lot - what share of that lot's floor area it carries, and whether that share is a ceiling.
 - Green buildings are the ones that converted; blue-gray are still offices; tan are homes that were already there.
@@ -99,8 +99,7 @@ The 2024 asking rent, where nothing converts:
 
 - Conversion is instant, and rents are uniform across the district. There is no time in the model but the hour.
 - The convertibility score is ours, misses three of the criteria it stands in for, and also drives conversion cost.
-- Floor area per apartment depends on which filings count, and the choice moves it by 40%; the cut is a control with six measured stops.
-- Added floors are a story count, so they can only be drawn as a block on the roof.
+- Floor area per apartment depends on which filings count, and the choice moves it by 40%. It is fixed at conversions of ten units or more.
 - The sidewalk numbers are people a building sends out and takes in, spread over the ground near it - not people observed on a street. The spread is a Gaussian on the distance from the footprint, which is a choice.
 - A cell counts as sidewalk when it is within 15 m of a walkable street centerline and not inside a building. The 15 m is ours: roughly a curb-to-building depth plus a lane on a side street, and still too narrow for a wide avenue. Ground away from a street is not in the model, so the memorial plaza is empty here.
 - Floor area is divided across the buildings a 2014 survey contains, and where it is missing a building the others absorb its area. The cap holds each building to what its own outline could contain, which is a ceiling on that error rather than a correction of it; 1 WTC still carries about a quarter more floor area than it has.

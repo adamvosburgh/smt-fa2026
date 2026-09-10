@@ -94,7 +94,7 @@ Do the naming with the Rhino `Properties` panel, in the `Name` field, one object
 A worked set of names, for one floor of a building with six rooms:
 
 ```
-context_neighbour_01 ... context_neighbour_09
+context_neighbor_01 ... context_neighbor_09
 context_ground
 context_below
 context_above

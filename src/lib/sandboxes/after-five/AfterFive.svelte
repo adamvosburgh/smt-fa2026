@@ -29,7 +29,7 @@
   import { browser } from '$app/environment';
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
   import {
-    compute, colors, STRIDE, HEIGHT, FLOORS, FLOORS_ADDED, DISTRICT,
+    compute, colors, STRIDE, HEIGHT, DISTRICT,
     DISTRICT_INDEX, BUILDING_COLOR, OFFICE_AREA, RES_AREA
   } from './gates.js';
   import {
@@ -224,7 +224,7 @@
     result = compute(buildings, manifest, params);
     rgba = colors(result, buildings, params);
 
-    people = peoplePerBuilding(buildings, manifest, result, params);
+    people = peoplePerBuilding(buildings, manifest, result);
     channels = applyCurves(
       computeChannels(grid, csr, buildings, people, params.district), day);
     if (!maxPerCell) maxPerCell = percentile98(channels);
@@ -239,8 +239,7 @@
             params.cap_rate_office, params.residential_rent, params.opex_residential,
             params.cap_rate_residential, params.conversion_cost_sf,
             params.convertibility_threshold, params.w_depth, params.w_f2f,
-            params.w_area, params.w_age, params.incentive_467m,
-            params.min_units_for_conversion_sample].join('|');
+            params.w_area, params.w_age, params.incentive_467m].join('|');
   }
 
   const num = (v) => Math.round(v).toLocaleString();
@@ -342,23 +341,14 @@
         target[2] = rgba[o + 2]; target[3] = rgba[o + 3];
         return target;
       },
-      getElevation: (d) => {
-        const base = d.i * STRIDE;
-        let ft = buildings[base + HEIGHT];
-        // Added floors: the existing roof pushed up by the stories a filing
-        // added. This is the QUANTITY of change, not its form - a building
-        // that grew four floors grows a four-floor block, with no setback
-        // and no new envelope.
-        if (params.added_floors !== false && result.state[d.i] === 2) {
-          const floors = buildings[base + FLOORS];
-          const added = buildings[base + FLOORS_ADDED];
-          if (added > 0 && floors > 0) ft += (ft / floors) * added;
-        }
-        return ft * FT_TO_M;
-      },
+      // Every building is drawn at its surveyed height, converted or not. A
+      // converted building used to be drawn taller by the stories a past DOB
+      // filing proposed, which was a fact about that filing and not a result
+      // of this model - no conversion rule here adds height. Nothing is drawn
+      // for it now.
+      getElevation: (d) => buildings[d.i * STRIDE + HEIGHT] * FT_TO_M,
       updateTriggers: {
-        getFillColor: [rgba],
-        getElevation: [params.added_floors, result]
+        getFillColor: [rgba]
       }
     }));
 
@@ -374,8 +364,6 @@
       'office floor area removed': `${n(m.officeRemoved / 1e6)}M sf`,
       'buildings converted, of the office buildings there are':
         `${n(m.converted)} of ${n(m.officeBuildings)}`,
-      'residents living there afterwards': n(m.residentsAdded),
-      'office jobs displaced': n(m.officeJobsRemoved),
       'share of office buildings that converted':
         `${(m.shareConverted * 100).toFixed(1)}%`
     });
@@ -415,7 +403,7 @@
 
   // The clock and the view: cheap, no recompute.
   $effect(() => {
-    void [params.hour, params.view, params.added_floors];
+    void [params.hour, params.view];
     schedule(false);
   });
 
@@ -425,8 +413,7 @@
           params.cap_rate_office, params.residential_rent, params.opex_residential,
           params.cap_rate_residential, params.conversion_cost_sf,
           params.convertibility_threshold, params.w_depth, params.w_f2f,
-          params.w_area, params.w_age, params.incentive_467m,
-          params.min_units_for_conversion_sample];
+          params.w_area, params.w_age, params.incentive_467m];
     schedule(true);
   });
 

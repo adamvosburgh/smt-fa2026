@@ -114,11 +114,12 @@ function value(rentPerSf, capRate, opexShare) {
 }
 
 /**
- * Floor area per apartment at the reader's chosen unit floor, off the measured
- * ladder the pipeline ships. The cut is a judgment - 1,366 sf with no floor,
- * 907 at fifty units - and exposing it as a control is the cheapest way to
- * turn a buried judgment into a visible one. Only the six measured cuts are
- * offered; interpolating between them would be inventing filings.
+ * Floor area per apartment at a cut of the measured ladder the pipeline ships.
+ * The cut is a judgment - 1,366 sf with no floor, 1,152 at ten units, 907 at
+ * fifty - and it is fixed at 10+ rather than exposed as a control, because
+ * cutting at one unit lets filings that report a whole building's floor area
+ * against a single apartment into the sample. The card's footnote states the
+ * figure and the cutoff. The function stays because it documents why 10.
  */
 function sfPerUnitAt(manifest, cut) {
   const row = manifest?.economics?.sensitivity_to_the_unit_floor?.[String(cut)];
@@ -181,7 +182,7 @@ export function compute(buildings, manifest, p) {
   const capResidential = p.cap_rate_residential ?? 0.05;
   const opexOffice = p.opex_office ?? 0.35;
   const opexResidential = p.opex_residential ?? 0.2;
-  const sfPerUnit = sfPerUnitAt(manifest, p.min_units_for_conversion_sample ?? 10);
+  const sfPerUnit = sfPerUnitAt(manifest, 10);
   const officeScores = [];
   const sfPerJob = jobDensity(manifest);
   let officeJobsHere = 0;      // office-using jobs in the district today

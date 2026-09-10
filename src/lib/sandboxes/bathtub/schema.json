@@ -27,7 +27,7 @@
         "every storm, every projection"
       ],
       "default": "one_storm",
-      "description": "The first view fills in one storm at today's sea level and draws where it reaches under each of the four projections for the chosen year. The second draws all four storms and all sixteen lines at once, flat, so the whole published range is on one map."
+      "description": "The first view fills in one storm at today's sea level and draws where it reaches under each of the four projections for the chosen year. The second draws all four storms and all sixteen lines at once, flat."
     },
     "aep": {
       "type": "string",
@@ -59,7 +59,7 @@
       ],
       "default": "none",
       "x-emphasis": true,
-      "description": "NOAA's exceedance levels for the Battery, published as the water level with a 99%, 50%, 10% and 1% chance of being exceeded in a given year. \"None\" is today's high tide, so the four lines then show sea level rise alone. The levels are still water with no waves; the 100-year level is about 8.2 ft above NAVD88, and Sandy reached about 11.3 ft at this gauge."
+      "description": "NOAA's exceedance levels for the Battery: the water level with a 99%, 50%, 10% and 1% chance of being exceeded in a given year. \"None\" is today's high tide, so the four lines then show sea level rise alone."
     },
     "basemap": {
       "type": "string",
@@ -81,7 +81,7 @@
         "flat"
       ],
       "default": "elevation",
-      "description": "Shading shows how deep the water is over each cell. The all-storms view is always flat, because four fills cannot each carry a depth."
+      "description": "Shading shows how deep the water is over each cell. The all-storms view is always flat."
     },
     "flood_line": {
       "type": "boolean",
@@ -152,7 +152,7 @@
       "x-panel": "assumptions",
       "default": true,
       "x-emphasis": true,
-      "description": "With connectivity on, a place floods only if water can reach it from open water at that waterline. With it off, every low place floods, including inland dips the sea cannot reach; those cells are drawn red. Many published maps make this choice without saying so."
+      "description": "With connectivity on, a place floods only if water can reach it from open water at that waterline. With it off, every low place floods, including inland dips the sea cannot reach; those cells are drawn red."
     },
     "slr_by_hand": {
       "type": "boolean",
@@ -174,8 +174,7 @@
       "maximum": 5,
       "x-step": 0.05,
       "default": 0.8,
-      "x-unit": "m",
-      "description": "How much higher the average sea sits than it does today. The model raises the whole harbor by the same amount at once; there is no map of it."
+      "x-unit": "m"
     },
     "surge_by_hand": {
       "type": "boolean",
@@ -197,8 +196,7 @@
       "maximum": 4,
       "x-step": 0.1,
       "default": 0,
-      "x-unit": "m",
-      "description": "A surge height set by hand, added to the tide. It arrives instantly and everywhere at once. A real surge arrives over hours, peaks, drains, and is higher in some places than others."
+      "x-unit": "m"
     }
   }
 }

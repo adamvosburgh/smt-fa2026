@@ -112,7 +112,7 @@
         "vs published"
       ],
       "default": "anthrome",
-      "description": "What the color means: the anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating. At the default thresholds that last difference is purely what aggregating a threshold rule does."
+      "description": "The anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating."
     },
     "used_threshold": {
       "type": "number",
@@ -124,7 +124,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "The share of a cell's land that must be cropped, grazed or built before the cell counts as used at all. The published value is 20%. This is the threshold that decides the crossover year, the first time step at which used land exceeds wild, and moving it shifts that year by millennia."
+      "description": "The share of a cell's land that must be cropped, grazed or built before the cell counts as used at all. Published value 20%. This threshold decides the crossover year, and moving it shifts that year by millennia."
     },
     "crops_threshold": {
       "type": "number",
@@ -190,7 +190,7 @@
       "maximum": 10000,
       "x-step": 100,
       "default": 2500,
-      "x-unit": "/km\u00b2",
+      "x-unit": "/km²",
       "description": "People per square kilometer of land above which a cell is urban regardless of built-up area. Published value 2,500."
     },
     "dense_settlement_density": {
@@ -202,8 +202,8 @@
       "maximum": 500,
       "x-step": 10,
       "default": 100,
-      "x-unit": "/km\u00b2",
-      "description": "The lower edge of the dense-settlement and village band. Below it a cell can't be a village however much rice it grows. Published value 100 per square kilometer."
+      "x-unit": "/km²",
+      "description": "The lower edge of the dense-settlement and village band. Below it a cell cannot be a village however much rice it grows. Published value 100."
     },
     "residential_density": {
       "type": "number",
@@ -214,8 +214,8 @@
       "maximum": 50,
       "x-step": 1,
       "default": 10,
-      "x-unit": "/km\u00b2",
-      "description": "The lower edge of the residential band: residential croplands, rangelands and woodlands. Published value 10 per square kilometer."
+      "x-unit": "/km²",
+      "description": "The lower edge of the residential band: residential croplands, rangelands and woodlands. Published value 10."
     },
     "populated_density": {
       "type": "number",
@@ -226,8 +226,8 @@
       "maximum": 5,
       "x-step": 0.1,
       "default": 1,
-      "x-unit": "/km\u00b2",
-      "description": "The line between populated and remote. Below it a cropland is remote cropland however it's farmed. Published value 1 per square kilometer."
+      "x-unit": "/km²",
+      "description": "The line between populated and remote. Below it a cropland is remote cropland however it is farmed. Published value 1."
     },
     "tree_biomes": {
       "type": "integer",

@@ -41,15 +41,16 @@ export const HOURS = 24;
  * residential building's are its own, from the floor area at the same measured
  * square feet per apartment.
  */
-export function peoplePerBuilding(buildings, manifest, result, p) {
+export function peoplePerBuilding(buildings, manifest, result) {
   const n = buildings.length / STRIDE;
   const jobs = new Float32Array(n);
   const residents = new Float32Array(n);
   const householdSize = manifest.household_size ?? 2.01;
+  // The 10+ row of the measured ladder: 149 filings, 1,152 sf per apartment.
+  // The cut is fixed, not a control - see sfPerUnitAt in gates.js.
   const sfPerUnit =
-    manifest?.economics?.sensitivity_to_the_unit_floor?.[
-      String(p.min_units_for_conversion_sample ?? 10)
-    ]?.sf_per_unit ?? manifest?.economics?.sf_per_unit ?? 1152;
+    manifest?.economics?.sensitivity_to_the_unit_floor?.['10']?.sf_per_unit
+    ?? manifest?.economics?.sf_per_unit ?? 1152;
 
   // Office-using jobs per district, and the office floor area they sit on, so
   // the allocation is by area rather than by a rule of thumb.

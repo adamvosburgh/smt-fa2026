@@ -1,10 +1,10 @@
 // Sandbox cards.
 //
 // One markdown file per sandbox, at src/lib/sandboxes/<slug>/card.md, holding
-// the plain-language account of what the thing is, what it is trying to show,
-// how it works, what it assumes, and what it cannot see. Sources are footnotes
-// on the sentences that use them. Every sandbox gets one; SandboxCard.svelte
-// puts it behind the info button.
+// the plain-language account of what the thing is in two sections: Description,
+// then Assumptions + Limitations. Sources are footnotes on the sentences that
+// use them, and each footnote carries a link wherever the source has one. Every
+// sandbox gets one; SandboxCard.svelte puts it behind the info button.
 //
 // It lives beside the component rather than in src/content/ on purpose: the
 // card is part of the sandbox, and moving one sandbox moves its card with it.
@@ -16,13 +16,18 @@
 // panel into a permalink.
 import MarkdownIt from 'markdown-it';
 import footnote from 'markdown-it-footnote';
+import { openInNewTab } from '$lib/markdown-links.js';
 
 // Footnotes carry the citations. markdown-it-footnote emits them at the end of
 // whatever it was asked to render, so in the per-section render below a note
 // lands under the section that used it - which means a card.md has to define
 // each footnote inside the section that references it, not at the end of the
 // file. Numbering restarts per section for the same reason.
-const md = new MarkdownIt({ html: false, breaks: false, linkify: true }).use(footnote);
+// The footnotes carry links to the sources. openInNewTab keeps a click on one
+// from navigating the tab away from a running sandbox.
+const md = new MarkdownIt({ html: false, breaks: false, linkify: true })
+  .use(footnote)
+  .use(openInNewTab);
 
 const raw = import.meta.glob('/src/lib/sandboxes/*/card.md', {
   eager: true,

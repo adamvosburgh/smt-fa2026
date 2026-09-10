@@ -660,13 +660,13 @@
     hoursPerPoint = new Float32Array(points.count);
     for (let i = 0; i < points.count; i++) hoursPerPoint[i] = counts[i] * perDay;
     runStats = { points: points.count, passes: schedule.passes, elapsedMs };
-    recolour();
+    recolor();
     computeMetrics();
     onready?.(true);
   }
 
   // --- coloring and the numbers ------------------------------------------
-  function recolour() {
+  function recolor() {
     if (!overlayMesh || !hoursPerPoint) return;
     const overlay = params.overlay ?? 'hours';
     const threshold = Number(params.threshold_hours ?? 2);
@@ -901,10 +901,10 @@
     if (renderer) applyContext();
   });
 
-  // Cheap: recolouring and re-deriving the table needs no new sun positions.
+  // Cheap: recoloring and re-deriving the table needs no new sun positions.
   $effect(() => {
     params.overlay; params.threshold_hours; params.window_rule; params.depth_rule;
-    if (hoursPerPoint) { recolour(); computeMetrics(); }
+    if (hoursPerPoint) { recolor(); computeMetrics(); }
   });
 
   // Hovering a table row lights the room in the model, and hovering the model

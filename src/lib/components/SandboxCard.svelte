@@ -154,6 +154,10 @@
   .body :global(li) { margin-bottom: 0.5rem; }
   .body :global(code) { font-size: 0.9em; background: #f2f2f0; padding: 0 0.2em; }
   .body :global(strong) { font-weight: 700; }
+  /* Sources are links now. Same treatment as body prose elsewhere on the site;
+     they open in a new tab, which cards.js sets on the token. */
+  .body :global(a) { color: inherit; text-decoration: underline; }
+  .body :global(a:hover) { background: var(--hi); color: var(--hi-fg); text-decoration: none; }
   /* Footnotes carry the sources. Small, ruled off, and at the end of whichever
      render they belong to - the whole card in the modal, the section in the dock. */
   .body :global(.footnote-ref a) { text-decoration: none; font-size: 0.75em; }

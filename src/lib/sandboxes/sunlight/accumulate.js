@@ -346,7 +346,7 @@ export function createAccumulator({ THREE, renderer, shadowSize = 2048 }) {
   function fitSun(dir, spaceBox, sceneBox, margin = 2) {
     fitOrtho({ THREE, camera: sunCam, dir, spaceBox, sceneBox, margin });
     lightMatrix.multiplyMatrices(sunCam.projectionMatrix, sunCam.matrixWorldInverse);
-    // Two centimetres along the ray, expressed in this frustum's normalized
+    // Two centimeters along the ray, expressed in this frustum's normalized
     // depth. The display shadow map's -0.0005 is in three's own units for its
     // own frustum and does not transfer here.
     material.uniforms.uDepthBias.value = 0.02 / Math.max(1, sunCam.far - sunCam.near);

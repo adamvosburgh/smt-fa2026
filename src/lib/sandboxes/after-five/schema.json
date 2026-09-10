@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/after-five.json",
   "title": "Office to Residential Conversion parameters",
-  "$comment": "Slider granularity is x-step, NOT multipleOf - see the bathtub schema for why. x-panel splits the controls in two: representation is how the map is drawn, assumptions is what the model is made of. The seven deal numbers and the convertibility threshold are set together by `scenario` through x-scenario-values; moving any of them by hand writes `scenario` back to \"custom\", which is what x-scenario-of on each slider says. Every stop sets all eight - a stop that left one out would leave whatever the reader had last set. Every figure in x-scenario-values is cited in that scenario's note - do not change one without changing the other.",
+  "$comment": "Slider granularity is x-step, NOT multipleOf - see the bathtub schema for why. x-panel splits the controls in two: representation is how the map is drawn, assumptions is what the model is made of. The seven deal numbers and the convertibility threshold are set together by `scenario` through x-scenario-values; moving any of them by hand writes `scenario` back to \"custom\", which is what x-scenario-of on each slider says. Every stop sets all eight - a stop that left one out would leave whatever the reader had last set. Every figure in x-scenario-values is cited in that scenario's note - do not change one without changing the other. x-enum-notes and description render as inline markdown in the panel's fold, which is how a note links the report its numbers came from.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -28,8 +28,7 @@
         "CD 5, Midtown",
         "both"
       ],
-      "default": "mn01",
-      "description": "The two community districts covered by the survey. The chosen district is drawn in full and everything else on the map is faded to 25%."
+      "default": "mn01"
     },
     "view": {
       "type": "string",
@@ -47,7 +46,7 @@
         "which buildings could convert"
       ],
       "default": "activity",
-      "description": "Sidewalk activity is the total traffic each patch of sidewalk carries in the chosen hour, from gray (none) through yellow to red (the busiest cell in the district's day). Who is on the street splits the same traffic into people from office buildings (blue) and people from homes (dark green). Which buildings could convert colors every office building by its convertibility score and marks the threshold."
+      "description": "Sidewalk activity is the total traffic each patch of sidewalk carries in the chosen hour, from gray (little) through yellow to red (the busiest cell in the district's day). Who is on the street splits the same traffic into people from office buildings (blue) and people from homes (dark green). Which buildings could convert colors every office building by its convertibility score and marks the threshold."
     },
     "hour": {
       "type": "number",
@@ -70,15 +69,7 @@
       "maximum": 24,
       "x-step": 0.05,
       "default": 8,
-      "description": "One weekday, from the MTA's October 2024 weekday counts and the time-use survey's weekday diaries. The map interpolates between the hourly counts. The clock runs an hour a second at 1x, so a day takes twenty-four seconds."
-    },
-    "added_floors": {
-      "type": "boolean",
-      "title": "Show added floors",
-      "x-group": "how it's drawn",
-      "x-panel": "representation",
-      "default": true,
-      "description": "A converted building is drawn with the floors it could add under the conversion rules, as plain boxes."
+      "description": "From the MTA's October 2024 weekday counts and the time-use survey's weekday diaries. These sources publish hourly figures; the model interpolates between them."
     },
     "scenario": {
       "type": "string",
@@ -97,14 +88,14 @@
         "published asking rent, 2024",
         "Downtown Class B, effective rent, 2026",
         "Comptroller pro forma, 2025",
-        "a program that reaches everything",
+        "maximum housing",
         "custom"
       ],
       "x-enum-notes": [
-        "Office rent $54 per square foot, the average asking rent for Manhattan Class B and C space in the NYC Comptroller's Spotlight of 14 May 2024 (CoStar). Residential rent $75, conversion cost $350, both capitalization rates 5.5% and both operating cost shares 35% are the sandbox's original defaults and have no source; the Comptroller's May 2024 report puts conversion cost \"in excess of $400 per square foot.\" At these numbers an office is valued at about $640 per square foot, and nothing converts.",
-        "Office rent $39: Cushman & Wakefield's Q1 2026 Downtown Class A asking rent of $61.77 divided by its reported 25.5% Class A premium gives $49 for Class B, times 0.80, the ratio of net effective to asking rent JLL reported for Manhattan Class A in 2024 (Commercial Observer, December 2024); no source gives a Class B effective rent directly. Residential rent $72: the Elliman Report's January 2026 Manhattan rental price of $96.35 per square foot per year, times the 0.75 ratio of rentable to gross area in the Comptroller's July 2025 fiscal note. Residential capitalization rate 5.25%, the midpoint of CBRE's H1 2026 range for stabilized New York multifamily. Conversion cost $400, the Comptroller's May 2024 figure. Office capitalization rate 5.5% and both operating cost shares 35% are carried over. Almost nothing converts.",
-        "From the NYC Comptroller's Fiscal Note 6-2025, \"Office-to-Residential Conversions in NYC\" (July 2025): conversion cost $500 per gross square foot including financing and excluding acquisition; residential rent $79 per gross square foot ($105 per rentable); residential operating costs $14 per gross square foot plus property tax of $2 with the 467-m exemption or $21 without, so 20% of rent with the exemption and 44% without; a 5.0% capitalization rate at stabilization; and Lower Manhattan office buildings bought for conversion at $218 per gross square foot. Office rent $54 is carried over from 2024, and the office capitalization rate is set at 16% so that $54 less 35% costs values an office at the $218 the Comptroller observed; it is a rate implied by sale prices, not a market rate. Most convertible buildings convert. At these numbers the financial test stops discriminating - every building past the convertibility threshold also clears the deal - so what converts is decided by shape alone.",
-        "Not a published scenario. The deal numbers are the same ones the assessor's view used: from the NYC Department of Finance FY2025 income-approach guidelines for Downtown Financial District Class B office, median income $46.84 per square foot, expense ratio 49%, capitalization rate 9.49% (the assessor's rates are believed to include the effective tax rate, which is why they run above market); those three value an office at $252 per square foot, in line with the 2024 sale of 222 Broadway at $147.5 million for 770,416 square feet, or $191 per square foot, ahead of its conversion to 798 apartments. Conversion cost $374, the building's $288 million construction loan divided by its area, which is a floor on the cost rather than the cost. Residential rent $79, operating cost share 20% and capitalization rate 5.0% are carried from the Comptroller pro forma. What is invented here is the convertibility threshold, lowered from 0.5 to 0.3, which stands for a program generous enough that a building's shape stops disqualifying it. Nothing published supports that number. Almost everything convertible converts.",
+        "Source: [NYC Comptroller, Spotlight: New York City's Office Market, 14 May 2024](https://comptroller.nyc.gov/wp-content/uploads/documents/May-Spotlight-OFFICE-MARKET.pdf). Office rent $54, the average asking rent for Manhattan Class B and C space (CoStar). Assumed, with no source: residential rent $75, conversion cost $350, both capitalization rates 5.5%, both operating cost shares 35%; the Comptroller puts conversion cost above $400. At these numbers an office is valued at about $640 per square foot, and nothing converts.",
+        "Sources: [Cushman & Wakefield, Downtown Manhattan, April 2026](https://www.cushmanwakefield.com/en/united-states/news/2026/04/divide-in-the-downtown-manhattan-office-sharpens-as-class-a-pulls-further-ahead-on-rents); [Commercial Observer, December 2024 (JLL)](https://commercialobserver.com/2024/12/asking-vs-taking-rents-manhattan-office-2024/); [Elliman Report, January 2026](https://millersamuel.com/reports/elliman-report-manhattan-brooklyn-queens-rentals-1-2026/); [CBRE cap rate survey, H1 2026](https://www.cbre.com/insights/reports/us-cap-rate-survey-h1-2026). Office rent $39: Downtown Class A asking rent $61.77, less the 25.5% Class A premium, times 0.80, JLL's ratio of effective to asking rent; no source gives a Class B effective rent directly. Residential rent $72: $96.35 per square foot per year times the Comptroller's 0.75 rentable-to-gross ratio. Residential capitalization rate 5.25%, the midpoint of CBRE's range for stabilized New York multifamily. Conversion cost $400, the Comptroller's 2024 figure. Assumed, with no source: office capitalization rate 5.5% and both operating cost shares 35%. Almost nothing converts.",
+        "Source: [NYC Comptroller, Fiscal Note 6-2025, \"Office-to-Residential Conversions in NYC\", July 2025](https://comptroller.nyc.gov/wp-content/uploads/documents/fn_economics_conversions_july.pdf). Conversion cost $500 per gross square foot including financing and excluding acquisition; residential rent $79 per gross square foot; residential operating costs 20% of rent with the 467-m exemption (44% without); residential capitalization rate 5.0%; Lower Manhattan office buildings bought for conversion at $218 per gross square foot. Assumed: office rent $54, carried over from 2024, and an office capitalization rate of 16%, set so that $54 less 35% costs values an office at the Comptroller's $218; it is a rate implied by sale prices, not a market rate. At these numbers every building past the convertibility threshold also clears the deal, so shape alone decides what converts.",
+        "Not a published scenario. Deal numbers from the [NYC Department of Finance FY2025 income-approach guidelines](https://www.nyc.gov/assets/finance/downloads/pdf/24pdf/fy25-assessment-roll-guidelines.pdf) for Downtown Class B office: income $46.84 per square foot, expense ratio 49%, capitalization rate 9.49%, which value an office at $252 per square foot. Conversion cost $374, the construction loan on 222 Broadway divided by its area. Residential rent $79, operating cost share 20% and capitalization rate 5.0% are carried from the Comptroller pro forma. The convertibility threshold is lowered from 0.5 to 0.3, and that number is invented. Almost everything convertible converts.",
         "The sliders as you have set them."
       ],
       "x-scenario-values": {
@@ -150,7 +141,7 @@
         }
       },
       "default": "comptroller_2025",
-      "description": "Each scenario sets the seven numbers below, and the convertibility threshold, from one set of published sources. Moving any slider afterwards switches the scenario to custom. The notes under each scenario say where every number comes from and which are carried over because no source gives them. The fourth is not a published scenario, and its note says what is invented in it."
+      "description": "Each scenario sets the seven deal numbers below and the convertibility threshold. Moving any slider afterwards switches the scenario to custom. The note under each scenario cites its source and lists what is assumed."
     },
     "office_rent": {
       "type": "number",
@@ -164,7 +155,7 @@
       "x-step": 1,
       "default": 54,
       "x-unit": "$/sf/yr",
-      "description": "What the office earns per square foot of floor area each year. Asking rents overstate what tenants pay; the second scenario makes an estimate of the difference."
+      "description": "What the office earns per square foot of floor area each year."
     },
     "opex_office": {
       "type": "number",
@@ -187,7 +178,7 @@
       "maximum": 0.2,
       "x-step": 0.0025,
       "default": 0.16,
-      "description": "The value of a building is its net income divided by this rate. No broker publishes a Manhattan office capitalization rate; the third scenario derives one from observed sale prices and the fourth uses the assessor's."
+      "description": "The value of a building is its net income divided by this rate. The third scenario derives the rate from observed sale prices and the fourth uses the assessor's."
     },
     "residential_rent": {
       "type": "number",
@@ -211,7 +202,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "The Comptroller's pro forma puts operating costs at $14 per gross square foot plus property tax, and property tax at $2 with the 467-m exemption or $21 without. With the exemption that is 20% of an $79 rent; without it, 44%."
+      "description": "The Comptroller's pro forma puts operating costs at $14 per gross square foot plus property tax, and property tax at $2 with the 467-m exemption or $21 without. With the exemption that is 20% of a $79 rent; without it, 44%."
     },
     "cap_rate_residential": {
       "type": "number",
@@ -235,7 +226,7 @@
       "x-step": 5,
       "default": 500,
       "x-unit": "$/sf",
-      "description": "The cost of the work per square foot of floor area, including soft costs and financing but not the purchase of the building. The Comptroller's 2025 pro forma uses $500; its two case studies came out at $525 to $765."
+      "description": "The cost of the work per square foot of floor area, including soft costs and financing but not the purchase of the building. The Comptroller's 2025 pro forma uses $500; its two case studies came out at $525 to $765. Buildings shaped in a way that makes conversion difficult are assumed to cost more: the figure is scaled up by how far the building's convertibility score falls short of 1."
     },
     "convertibility_threshold": {
       "type": "number",
@@ -248,7 +239,7 @@
       "x-step": 0.05,
       "default": 0.5,
       "x-emphasis": true,
-      "description": "The score a building must reach to be treated as convertible. The default is set so that about a quarter of the district's office buildings pass, which is Gensler's published share across the 1,300 buildings it scored."
+      "description": "The score a building must reach to be treated as convertible. The default is set so that about a quarter of the district's office buildings pass, the share Gensler reports across the 1,300 buildings it scored."
     },
     "w_depth": {
       "type": "number",
@@ -259,7 +250,7 @@
       "maximum": 1,
       "x-step": 0.05,
       "default": 0.35,
-      "description": "The four criteria Gensler names. The weights are ours; Gensler's are proprietary. Depth is weighted highest because a deep floor plate leaves interior rooms without windows."
+      "description": "Four criteria drawn from Gensler's convertibility report, which does not publish its weights. These weights are educated guesses."
     },
     "w_f2f": {
       "type": "number",
@@ -298,38 +289,6 @@
       "x-panel": "assumptions",
       "default": true,
       "description": "With the switch on, only buildings that meet the exemption's eligibility rules can convert. The tax effect of the exemption is in the residential operating cost share, not here."
-    },
-    "min_units_for_conversion_sample": {
-      "type": "integer",
-      "title": "Unit floor in the conversion sample",
-      "x-group": "the rules",
-      "x-panel": "assumptions",
-      "enum": [
-        1,
-        2,
-        5,
-        10,
-        20,
-        50
-      ],
-      "x-enum-labels": [
-        "1+",
-        "2+",
-        "5+",
-        "10+",
-        "20+",
-        "50+"
-      ],
-      "x-enum-notes": [
-        "442 filings, 1,366 sf per apartment. No floor: every filing that made a business building residential counts, including one-unit cases that report a whole tower's floor area against a single apartment.",
-        "388 filings, 1,308 sf per apartment.",
-        "260 filings, 1,266 sf per apartment.",
-        "149 filings, 1,152 sf per apartment. The default: conversions of ten units or more.",
-        "103 filings, 1,116 sf per apartment.",
-        "59 filings, 907 sf per apartment. Only conversions of fifty units or more."
-      ],
-      "default": 10,
-      "description": "The floor area per apartment is measured from completed Manhattan conversions with at least this many units. The choice moves the figure by about 40%."
     }
   }
 }

@@ -246,7 +246,7 @@
           : (ledger ? `${ledger.crossoverYear ?? 'never'} (recomputing…)` : '…'),
       [`used land, ${params.year}`]: fmtPct(usedArea / totalArea),
       [`wild land, ${params.year}`]: fmtPct(wildArea / totalArea),
-      'agreement with the published method at native resolution':
+      'agreement with the published method run at native resolution':
         fmtPct(agreeArea / totalArea),
       'land cells classified': nLand.toLocaleString()
     });

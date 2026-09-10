@@ -3,14 +3,16 @@
 Course site for Simulations, Models, Twins - Columbia GSAPP, Fall 2026.
 **simmodeltwin.net**
 
-Seven sandboxes, each running in the browser with a small set of exposed
-parameters. Play with any of them; you don't need to be in the class.
-
-## Running it
+## Quick start
 
 ```
 npm install
 npm run dev
+```
+
+To run a dev server with un-published content:
+```
+SMT_SHOW_UNPUBLISHED=1 npm run dev
 ```
 
 No `.env` is needed to run it - copy `.env.example` to `.env` only when you want

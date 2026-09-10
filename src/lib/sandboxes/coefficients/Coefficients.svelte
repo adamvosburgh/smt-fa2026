@@ -94,13 +94,13 @@
     const m = readMetrics(sim);
     onmetrics?.({
       population: m.population.toLocaleString(),
-      'residential / commercial / industrial demand':
+      'the residential, commercial and industrial demand valves':
         m.rci.map((v) => (v > 0 ? '+' : '') + v).join('  '),
       'mean land value': m.landValue,
       'mean crime': m.crime,
-      'spread across runs at the final tick':
+      'the spread across repeated runs at the final step':
         divergenceSpread === null ? (view ? 'not run in view mode' : '…') : divergenceSpread,
-      'ticks run': m.cityTime * 16
+      'steps run': m.cityTime * 16
     });
   }
 
@@ -395,7 +395,7 @@
         heroPrev.height = heroNext.height = 200;
         fitView();
         ontransport?.({
-          label: 'the simulation',
+          label: 'the clock',
           playing: true,
           play: () => { paused = false; },
           pause: () => { paused = true; cyclesPerSecond = 0; },

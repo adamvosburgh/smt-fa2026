@@ -10,6 +10,7 @@
   // is a fact about the control, so it lives in the schema rather than in a list
   // here.
   import { dev } from '$app/environment';
+  import { inlineMarkdown } from '$lib/inline-markdown.js';
 
   let {
     schema,
@@ -32,7 +33,7 @@
   }
 
   // x-hidden-when-asset names an asset whose presence removes the control
-  // outright, rather than greying it. The sunlight sandbox's "which floor of the
+  // outright, rather than graying it. The sunlight sandbox's "which floor of the
   // example" control means nothing once a student has uploaded their own model,
   // and a disabled slider would read as something they had failed to unlock.
   const entries = $derived(
@@ -79,6 +80,11 @@
     const i = (prop.enum ?? []).indexOf(value);
     return prop['x-enum-notes']?.[i] ?? null;
   }
+  // Both the note and the description are rendered as inline markdown, because
+  // a scenario note now opens with a link to the report its numbers came from.
+  // inlineMarkdown runs markdown-it with html:false, so nothing in a schema
+  // string can put a tag on the page that markdown-it did not write.
+  const prose = (text) => inlineMarkdown(text);
   // Slider granularity comes from x-step, not from multipleOf. multipleOf is a
   // validation keyword and Ajv checks it by dividing: 1.4 / 0.1 is
   // 13.999999999999998, so a schema that declares multipleOf 0.1 rejects a
@@ -295,12 +301,12 @@
            description under the same fold. -->
       {#if prop.description || (prop.enum && noteFor(prop, params[key]))}
         <details class="why">
-          <summary>why these numbers</summary>
+          <summary>more</summary>
           {#if prop.enum && noteFor(prop, params[key])}
-            <p class="param-note stop-note">{noteFor(prop, params[key])}</p>
+            <p class="param-note stop-note">{@html prose(noteFor(prop, params[key]))}</p>
           {/if}
           {#if prop.description}
-            <p class="param-note">{prop.description}</p>
+            <p class="param-note">{@html prose(prop.description)}</p>
           {/if}
         </details>
       {/if}
@@ -368,6 +374,11 @@
   .speed:last-child { border-right: 1px solid #eee; }
   .speed.on { background: #000; border-color: #000; color: #fff; }
   .stop-note { font-style: italic; }
+  /* A note cites its source by linking it. Small, underlined, and opened in a
+     new tab so a click does not throw away the state of a running sandbox. */
+  .param-note :global(a) { color: inherit; text-decoration: underline; }
+  .param-note :global(a:hover) { background: var(--hi); color: var(--hi-fg); text-decoration: none; }
+  .param.off .param-note :global(a) { color: inherit; }
   .stack { display: flex; flex-direction: column; border: 1px solid #ccc; }
   .stack button {
     padding: 0.35rem 0.5rem; font: inherit; font-size: 0.7rem; text-align: left;

@@ -9,7 +9,6 @@
     "district": "mn01",
     "view": "population",
     "hour": 17.0,
-    "added_floors": true,
     "scenario": "comptroller_2025",
     "office_rent": 54,
     "opex_office": 0.35,
@@ -23,14 +22,12 @@
     "w_f2f": 0.25,
     "w_area": 0.2,
     "w_age": 0.2,
-    "incentive_467m": true,
-    "min_units_for_conversion_sample": 10
+    "incentive_467m": true
   },
   "cover": {
     "district": "mn01",
     "view": "population",
     "hour": 17.0,
-    "added_floors": true,
     "scenario": "comptroller_2025",
     "office_rent": 54,
     "opex_office": 0.35,
@@ -44,8 +41,7 @@
     "w_f2f": 0.25,
     "w_area": 0.2,
     "w_age": 0.2,
-    "incentive_467m": true,
-    "min_units_for_conversion_sample": 10
+    "incentive_467m": true
   },
   "assets": [],
   "app_version": "0.1.0",

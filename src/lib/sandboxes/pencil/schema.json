@@ -28,7 +28,7 @@
         "units on their lots"
       ],
       "default": "tracts",
-      "description": "Three views of the same result. The tract view counts homes that pass all three tests. The lot view shows one test at a time, lot by lot. The 3D view draws a unit on every lot that has room for one and colors it by the other two tests."
+      "description": "The tract view counts homes that pass all three tests. The lot view shows one test at a time, lot by lot. The 3D view draws a unit on every lot that has room for one and colors it by the other two tests."
     },
     "tract_measure": {
       "type": "string",
@@ -49,7 +49,7 @@
         "share of existing homes"
       ],
       "default": "count",
-      "description": "A share divides the homes added by the homes the tract already has, from the same lot table. A tract of large lots and few homes can show a high share from a small number."
+      "description": "A share divides the homes added by the homes the tract already has. A tract of large lots and few homes can show a high share from a small number."
     },
     "test": {
       "type": "string",
@@ -72,7 +72,7 @@
         "works for the owner"
       ],
       "default": "financial",
-      "description": "Each test is run only on the lots that passed the one before it, so the third view shows fewer colored dots than the first. Red always means the lot fails the selected test."
+      "description": "Each test is run only on the lots that passed the one before it. Red always means the lot fails the selected test."
     },
     "grant_max": {
       "type": "number",
@@ -96,7 +96,7 @@
       "maximum": 0.5,
       "x-step": 0.05,
       "default": 0,
-      "description": "The program does not require a contribution. This is the share of the cost the owner pays in cash, which reduces the loan."
+      "description": "The share of the cost the owner pays in cash, which reduces the loan. The program does not require a contribution."
     },
     "interest_rate": {
       "type": "number",
@@ -148,7 +148,7 @@
       "x-step": 1,
       "default": 603,
       "x-unit": "$/sf",
-      "description": "The median of the eleven published cost midpoints in HPD's Pre-Approved Plan Library, which run from $248 to $1,500 per square foot for designs reviewed by one agency for one purpose."
+      "description": "The median of the eleven published cost midpoints in HPD's Pre-Approved Plan Library, which run from $248 to $1,500 per square foot."
     },
     "rent_basis": {
       "type": "string",
@@ -166,7 +166,7 @@
         "a flat figure"
       ],
       "default": "ami_cap",
-      "description": "The program caps rent at 100% of area median income, one figure for the whole borough. Market rent is HUD's FY2026 Small Area Fair Market Rent for a one-bedroom, which varies by ZIP. The cap is above market in most of Queens, so the cap is usually the lower of the two."
+      "description": "The program caps rent at 100% of area median income, one figure for the whole borough. Market rent is HUD's FY2026 Small Area Fair Market Rent for a one-bedroom, by ZIP. The cap is above market in most of Queens."
     },
     "rent_flat": {
       "type": "number",
@@ -205,7 +205,7 @@
       "x-step": 1,
       "default": 3,
       "x-emphasis": true,
-      "description": "The Zoning Resolution allows a unit on \"an area not exceeding one-third of the rear yard.\" This is the three. Changing it is changing the statute; it is here because it is the number that decides how many lots have room at all."
+      "description": "The Zoning Resolution allows a unit on \"an area not exceeding one-third of the rear yard.\" This is the three, and it decides how many lots have room at all."
     },
     "side_setback_ft": {
       "type": "number",
@@ -217,7 +217,7 @@
       "x-step": 0.5,
       "default": 5,
       "x-unit": "ft",
-      "description": "The Zoning Resolution requires 5 feet from the rear and side lot lines. The setback is what decides whether a unit that passes the area test also fits on the ground."
+      "description": "The Zoning Resolution requires 5 feet from the rear and side lot lines. The setback decides whether a unit that passes the area test also fits on the ground."
     }
   }
 }
