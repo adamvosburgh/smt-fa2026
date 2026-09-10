@@ -79,11 +79,6 @@
 
 {#if open}
   <div class="panel">
-    <p class="note">
-      Additive, not required - every tutorial stands on its own. The prompt this runs
-      on is <a href="/resources/assistant/">published</a>, and conversations are logged
-      so I can see which sections keep tripping people up.
-    </p>
     <div class="tokenrow">
       {#if $token && !replacing}
         <label>
