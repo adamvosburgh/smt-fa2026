@@ -30,7 +30,7 @@
   import { createMap, attachRedraw } from '../_shared/maplibre.js';
   import {
     compute, colors, STRIDE, HEIGHT, FLOORS, FLOORS_ADDED, DISTRICT,
-    DISTRICT_INDEX, BUILDING_COLOR
+    DISTRICT_INDEX, BUILDING_COLOR, OFFICE_AREA, RES_AREA
   } from './gates.js';
   import {
     peoplePerBuilding, computeChannels, applyCurves, percentile98, paint,
@@ -51,6 +51,8 @@
   let heavyMs = $state(0);
   let result = $state(null);
   let maxPerCell = $state(0);
+  let hover = $state(null);
+  let stageEl = $state(null);
 
   let map, overlay, detachRedraw, PolygonLayer, SolidPolygonLayer, BitmapLayer;
   let buildings, footprints, grid, csr, sidewalk, day, outlines;
@@ -59,6 +61,7 @@
   // retessellate 3,700 polygons per frame while the hour plays.
   let fpByDistrict = null;
   let rgba = null;          // building colors, rebuilt only on a heavy pass
+  let people = null;        // jobs and residents per building, from the heavy pass
   let channels = null;      // 24 hours x cells, two channels
   let texture = null;       // the RGBA buffer paint() writes into
   let heatImage = null;     // an ImageData view of it
@@ -221,7 +224,7 @@
     result = compute(buildings, manifest, params);
     rgba = colors(result, buildings, params);
 
-    const people = peoplePerBuilding(buildings, manifest, result, params);
+    people = peoplePerBuilding(buildings, manifest, result, params);
     channels = applyCurves(
       computeChannels(grid, csr, buildings, people, params.district), day);
     if (!maxPerCell) maxPerCell = percentile98(channels);
@@ -238,6 +241,57 @@
             params.convertibility_threshold, params.w_depth, params.w_f2f,
             params.w_area, params.w_age, params.incentive_467m,
             params.min_units_for_conversion_sample].join('|');
+  }
+
+  const num = (v) => Math.round(v).toLocaleString();
+
+  /** The two hour curves at a fractional hour, interpolated the way paint() is. */
+  function curveAt(hour) {
+    const h0 = Math.floor(hour) % 24;
+    const h1 = (h0 + 1) % 24;
+    const f = hour - Math.floor(hour);
+    const o0 = day.workers.arrivals[h0] + day.workers.departures[h0];
+    const o1 = day.workers.arrivals[h1] + day.workers.departures[h1];
+    const r0 = day.residents.flow[h0];
+    const r1 = day.residents.flow[h1];
+    return { office: o0 + (o1 - o0) * f, residential: r0 + (r1 - r0) * f };
+  }
+
+  /**
+   * What one building says about itself.
+   *
+   * The heat map is people per 10 m of street and this is people in a
+   * building, so the two numbers do not match and are not meant to: a building
+   * with more frontage spreads the same crowd over more pavement. The lot line
+   * is here because a building on a shared lot does not have a floor area of
+   * its own - it has a share of the lot's, in proportion to its volume - and a
+   * reader comparing two towers should be told which of them is a share. Where
+   * the lot's massing is incomplete that share is a ceiling and the readout
+   * says so - see manifest.massing_cap.
+   */
+  function readoutFor(fp, x, y) {
+    if (!result || !people) return null;
+    const i = fp.i;
+    const base = i * STRIDE;
+    const st = result.state[i];
+    const office = buildings[base + OFFICE_AREA];
+    const res = buildings[base + RES_AREA];
+    const c = curveAt(params.hour ?? 8);
+    return {
+      x, y,
+      kind: st === 2 ? 'converted to homes'
+        : st === 1 ? 'office building'
+        : res > 0 ? 'existing homes'
+        : 'neither offices nor homes',
+      office,
+      score: st === 1 || st === 2 ? result.score[i] : null,
+      jobs: people.jobs[i],
+      residents: people.residents[i],
+      onto: people.jobs[i] * c.office + people.residents[i] * c.residential,
+      lotN: fp.n ?? 0,
+      lotShare: fp.s ?? null,
+      lotCapped: fp.c === true
+    };
   }
 
   function render(force = false) {
@@ -267,13 +321,20 @@
       }));
     }
 
+    // The building layer is the pickable one. Headcount belongs on the
+    // building, not on the pavement: the heat map is people per 10 m of street,
+    // which is a different quantity from the people in the building that put
+    // them there, and the readout is where that distinction is made legible.
     layers.push(new PolygonLayer({
       id: 'massing',
       data: fpFor(params.district),
       extruded: true,
       wireframe: false,
       filled: true,
-      pickable: false,
+      pickable: mode === 'edit',
+      onHover: ({ object, x, y }) => {
+        hover = object ? readoutFor(object, x, y) : null;
+      },
       getPolygon: (d) => d.r,
       getFillColor: (d, { target }) => {
         const o = d.i * 4;
@@ -386,8 +447,44 @@
   });
 </script>
 
-<div class="wrap">
+<div class="wrap" bind:this={stageEl}>
   <div class="map" bind:this={container}></div>
+
+  <!-- The readout follows the pointer rather than sitting in the legend. Same
+       tooltip as the pencil map: 230px, clamped inside the stage, no pointer
+       events of its own so it never eats a drag. -->
+  {#if hover && stageEl}
+    <div
+      class="tip"
+      style="left:{Math.min(hover.x + 14, stageEl.clientWidth - 244)}px;
+             top:{Math.min(hover.y + 14, stageEl.clientHeight - 130)}px"
+    >
+      <b>{hover.kind}</b>
+      {#if hover.office > 0}
+        <span>{num(hover.office)} sf of office floor area</span>
+      {/if}
+      {#if hover.score !== null}
+        <span>
+          convertibility {hover.score.toFixed(2)}, threshold
+          {Number(params.convertibility_threshold).toFixed(2)}
+        </span>
+      {/if}
+      {#if hover.jobs > 0}<span>{num(hover.jobs)} office jobs</span>{/if}
+      {#if hover.residents > 0}<span>{num(hover.residents)} residents</span>{/if}
+      {#if isHeat}
+        <span>{hover.onto.toFixed(1)} people onto the street this hour</span>
+      {/if}
+      {#if hover.lotN > 1}
+        <i>
+          shares a lot with {hover.lotN - 1} other building{hover.lotN > 2 ? 's' : ''};
+          it carries {(hover.lotShare * 100).toFixed(1)}% of the lot's floor area
+        </i>
+        {#if hover.lotCapped}
+          <i>that share is a ceiling - the survey is missing buildings on this lot</i>
+        {/if}
+      {/if}
+    </div>
+  {/if}
 
   {#if error}
     <p class="err">Couldn't load the data for this one: {error}</p>
@@ -501,6 +598,15 @@
     border-top: 1px solid #e0e0dd; margin-top: 0.2rem; padding-top: 0.3rem;
   }
   .sw { width: 9px; height: 9px; display: inline-block; flex: none; }
+  .tip {
+    position: absolute; width: 230px; pointer-events: none; z-index: 6;
+    background: rgba(255,255,255,0.95); border: 1px solid #000;
+    padding: 0.35rem 0.5rem; font-size: 0.62rem; line-height: 1.45;
+    display: flex; flex-direction: column; gap: 0.05rem;
+  }
+  .tip b { font-size: 0.7rem; }
+  .tip span { color: #555; }
+  .tip i { color: #999; font-style: normal; }
   .note { color: #999; }
   .warn { color: #a00; font-weight: 700; }
 </style>

@@ -657,6 +657,10 @@ DOB_CO_FILING_KEEP = ("Initial", "Final")
 # either in it or not.
 DISTRICT_CD = {"MN01": 101, "MN05": 105}
 
+# How far past its own ceiling a building may sit before the cap trims it - see
+# the cap block in main(). checks/preflight.py allows the same margin.
+CAP_TOLERANCE = 1.05
+
 
 def socrata(dataset, params, timeout=300):
     url = f"https://data.cityofnewyork.us/resource/{dataset}.json?{urllib.parse.urlencode(params)}"
@@ -875,16 +879,84 @@ def main():
     # on one tax lot, and attributing the lot's whole floor area to each of them
     # multiplies the district's office stock several times over - the same bug,
     # in the same shape, as bathtub's UnitsRes. So the lot's area columns are
-    # divided across the buildings that stand on it.
+    # divided across the buildings that stand on it, in proportion to each
+    # one's volume.
     #
-    # It is a crude split: it gives a mechanical room the same share as the
-    # tower beside it. Weighting by footprint area would be better and is not
-    # done here, because the footprint we have is the ground surface and the
-    # floor area is the whole stack. Named in the card.
+    # The split is by VOLUME, not equally. An equal split gave a mechanical
+    # room the same share as the tower beside it: at the World Trade Center,
+    # BBL 1000580001 carries 7.17M sf of office and the CityGML has five
+    # buildings on it, so the tower and a 1,400 sf entrance canopy each took a
+    # fifth. This code used to decline a footprint weighting on the grounds
+    # that the footprint is a ground surface and the floor area is a stack.
+    # Volume answers that: the CityGML gives a per-building height, so
+    # footprint area times height is a proxy for the stack itself, which is the
+    # quantity floor area is proportional to. Named in the card.
+    #
+    # A lot falls back to the equal split when its volumes sum to zero or when
+    # any building on it has no height, because a zero-height building would
+    # otherwise be given a zero share of a floor area it plainly has.
     per_lot = Counter(b["bbl"] for b in buildings if b["bbl"])
     multi = sum(1 for v in per_lot.values() if v > 1)
+    lot_volume = defaultdict(float)
+    lot_no_height = set()
+    for b in buildings:
+        if not b["bbl"]:
+            continue
+        vol = b["area"] * b["height"]
+        if b["height"] <= 0 or b["area"] <= 0:
+            lot_no_height.add(b["bbl"])
+        lot_volume[b["bbl"]] += vol
+    fell_back = sum(1 for bbl, n in per_lot.items() if n > 1
+                    and (bbl in lot_no_height or lot_volume[bbl] <= 0))
     print(f"build: {multi:,} lots carry more than one modeled building; "
-          f"their lot-level floor areas are divided across them")
+          f"their lot-level floor areas are divided across them in proportion "
+          f"to footprint area times height")
+    print(f"build: {fell_back:,} of those {multi:,} lots fall back to an equal "
+          f"split (a building with no height, or no volume on the lot)")
+
+    # THE CAP. The volume split divides a lot's floor area across the buildings
+    # the CityGML CONTAINS, and the CityGML is a 2014 survey that does not
+    # always contain them all. BBL 1000580001 is the case: PLUTO says NumBldgs
+    # is 9 and the city's own BUILDING footprint file lists nine, but the
+    # CityGML supplies five - the tower and four small structures. 3 WTC, 4 WTC
+    # and the Oculus are missing, so 1 WTC took 98.5% of the lot, 7.06M sf of
+    # office and 17,951 jobs against a real headcount nearer 8,000-10,000. The
+    # equal split hid this by dilution; the volume split concentrates it.
+    #
+    # So no building may be assigned more floor area than its own ground
+    # outline could hold at its lot's stated floor count: footprint area times
+    # NumFloors. That is a CEILING ON AN ERROR, not a correction of it - it is
+    # generous for a short building on a lot with a tower, and 1 WTC still ends
+    # up with about 25% more gross area than it really has.
+    #
+    # THE REMOVED AREA IS NOT REDISTRIBUTED. There is nowhere honest to put it:
+    # the other buildings on the WTC lot are canopies with tiny caps of their
+    # own. It is floor area the massing cannot place, and manifest.massing_cap
+    # records how much of it there is rather than moving it somewhere
+    # convenient.
+    #
+    # All four area columns are scaled by the SAME k, so the ratios between
+    # them do not move - gates.js reads a ratio of them for the 467-m test.
+    #
+    # The cap fires only past CAP_TOLERANCE. NumFloors is a lot-level integer
+    # and the footprint is a 2014 survey polygon, so a building a few percent
+    # over its own ceiling is inside the noise of the rule itself, and trimming
+    # it would be precision the inputs do not have. checks/preflight.py allows
+    # the same margin, so the two agree by construction: 117 buildings are over
+    # by more than 5% and are capped; another 30 sit between 0 and 5% over and
+    # are left where they are.
+    cap_stats = {
+        "buildings_capped": 0,
+        "bldg_area_removed": 0.0,
+        "office_area_removed": 0.0,
+        "by_district": {d: {"buildings_capped": 0, "bldg_area_removed": 0.0,
+                            "office_area_removed": 0.0,
+                            "office_area_before": 0.0, "office_area_after": 0.0}
+                        for d in args.districts},
+    }
+    cap_log = []
+    total_bldg_before = 0.0
+    total_office_before = 0.0
 
     rows = []
     kept = 0
@@ -893,7 +965,13 @@ def main():
         if not p:
             continue
 
-        share = 1.0 / max(1, per_lot.get(b["bbl"], 1))
+        n_on_lot = max(1, per_lot.get(b["bbl"], 1))
+        total_vol = lot_volume.get(b["bbl"], 0.0)
+        if (n_on_lot == 1 or total_vol <= 0
+                or b["bbl"] in lot_no_height):
+            share = 1.0 / n_on_lot
+        else:
+            share = (b["area"] * b["height"]) / total_vol
 
         def num(k, per_building=False):
             try:
@@ -905,9 +983,52 @@ def main():
         floors = num("NumFloors")
         bldg_area = num("BldgArea", True)
         office_area = num("OfficeArea", True)
+        res_area = num("ResArea", True)
+        com_area = num("ComArea", True)
+        lot_bldg_area = num("BldgArea")   # the LOT's, for the share the tooltip shows
         year_built = num("YearBuilt")
         depth = num("BldgDepth")
         height_ft = b["height"]          # from the CityGML roof surfaces, feet
+
+        dk = args.districts[b["district"]] if b["district"] < len(args.districts) \
+            else args.districts[0]
+        total_bldg_before += bldg_area
+        total_office_before += office_area
+        cap_stats["by_district"][dk]["office_area_before"] += office_area
+
+        # A single-building lot takes the whole lot's area by definition, so a
+        # cap there would only be firing on a PLUTO inconsistency, which is not
+        # this fix's job.
+        capped = False
+        cap = b["area"] * floors
+        if n_on_lot > 1 and cap > 0 and bldg_area > cap * CAP_TOLERANCE:
+            k = cap / bldg_area
+            implied_floors = bldg_area / b["area"] if b["area"] > 0 else 0.0
+            cap_log.append({
+                "bbl": b["bbl"], "bin": b["bin"],
+                "removed": bldg_area - cap,
+                "bldg_area_before": bldg_area, "bldg_area_after": cap,
+                "office_before": office_area, "office_after": office_area * k,
+                "implied_floors": implied_floors, "lot_floors": floors,
+                "k": k, "district": dk,
+            })
+            cap_stats["buildings_capped"] += 1
+            cap_stats["bldg_area_removed"] += bldg_area - cap
+            cap_stats["office_area_removed"] += office_area * (1 - k)
+            cap_stats["by_district"][dk]["buildings_capped"] += 1
+            cap_stats["by_district"][dk]["bldg_area_removed"] += bldg_area - cap
+            cap_stats["by_district"][dk]["office_area_removed"] += office_area * (1 - k)
+            bldg_area *= k
+            office_area *= k
+            res_area *= k
+            com_area *= k
+            capped = True
+        cap_stats["by_district"][dk]["office_area_after"] += office_area
+
+        # The share the readout shows is the share AFTER the cap, of the lot's
+        # own floor area - so a capped building does not claim a share it was
+        # not left with.
+        share_out = (bldg_area / lot_bldg_area) if lot_bldg_area > 0 else share
 
         plate_area = bldg_area / floors if floors > 0 else 0.0
         f2f = height_ft / floors if floors > 0 else 0.0
@@ -925,10 +1046,14 @@ def main():
         f = filings.get(str(b["bin"]))
         rows.append({
             "b": b, "p": p,
+            # Carried so the footprint can say so: a building whose floor area
+            # is a share of a lot's is a different claim from one that has its
+            # own, and the sandbox's readout names which it is.
+            "share": share_out, "n_on_lot": n_on_lot, "capped": capped,
             "vals": [
                 b["centroid_ll"][0], b["centroid_ll"][1],
                 height_ft, floors, bldg_area, office_area,
-                num("ResArea", True), num("ComArea", True), year_built,
+                res_area, com_area, year_built,
                 s_depth, s_f2f, s_area, s_age,
                 f["units_after"] - f["units_before"] if f else 0.0,
                 f["floors_added"] if f else 0.0,
@@ -939,6 +1064,29 @@ def main():
         kept += 1
 
     print(f"build: {kept:,} buildings with both massing and PLUTO")
+
+    # What the cap removed. The ten largest by hand, because one lot dominates
+    # and a total on its own would hide that.
+    print(f"cap: {cap_stats['buildings_capped']:,} of {kept:,} buildings hold "
+          f"more floor area than their own footprint times their lot's "
+          f"NumFloors; capped")
+    print(f"cap: BldgArea removed {cap_stats['bldg_area_removed'] / 1e6:.2f}M sf "
+          f"of {total_bldg_before / 1e6:.2f}M "
+          f"({100 * cap_stats['bldg_area_removed'] / max(1, total_bldg_before):.1f}%); "
+          f"OfficeArea removed {cap_stats['office_area_removed'] / 1e6:.2f}M sf "
+          f"of {total_office_before / 1e6:.2f}M "
+          f"({100 * cap_stats['office_area_removed'] / max(1, total_office_before):.1f}%)")
+    for d in args.districts:
+        c = cap_stats["by_district"][d]
+        print(f"cap: {d} office {c['office_area_before'] / 1e6:.1f}M -> "
+              f"{c['office_area_after'] / 1e6:.1f}M sf "
+              f"({100 * c['office_area_after'] / max(1, c['office_area_before']):.1f}% kept), "
+              f"{c['buildings_capped']:,} capped")
+    for e in sorted(cap_log, key=lambda r: -r["removed"])[:10]:
+        print(f"cap:   BIN {e['bin']} BBL {e['bbl']} "
+              f"{e['bldg_area_before'] / 1e6:.2f}M -> {e['bldg_area_after'] / 1e6:.2f}M sf "
+              f"(k={e['k']:.3f}), implied {e['implied_floors']:.0f} floors against "
+              f"the lot's {e['lot_floors']:.0f}")
     w = CONVERTIBILITY["weights"]
     scores = np.array([
         w["floorplate_depth"] * r["vals"][9] + w["floor_to_floor"] * r["vals"][10]
@@ -970,7 +1118,17 @@ def main():
         b = r["b"]
         ring = [[round(lo, 6), round(la, 6)] for lo, la in b["lonlat"]]
         levels = [round(h, 1) for h, _ in b["levels"]]
-        foot.append({"r": ring, "l": levels})
+        entry = {"r": ring, "l": levels}
+        # `n` and `s` only where the lot carries more than one building, which
+        # is 165 lots of 4,348. Everywhere else the floor area is the whole
+        # lot's and there is nothing to qualify.
+        if r["n_on_lot"] > 1:
+            entry["n"] = r["n_on_lot"]
+            entry["s"] = round(r["share"], 4)
+            # Capped: the share is a ceiling, not the building's own figure.
+            if r["capped"]:
+                entry["c"] = True
+        foot.append(entry)
     (out / "footprints.json").write_text(json.dumps(foot, separators=(",", ":")))
 
     # Only the district's buildings - the fetch covers all of Manhattan, and
@@ -1004,7 +1162,7 @@ def main():
     else:
         print("day: SKIPPED - no flow.json. Run data/scripts/after-five-agents.py "
               "for the MTA arrival and departure curves.")
-    grid_meta = afterfive_day.write_grid(out, foot)
+    grid_meta = afterfive_day.write_grid(out, foot, original)
     outlines_meta = afterfive_day.write_district_outlines(
         out, original, args.districts)
 
@@ -1091,6 +1249,34 @@ def main():
             "score and theirs can be held up against each other. It is a "
             "comparison and not a validation.",
         "presence": presence,
+        "massing_cap": {
+            "rule": "No building is assigned more floor area than its own "
+                    "footprint area times its lot's NumFloors. All four area "
+                    "columns are scaled by the same factor, so the ratios "
+                    "between them do not move.",
+            "buildings_capped": cap_stats["buildings_capped"],
+            "buildings_total": kept,
+            "bldg_area_removed_sf": round(cap_stats["bldg_area_removed"]),
+            "bldg_area_total_sf": round(total_bldg_before),
+            "office_area_removed_sf": round(cap_stats["office_area_removed"]),
+            "office_area_total_sf": round(total_office_before),
+            "by_district": {
+                d: {k: (v if isinstance(v, int) else round(v))
+                    for k, v in cap_stats["by_district"][d].items()}
+                for d in args.districts
+            },
+            "note": "This is floor area MapPLUTO puts on a lot whose massing "
+                    "does not contain every building the lot has. The CityGML "
+                    "is a 2014 survey; where it is missing a building, the "
+                    "volume split hands that building's floor area to the "
+                    "others on the lot, and the largest of them absorbs most "
+                    "of it. BBL 1000580001 is the case that matters: PLUTO "
+                    "says nine buildings, the CityGML has five, and 1 WTC was "
+                    "taking 98.5% of the lot. The cap bounds the error and "
+                    "does not remove it - 1 WTC is still left with more gross "
+                    "area than it has. The removed area is NOT redistributed; "
+                    "there is nowhere honest to put it.",
+        },
         "incentive_467m": INCENTIVE_467M,
         "dob": {
             "datasets": {"legacy": DOB_LEGACY, "certificates_of_occupancy": DOB_CO},
@@ -1145,7 +1331,10 @@ def main():
             "replaced them. flow.json IS still read - the MTA arrivals and "
             "departures are the office channel's curve. There are no gateways "
             "in the model any more, so nothing concentrates at a station exit "
-            "except insofar as buildings stand near one.",
+            "except insofar as buildings stand near one. As of 2026-09-10 the "
+            "CSCL street centerline export is read again, by "
+            "afterfive_day.build_grid, for the sidewalk mask - the walkable "
+            "filter is the same one the agent layer used.",
         "back_test": "CUT. The spec proposed validating against 421-g from 1995. "
                      "The legacy dataset's earliest pre-filing date is "
                      "2000-01-01, so it cannot reach. The model is not validated "

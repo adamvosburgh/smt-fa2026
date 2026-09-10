@@ -189,7 +189,7 @@
     "note": "Ours. Each proxy is clamped to its range and normalized so that 1 means easier to convert."
   },
   "gensler_calibration": {
-    "MN01": 0.767,
+    "MN01": 0.769,
     "MN05": 0.715
   },
   "gensler_calibration_note": "The threshold at which our score passes 25% of each district's office buildings, at the default weights. Gensler published that about a quarter of the 1,300+ buildings they scored were suitable and did not publish the scoring, so this is the one number our score and theirs can be held up against each other. It is a comparison and not a validation.",
@@ -236,6 +236,32 @@
     },
     "density_caveat": "Roughly one office job per 490 square feet in Lower Manhattan and per 324 in Midtown South. Both are well above the 150-250 square feet per worker that gets quoted for a fitted-out floor, and the difference is vacancy plus the fact that OfficeArea is gross floor area and LODES counts primary jobs only. The model uses the measured ratio rather than the rule of thumb, so a converted building displaces the jobs that were really recorded on that floor area.",
     "what_is_missing": "THE HOURS. This gives the size of the two populations and nothing about when either of them is on the street, which is the thing the sandbox is named after. NHTS Table 8-1 is national, six bands wide, and its finest statement about the evening is that 28% of trips begin somewhere between 6pm and midnight. ACS B08302 is half-hour bands at tract level, but its universe is departures TO work, so it describes the morning only. There is no published table of when people leave Manhattan offices in the evening. So the counts are reported and no curve is drawn through them."
+  },
+  "massing_cap": {
+    "rule": "No building is assigned more floor area than its own footprint area times its lot's NumFloors. All four area columns are scaled by the same factor, so the ratios between them do not move.",
+    "buildings_capped": 117,
+    "buildings_total": 3728,
+    "bldg_area_removed_sf": 8896257,
+    "bldg_area_total_sf": 393111209,
+    "office_area_removed_sf": 3157334,
+    "office_area_total_sf": 263427150,
+    "by_district": {
+      "MN01": {
+        "buildings_capped": 44,
+        "bldg_area_removed": 7846121,
+        "office_area_removed": 2707610,
+        "office_area_before": 78113994,
+        "office_area_after": 75406384
+      },
+      "MN05": {
+        "buildings_capped": 73,
+        "bldg_area_removed": 1050135,
+        "office_area_removed": 449724,
+        "office_area_before": 185313156,
+        "office_area_after": 184863432
+      }
+    },
+    "note": "This is floor area MapPLUTO puts on a lot whose massing does not contain every building the lot has. The CityGML is a 2014 survey; where it is missing a building, the volume split hands that building's floor area to the others on the lot, and the largest of them absorbs most of it. BBL 1000580001 is the case that matters: PLUTO says nine buildings, the CityGML has five, and 1 WTC was taking 98.5% of the lot. The cap bounds the error and does not remove it - 1 WTC is still left with more gross area than it has. The removed area is NOT redistributed; there is nowhere honest to put it."
   },
   "incentive_467m": {
     "source": "HPD 467-m requirements FAQ, read 2026-08-31",
@@ -294,19 +320,27 @@
     "cell_m": 10.0,
     "reach_m": 50.0,
     "sigma_m": 25.0,
+    "street_buffer_m": 15.0,
+    "street_buffer_note": "Ours, and not measured. A cell counts as sidewalk when it is within this many meters of a walkable street centerline and not inside a building. Roughly a curb-to-building depth on a side street, and too narrow for a wide avenue.",
+    "sidewalk_cells": 164427,
+    "street_reach": {
+      "street": 3711,
+      "widened": 14,
+      "fallback": 3,
+      "empty": 0
+    },
     "note": "10 m cells over the districts, with a per-building list of the sidewalk cells within 50 m of its footprint edge and a Gaussian weight on that distance, normalized per building."
   },
   "district_outlines": {
     "file": "districts.json",
     "source": "NYC Community Districts, NYC Open Data 5crt-au7u, BoroCD 101 and 105. The build doc named yfnk-k7r4, which does not exist on the portal."
   },
-  "agents_removed": "The agent layer is gone as of 2026-09-08. agents.json, gateways.json, graph.bin, routes.bin and occupancy.json are still on disk and are no longer read by anything; the sidewalk heat map replaced them. flow.json IS still read - the MTA arrivals and departures are the office channel's curve. There are no gateways in the model any more, so nothing concentrates at a station exit except insofar as buildings stand near one.",
+  "agents_removed": "The agent layer is gone as of 2026-09-08. agents.json, gateways.json, graph.bin, routes.bin and occupancy.json are still on disk and are no longer read by anything; the sidewalk heat map replaced them. flow.json IS still read - the MTA arrivals and departures are the office channel's curve. There are no gateways in the model any more, so nothing concentrates at a station exit except insofar as buildings stand near one. As of 2026-09-10 the CSCL street centerline export is read again, by afterfive_day.build_grid, for the sidewalk mask - the walkable filter is the same one the agent layer used.",
   "back_test": "CUT. The spec proposed validating against 421-g from 1995. The legacy dataset's earliest pre-filing date is 2000-01-01, so it cannot reach. The model is not validated against history and the card says so.",
   "sources": {
     "massing": "DCP NYC 3D Model by Community District (NYC Open Data u5j4-zxpn), EPSG:2263 feet. THE FILE CARRIES NO ATTRIBUTES - no BIN, no BBL, nothing - so identity is inferred by spatial match against NYC Building Footprints: 99.5% matched, median distance 2 feet.",
     "pluto": "MapPLUTO 26v2, joined on the BBL recovered by that match.",
     "dob": "DOB job filings, both systems, unioned."
   },
-  "why_this_shape": "Per-building constants, both gates recomputed in the browser on every slider move. Same reasoning as sandbox 02: every control changes the arithmetic rather than the data, so there is nothing to precompute except what no parameter can move.",
-  "regenerated_note": "buildings.bin was widened from 15 columns to 18 on 2026-09-01 without re-running the CityGML read. The four sub-scores are exact rearrangements of the composite that was already stored - no new information entered. On 2026-09-08 after-five.py WAS re-run end to end against the 13GB of CityGML in data/original/DA_WISE_GML, and the claim held: footprints.json came out byte-identical and buildings.bin differed only in the four sub-score columns, by at most 3e-7, which is one float32 ulp. One BIN with an all-zero filing record is no longer emitted (1,810 rather than 1,811), which changes nothing the model reads."
+  "why_this_shape": "Per-building constants, both gates recomputed in the browser on every slider move. Same reasoning as sandbox 02: every control changes the arithmetic rather than the data, so there is nothing to precompute except what no parameter can move."
 }

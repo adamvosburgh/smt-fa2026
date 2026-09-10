@@ -8,13 +8,15 @@ devnotes: true
 published: false
 ---
 
+<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+
 Notes from building the [Office to Residential Conversion](/sandboxes/after-five/) sandbox. Pipeline: `data/scripts/after-five.py`, with `afterfive_massing.py` for the CityGML and `afterfive_day.py` for the day and the sidewalk grid. Component: `src/lib/sandboxes/after-five/`.
 
 ![the sandbox at its defaults](/covers/after-five.png#img-full)
 
 <div class="gap">
 
-**What a rebuild won't have.** The sandbox precomputes, for every one of 3,728 buildings, the sidewalk cells within 50 m of its footprint edge with a distance weight on each - 298,563 pairs, shipped as a CSR array - and cuts an at-home curve from a half-gigabyte federal survey. A rebuild should take one district, a coarser grid, and a hand-drawn day curve. Keep the labels that say which parts are measured and which are assumed.
+**What a rebuild won't have.** The sandbox precomputes, for every one of 3,728 buildings, the sidewalk cells within 50 m of its footprint edge with a distance weight on each - 227,437 pairs, shipped as a CSR array - and cuts an at-home curve from a half-gigabyte federal survey. A rebuild should take one district, a coarser grid, and a hand-drawn day curve. Keep the labels that say which parts are measured and which are assumed.
 
 </div>
 
@@ -27,7 +29,7 @@ The 09-08 rebuild removed the agents and the year. The agents asked the reader t
 ## The parts
 
 - **DCP 3-D Building Model, CityGML** (NYC Open Data `tnru-abg2`), 1,159 buildings in CD1 with BINs. Gives the massing and the ID everything else joins on.
-- **MapPLUTO 26v2**, joined on BBL. Gives floor area, office area, floors, year built and depth; lot areas are split across the buildings on a lot.
+- **MapPLUTO 26v2**, joined on BBL. Gives floor area, office area, floors, year built and depth; lot areas are split across the buildings on a lot in proportion to footprint area times height.
 - **DOB job filings** (`ic3t-wcy2`) and **certificates of occupancy** (`pkdm-hqz6`). Give the conversions that actually happened, stories added, and a measured 1,152 sf per apartment from 149 filings.
 - **Gensler's published convertibility criteria.** Give the shape of the score; the scoring is proprietary, so the four proxies and their weights are ours.
 - **NYC Comptroller, Spotlight on the office market, 14 May 2024.** Gives the office rent, $54/sf asking, Class B and C, the one sourced figure in the deal.
@@ -40,7 +42,8 @@ The 09-08 rebuild removed the agents and the year. The agents asked the reader t
 - **MTA Subway Entrances and Exits 2024** (`i9wp-a4ja`). Places the complexes.
 - **ATUS 2003-2025.** Gives the residents' day: the weighted share of all respondents at home in each hour of a weekday, from 124,923 diaries after dropping 2020, which has no multi-year weight.
 - **NYC Community Districts** (NYC Open Data `5crt-au7u`), BoroCD 101 and 105. Gives the outlines that are cut out of the mask fading the rest of the city.
-- **A 10 m sidewalk grid**, derived: 675 x 941 cells over the two districts, 609,412 of them not inside any building footprint, with each building's list of cells within 50 m of its edge and a Gaussian weight on that distance.
+- **NYC Street Centerline** (NYC Open Data `inkn-q76z`), walkable segments only, 7,413 lines. Gives the mask a street to stand on.
+- **A 10 m sidewalk grid**, derived: 675 x 941 cells over the two districts, 164,427 of them sidewalk - within 15 m of a walkable centerline and not inside a building - with each building's list of cells within 50 m of its edge and a Gaussian weight on that distance.
 
 ![the MTA day and the ATUS check](/tutorials/images/02/mta-day-atus.png#img-full)
 
@@ -59,10 +62,14 @@ The 09-08 rebuild removed the agents and the year. The agents asked the reader t
 - Nothing on disk records what a ground floor is used for at building resolution, so the active-frontage share was a probability slider rather than data. The 09-08 rebuild dropped it along with the streets and the eye-height view.
 - The build doc named `yfnk-k7r4` for the community districts. That dataset does not exist on NYC Open Data; the catalog gives `5crt-au7u`, 71 features with `boro_cd` as a string, and the fetch script says so at the top.
 - `buildings.bin` was widened from 15 columns to 18 in an earlier pass without re-running the CityGML read, on the argument that the four sub-scores are an exact rearrangement of the composite already stored. Re-running the whole pipeline on 09-08 checked it: `footprints.json` came out byte-identical and `buildings.bin` differed only in those four columns, by at most 3e-7, which is one float32 ulp.
-- There is no sidewalk dataset, so a cell counts as sidewalk when its center is not inside a building footprint. That also counts streets, plazas, parks and the water - 95.9% of the grid - and the card says so rather than calling it a sidewalk map.
+- There is no sidewalk dataset, so a cell first counted as sidewalk when its center was not inside a building footprint. That was 95.9% of the grid: the memorial plaza, the West Street roadbed and the Hudson all absorbed people, and a tower set in a plaza painted fainter than the canopy beside it. The mask is now the 15 m band around a walkable street centerline, which is 25.9%, and the 15 m is a judgment with no source. It does not reach the memorial plaza and nothing in this range would: the pools are 47 to 99 m from the nearest walkable centerline, so the plaza is simply not ground the model has.
+- Dividing a lot's floor area equally across the buildings on it put a tower and a 1,400 sf entrance canopy on equal footing: at the World Trade Center the five buildings on BBL 1000580001 each took a fifth of 7.17M sf of office. The split is now by footprint area times height.
+- Weighting the split by volume then concentrated the lot onto whichever buildings the survey happens to contain, and the CityGML is from 2014. PLUTO says nine buildings stand on the World Trade Center lot and the survey has five, so 1 WTC absorbed 3 WTC, 4 WTC and the Oculus and came out at 98.5% of the lot, 7.06M sf and 17,951 jobs against a real headcount nearer 8,000-10,000; the equal split had hidden this by dilution. Capping each building at its own footprint times its lot's floor count brings it to 61%, 4.38M sf and about 11,500 jobs. The cap bounds the error and does not remove it, and the 8.9M sf it took off across 117 buildings is not redistributed.
+- MapPLUTO's `ComArea` is total commercial floor area and **includes** `OfficeArea`, so the 467-m eligibility test, which added the two, double-counted every office building: 1,620 of 1,818 came out more than 100% non-residential. Measuring the share as one minus the residential share instead takes the buildings that qualify from 1,641 to 1,578.
+- Two of the four scenarios drew the identical map. Both carried the Comptroller's residential side, at which the office is worth so much less than the apartments that the financial test stops binding - every building past the convertibility threshold clears the deal automatically - so the threshold was deciding alone and it was the same in both. The fourth scenario now sets the threshold too, and says in its note that the number is invented.
 - deck.gl's `BitmapLayer` does not take an `ImageData` and re-uploads a texture only when the image identity changes. The heat map writes into one buffer and hands the layer one of two alternating canvases, so the pixels reach the GPU every frame without allocating a texture every frame.
 - The grid's row 0 is its south edge and an image's row 0 is its top, so the write is flipped. Getting that wrong mirrors the heat map about the district's waist, which reads as a plausible map of somewhere else.
-- The 24-hour, two-channel pass over 298,563 building-cell pairs takes about 50 ms, so it runs on the main thread when an assumption moves and never when the clock does. The clock only interpolates between two hour bins.
+- The 24-hour, two-channel pass over 227,437 building-cell pairs takes about 50 ms, so it runs on the main thread when an assumption moves and never when the clock does. The clock only interpolates between two hour bins.
 - The activity ramp is normalized once, at the default scenario, and held. Rescaling it per scenario made the map show the shape of the color scale rather than the shape of the day.
 
 ## What came out
@@ -79,8 +86,9 @@ The 2024 asking rent, where nothing converts:
 
 <div data-sandbox="after-five" data-mode="view" data-params='{"district":"mn01","view":"population","hour":17,"added_floors":true,"scenario":"asking_2024","office_rent":54,"opex_office":0.35,"cap_rate_office":0.055,"residential_rent":75,"opex_residential":0.35,"cap_rate_residential":0.055,"conversion_cost_sf":350,"convertibility_threshold":0.5,"w_depth":0.35,"w_f2f":0.25,"w_area":0.2,"w_age":0.2,"incentive_467m":true,"min_units_for_conversion_sample":10}'></div>
 
-- The four scenarios in CD1: published asking rent 2024 converts **0 of 381** office buildings and creates no homes; Downtown Class B effective rent 2026 converts **1**, 26 homes; the Comptroller's 2025 pro forma converts **142**, 10,141 homes; the assessor's distressed view converts **142**, 10,141 homes. At the last two the office is valued at $219 and $252 per square foot and the apartments at $764 and $890.
-- Moving any of the seven deal sliders switches the scenario button to `custom`, and nothing else changes with it.
+- The four scenarios in CD1: published asking rent 2024 converts **0 of 381** office buildings and creates no homes; Downtown Class B effective rent 2026 converts **1**, 26 homes; the Comptroller's 2025 pro forma converts **137**, 9,439 homes; the program that reaches everything converts **199**, 35,907 homes. The fourth is the only one that moves the convertibility threshold, from 0.5 to 0.3, and that is the whole difference between it and the third.
+- Moving any of the seven deal sliders, or the convertibility threshold, switches the scenario button to `custom`, and nothing else changes with it.
+- Hovering a building gives its floor area, its convertibility score against the threshold, its jobs or residents, the people it puts onto the street this hour, and - where it stands on a shared lot - what share of that lot's floor area it carries, and whether that share is a ceiling.
 - Green buildings are the ones that converted; blue-gray are still offices; tan are homes that were already there.
 - At `asking_2024`, the population view at 17:00 has no green anywhere except the buildings that were already residential, because nothing converted.
 - **There are no gateways.** Nothing concentrates at a station exit except insofar as buildings stand near one, which is a real difference from the version this replaced.
@@ -94,7 +102,9 @@ The 2024 asking rent, where nothing converts:
 - Floor area per apartment depends on which filings count, and the choice moves it by 40%; the cut is a control with six measured stops.
 - Added floors are a story count, so they can only be drawn as a block on the roof.
 - The sidewalk numbers are people a building sends out and takes in, spread over the ground near it - not people observed on a street. The spread is a Gaussian on the distance from the footprint, which is a choice.
-- A cell counts as sidewalk when it is not inside a building, so streets, plazas, parks and the water are all in the map.
+- A cell counts as sidewalk when it is within 15 m of a walkable street centerline and not inside a building. The 15 m is ours: roughly a curb-to-building depth plus a lane on a side street, and still too narrow for a wide avenue. Ground away from a street is not in the model, so the memorial plaza is empty here.
+- Floor area is divided across the buildings a 2014 survey contains, and where it is missing a building the others absorb its area. The cap holds each building to what its own outline could contain, which is a ceiling on that error rather than a correction of it; 1 WTC still carries about a quarter more floor area than it has.
+- The map is people per 10 m of street, not people in a building. A building's people are spread evenly around its own perimeter, so one with more frontage puts fewer on each stretch of it; the hover readout is where a building's own headcount is.
 - Anyone not arriving by subway is invisible, and residents' hours are a national survey applied to Manhattan.
 - The model isn't validated against history.
 

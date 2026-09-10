@@ -151,6 +151,47 @@ for lbl, f, idcol in (("O-D arrivals", "mta_od_arrivals_study_districts_2024.csv
     except Exception as e:
         fails += 1; print(f"  FAIL  {lbl:30} unparseable: {e}")
 
+# after-five: the massing cap held. The volume split divides a lot's floor area
+# across the buildings the CityGML CONTAINS, and where the survey is missing a
+# building the largest one on the lot absorbs its area - at BBL 1000580001 that
+# put 98.5% of the World Trade Center on 1 WTC. after-five.py caps every
+# building at its own footprint times its lot's NumFloors, with the same 5%
+# margin allowed here. This is the check that catches the concentration coming
+# back through some future pipeline change.
+# Scoped to the SHARED lots, which is where the cap applies and where the
+# concentration happens. On a one-building lot the building is assigned the
+# lot's whole area by definition, and PLUTO's NumFloors against a 2014 survey
+# footprint puts a fair number of those over a ceiling that means nothing
+# there - a disagreement between two datasets, not an artifact of the split.
+bins = REPO/"data"/"processed"/"after-five"/"buildings.bin"
+fps = REPO/"data"/"processed"/"after-five"/"footprints.json"
+if bins.exists() and fps.exists():
+    try:
+        import array as _a
+        vals = _a.array("f")
+        vals.frombytes(bins.read_bytes())
+        shared = [i for i, e in enumerate(json.load(fps.open())) if e.get("n", 1) > 1]
+        S, FLOORS, BLDG, FOOT = 18, 3, 4, 16
+        over = []
+        for i in shared:
+            o = i * S
+            cap = vals[o + FOOT] * vals[o + FLOORS]
+            if cap > 0 and vals[o + BLDG] > cap * 1.05:
+                over.append((vals[o + BLDG] / cap, i))
+        if over:
+            fails += 1
+            over.sort(reverse=True)
+            print(f"  FAIL  after-five massing cap      {len(over)} shared-lot buildings "
+                  f"hold more floor area than footprint x NumFloors + 5%")
+            print(f"          worst is row {over[0][1]} at {over[0][0]:.2f}x its ceiling. "
+                  f"Re-run data/scripts/after-five.py.")
+        else:
+            print(f"  ok    after-five massing cap      0 of {len(shared):,} shared-lot "
+                  f"buildings over footprint x NumFloors + 5%")
+    except Exception as e:
+        warns += 1
+        print(f"  warn  after-five massing cap      unreadable: {e}")
+
 # HYDE 3.2 internals, since a truncated download passes a size check
 z = ORIG/"anthromes-inputs/raw-data.zip"
 if z.exists():

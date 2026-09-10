@@ -144,7 +144,14 @@ function sfPerUnitAt(manifest, cut) {
 function qualifies467m(b, base, unitsMade) {
   const bldgArea = b[base + BLDG_AREA];
   if (bldgArea <= 0) return false;
-  const nonResidential = (b[base + OFFICE_AREA] + b[base + COM_AREA]) / bldgArea;
+  // THE SHARE THAT IS NOT RESIDENTIAL, measured as one minus the residential
+  // share. It used to be (OfficeArea + ComArea) / BldgArea, which double-counts
+  // every office building: in MapPLUTO, ComArea is TOTAL commercial floor area
+  // and OfficeArea is a subset of it. ComArea >= OfficeArea on all 1,818 office
+  // buildings here, and 1,620 of them came out with a non-residential share
+  // above 1.0, which is impossible. The gate was too easy by 63 buildings.
+  // Do not add the two again.
+  const nonResidential = 1 - b[base + RES_AREA] / bldgArea;
   return nonResidential >= 0.9 && unitsMade >= 6;
 }
 
