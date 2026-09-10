@@ -25,8 +25,11 @@ export async function update(name, fallback, fn) {
   const next = prev.then(async () => {
     const cur = await read(name, fallback);
     const out = await fn(cur);
-    await mkdir(config.stateDir, { recursive: true });
-    await writeFile(file(name), JSON.stringify(out.state ?? out, null, 2));
+    const dest = file(name);
+    // `name` may be nested (`sessions/<id>.json`), so create the file's own
+    // parent, not just stateDir - otherwise the write fails with ENOENT.
+    await mkdir(path.dirname(dest), { recursive: true });
+    await writeFile(dest, JSON.stringify(out.state ?? out, null, 2));
     return out.result ?? out;
   });
   locks.set(name, next.catch(() => {}));
