@@ -12,13 +12,16 @@
 //      This is the control that matters. It converts an unbounded financial
 //      risk into a known number. Everything else is optimisation on top of it.
 //
-//   1. Students already have a token - the one they paste once to submit. It
-//      unlocks a generous allowance here too. That is not a password gate; it
-//      is a thing they already did in week 1 doing double duty.
+//   1. A VALID STUDENT TOKEN IS REQUIRED. No anonymous tier. The token is the
+//      one students already paste once to submit, so this is a thing they did
+//      in week 1 doing double duty rather than a second credential.
 //
-//   2. Anonymous visitors get a small free tier. Enough that someone browsing
-//      the sandboxes can see what the assistant is; not enough to be worth
-//      scripting. This is what keeps the site genuinely public.
+//      There was an anonymous free tier here until 2026-09-10, on the argument
+//      that it kept the site public. Adam's call was that it does not: the site
+//      is public, and every sandbox, tutorial and assignment on it stays open to
+//      anyone with no token at all. It is the API spend that is not public. An
+//      anonymous allowance keyed on a session cookie is also reset by clearing
+//      cookies, so it was friction rather than a limit.
 //
 //   3. THE TRANSCRIPT LIVES ON THE SERVER. The client sends a session id and
 //      one new message - never a message array. This is the easiest hole to
@@ -29,9 +32,9 @@
 //   4. The model, the system prompt, and max_tokens are all fixed server-side.
 //      The client picks none of them.
 //
-// What is deliberately NOT here: a password gate (it would kill the point of a
-// public sandbox site), accounts or OAuth (far too much machinery for a seminar),
-// and IP allowlisting Columbia (students work from home).
+// What is deliberately NOT here: accounts, passwords or OAuth (far too much
+// machinery for a seminar - the token IS the identity, see server/auth.js), and
+// IP allowlisting Columbia (students work from home).
 //
 // Every exchange is logged to var/assistant-log.jsonl. That is a course
 // improvement byproduct, the same way review.json is: it shows which tutorial
@@ -64,6 +67,22 @@ export async function POST({ request, cookies, getClientAddress }) {
     return json({ ok: false, error: 'bad origin' }, { status: 403 });
   }
 
+  // The gate. identify() returns 'anonymous' for a missing, unknown or revoked
+  // token alike, and all three get the same answer - saying which it was would
+  // tell someone probing whether a token they hold is real.
+  const who = await identify(request);
+  if (who.kind !== 'student') {
+    return json(
+      {
+        ok: false,
+        error:
+          'The assistant needs your submission token - the one from the enrollment link you were emailed. Paste it below and this browser will remember it.',
+        needsToken: true
+      },
+      { status: 401 }
+    );
+  }
+
   const body = await request.json().catch(() => ({}));
   const message = String(body.message ?? '').slice(0, a.maxCharsPerMessage);
   if (!message.trim()) return json({ ok: false, error: 'empty message' }, { status: 400 });
@@ -87,7 +106,9 @@ export async function POST({ request, cookies, getClientAddress }) {
   // push text of someone's choosing into the prompt.
   context.pageText = pageText(context.page);
 
-  const who = await identify(request);
+  // The session cookie is the transcript's key, not an identity. Only set once
+  // the token has checked out, so a caller with no token cannot make the server
+  // open a session for them.
   let sid = cookies.get(SESSION_COOKIE);
   if (!sid) {
     sid = randomUUID();
@@ -95,9 +116,9 @@ export async function POST({ request, cookies, getClientAddress }) {
       path: '/', httpOnly: true, sameSite: 'lax', secure: true, maxAge: 60 * 60 * 24 * 30
     });
   }
-  const identityKey = who.kind === 'student' ? `student:${who.student}` : `anon:${sid}`;
+  const identityKey = `student:${who.student}`;
 
-  const gate = await reserve(identityKey, who.kind);
+  const gate = await reserve(identityKey);
   if (!gate.ok) {
     return json(
       {
@@ -105,9 +126,7 @@ export async function POST({ request, cookies, getClientAddress }) {
         error:
           gate.reason === 'site-daily-ceiling'
             ? 'The assistant has hit its daily limit for the whole site. It resets tomorrow - everything else on the site still works, and no tutorial needs it.'
-            : who.kind === 'student'
-              ? `You have used your ${gate.allowance} messages for today.`
-              : `Anonymous visitors get ${gate.allowance} messages a day. If you are in the class, paste your token and you get a lot more.`
+            : `You have used your ${gate.allowance} messages for today.`
       },
       { status: 429 }
     );

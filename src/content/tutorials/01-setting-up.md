@@ -50,11 +50,9 @@ Go to the assignment page and click `Submit your work`, and fill out the form.
 
 Click `submit`. If it worked you will see a link to your new page. Follow it, and then go to [Student Work](/gallery/) and find yourself under Assignment 1.
 
-![the upload form][UPLOAD]
-
 ## Assignment 1
 
-Due next week, 9/17. Details on the [assignment page](/assignments/assignment-01/).
+Due 9/17. Details on the [assignment page](/assignments/assignment-01/).
 
 ---
 Module by Adam Vosburgh, Fall 2026.

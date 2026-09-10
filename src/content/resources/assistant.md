@@ -23,6 +23,6 @@ Everything the assistant is told is printed below. It lives in `src/lib/assistan
 
 ## Limits
 
-Each of you has a daily allowance of messages, tied to the same token you submit with. Visitors without a token get a smaller one. The site as a whole has a daily cap, and if it is reached the assistant will say so until the next day.
+The assistant needs your submission token, the same one you hand work in with. If this browser has lost it, there is a field for it at the top of the assistant panel. Each of you has a daily allowance of messages. The site as a whole has a daily cap, and if it is reached the assistant will say so until the next day.
 
 I keep a log of the conversations and read them to see which parts of the tutorials are giving people trouble. If you would rather I not read yours, skip the assistant; nothing in the class depends on it.

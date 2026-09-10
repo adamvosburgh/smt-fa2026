@@ -56,8 +56,9 @@ All tutorials and assignments are on this website. Readings are listed under the
 An overview of the semester: the class ambitions, the kinds of output the course produces, and which parts of the course are technical and which are about representation and argument.
 
 <!-- Class plan
-- Introduction to myself
 - Introduction to the course description
+- Introduction to myself
+- icebreaker - what do you think of when you think of a simulation?
 - Introduce course structure, explain previous course
 - introduce critical / counter cartography
 - working definitions of simulations models and twins
@@ -79,12 +80,12 @@ Data, representation, and the politics of each. In-class exercise: look at a set
 - connection to architectural representation (new lecture to be developed.)
 -->
 
-#### Readings due
+#### Readings due (in course folder or linked)
 Kurgan, Laura. "Mapping Considered as a Problem of Theory and Practice." In *Close Up at a Distance: Mapping, Technology, and Politics*. Zone Books, 2013.
 
-Couclelis, Helen. "People Manipulate Objects (but Cultivate Fields): Beyond the Raster-Vector Debate in GIS." 1992.
+[Mattern, Shannon. "Modeling Doubt: A Speculative Syllabus." *Journal of Visual Culture* 22, no. 2 (2023).](https://journals.sagepub.com/doi/full/10.1177/14704129231184553)
 
-Mattern, Shannon. "Modeling Doubt: A Speculative Syllabus." *Journal of Visual Culture* 22, no. 2 (2023).
+Optional:  Couclelis, Helen. "People Manipulate Objects (but Cultivate Fields): Beyond the Raster-Vector Debate in GIS." 1992.
 
 #### Tutorial 1 due – Set Up
 This tutorial will get you up to speed with the course website.

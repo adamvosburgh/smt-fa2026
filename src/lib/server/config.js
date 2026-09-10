@@ -26,8 +26,8 @@ export const config = {
     maxCharsPerMessage: Number(env.SMT_ASSISTANT_MAX_CHARS || 4000),
     // THE control that matters. Everything else is optimisation on top of it.
     dailyTokenCeiling: Number(env.SMT_ASSISTANT_DAILY_TOKENS || 2_000_000),
-    // Per-identity daily message allowances.
-    studentDailyMessages: Number(env.SMT_ASSISTANT_STUDENT_MSGS || 200),
-    anonDailyMessages: Number(env.SMT_ASSISTANT_ANON_MSGS || 10)
+    // Daily message allowance per student. There is no anonymous allowance:
+    // the assistant refuses a request without a valid token.
+    studentDailyMessages: Number(env.SMT_ASSISTANT_STUDENT_MSGS || 200)
   }
 };

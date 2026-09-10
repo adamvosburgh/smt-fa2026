@@ -17,5 +17,10 @@ export const nav = [
   { href: '/assignments/', label: 'Assignments' },
   { href: '/resources/', label: 'Resources' },
   { href: '/gallery/', label: 'Student Work' },
+  {
+    href: 'https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=oxmdzqvf&dl=0',
+    label: 'Folder',
+    external: true
+  },
   { href: 'https://calendar.app.google/PswuYWWDUBSTaC4K7', label: 'Office Hours', external: true }
 ];

@@ -4,7 +4,11 @@
 //
 // Two ceilings, both daily, both enforced before the model is called:
 //   - a global token ceiling for the whole site
-//   - a message allowance per identity (generous for students, small for anyone else)
+//   - a message allowance per student
+//
+// Every identity here is a student: /api/assistant refuses a request without a
+// valid token before it ever gets this far, so there is no anonymous tier to
+// size a second allowance for.
 //
 // When the global ceiling trips, the assistant says so plainly and the rest of
 // the site keeps working. The assistant is strictly additive - no tutorial may
@@ -26,11 +30,8 @@ export async function status() {
 }
 
 // Reserve a turn. Returns { ok } or { ok:false, reason }.
-export async function reserve(identityKey, kind) {
-  const allowance =
-    kind === 'student'
-      ? config.assistant.studentDailyMessages
-      : config.assistant.anonDailyMessages;
+export async function reserve(identityKey) {
+  const allowance = config.assistant.studentDailyMessages;
 
   return update('budget.json', {}, (state) => {
     const d = day();

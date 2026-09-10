@@ -12,6 +12,26 @@
   let busy = $state(false);
   let log = $state([]);
 
+  // The token field. The submit forms hide theirs once a token is stored, which
+  // is fine there because a student only meets that form a few times a term.
+  // Here the field stays on screen and greys out instead: cookie-clearing and
+  // private windows drop localStorage often enough that a student who has lost
+  // their token needs somewhere obvious to put it back, and the assistant is
+  // the one place they hit that wall mid-task. `replacing` re-opens it.
+  let replacing = $state(false);
+  let draft = $state('');
+
+  function saveToken() {
+    const t = draft.trim();
+    if (!t) return;
+    token.set(t);
+    draft = '';
+    replacing = false;
+    // Drop the "needs your token" line so the panel isn't still telling them
+    // to do the thing they just did.
+    log = log.filter((m) => !m.needsToken);
+  }
+
   $effect(() => {
     // The frozen archive has no server, so there is no assistant. Don't probe
     // for one - it would 404 on every page of the archived site forever.
@@ -42,7 +62,7 @@
         })
       });
       const d = await res.json();
-      log = [...log, { role: d.ok ? 'assistant' : 'error', text: d.ok ? d.reply : d.error }];
+      log = [...log, { role: d.ok ? 'assistant' : 'error', text: d.ok ? d.reply : d.error, needsToken: d.needsToken }];
     } catch {
       log = [...log, { role: 'error', text: 'Could not reach the assistant.' }];
     } finally {
@@ -64,6 +84,36 @@
       on is <a href="/resources/assistant/">published</a>, and conversations are logged
       so I can see which sections keep tripping people up.
     </p>
+    <div class="tokenrow">
+      {#if $token && !replacing}
+        <label>
+          Submission token
+          <input type="password" value={$token} disabled />
+        </label>
+        <button type="button" class="link" onclick={() => (replacing = true)}>replace</button>
+      {:else}
+        <label>
+          Submission token
+          <input
+            type="password"
+            bind:value={draft}
+            placeholder="paste it once"
+            onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); saveToken(); } }}
+          />
+        </label>
+        <button type="button" class="link" onclick={saveToken} disabled={!draft.trim()}>save</button>
+        {#if $token}
+          <button type="button" class="link" onclick={() => { replacing = false; draft = ''; }}>cancel</button>
+        {/if}
+      {/if}
+    </div>
+    {#if !$token}
+      <p class="note">
+        From the enrollment link you were emailed. The browser keeps it, and the submit
+        form will not ask again on this computer.
+      </p>
+    {/if}
+
     <div class="log">
       {#each log as m}
         <div class="msg {m.role}">{m.text}</div>
@@ -98,6 +148,25 @@
     background: var(--bg); color: var(--fg); border: 1px solid var(--rule); padding: 0.9rem;
   }
   .note { font-size: 0.62rem; color: var(--fg-dim); line-height: 1.5; margin: 0 0 0.75rem; }
+  .tokenrow { display: flex; align-items: flex-end; gap: 0.4rem; margin-bottom: 0.75rem; }
+  .tokenrow label {
+    flex: 1; display: flex; flex-direction: column; gap: 0.25rem;
+    font-size: 0.62rem; color: var(--fg-dim);
+  }
+  .tokenrow input {
+    font: inherit; font-size: 0.7rem; padding: 0.3rem;
+    border: 1px solid var(--rule); background: var(--code-bg); color: var(--fg);
+  }
+  /* Set and greyed out, which is the whole point of leaving it on screen: a
+     student can see at a glance that the browser still has their token. */
+  .tokenrow input:disabled { color: var(--fg-dim); opacity: 0.55; cursor: not-allowed; }
+  .link {
+    font: inherit; font-size: 0.62rem; padding: 0.3rem 0.1rem;
+    background: none; border: 0; color: var(--fg-dim);
+    text-decoration: underline; cursor: pointer;
+  }
+  .link:hover:not(:disabled) { color: var(--hi); }
+  .link:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: none; }
   .log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.75rem; }
   .msg { line-height: 1.6; white-space: pre-wrap; }
   .msg.user { color: var(--fg); font-weight: 700; }
