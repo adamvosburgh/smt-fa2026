@@ -30,7 +30,7 @@
   for (const f of ['title', 'gallery_text', 'work']) if (!form.includes(f)) form.push(f);
 
   // Short-answer questions from the assignment's `questions:` frontmatter, a
-  // list of { key, label }. They come after the boxes. The answers go in the
+  // list of { key, label }, with `options` for a dropdown. They come after the boxes. The answers go in the
   // manifest and the gallery page shows them under the same labels.
   const questions = Array.isArray(doc.questions) ? doc.questions.filter((q) => q?.key && q?.label) : [];
   let answers = $state(Object.fromEntries(questions.map((q) => [q.key, ''])));
@@ -195,7 +195,14 @@
   {#each questions as q (q.key)}
     <label>
       {q.label}
-      <textarea bind:value={answers[q.key]} rows="3" maxlength="2000"></textarea>
+      {#if Array.isArray(q.options) && q.options.length}
+        <select bind:value={answers[q.key]}>
+          <option value="" disabled>Choose one</option>
+          {#each q.options as o}<option value={o}>{o}</option>{/each}
+        </select>
+      {:else}
+        <textarea bind:value={answers[q.key]} rows="3" maxlength="2000"></textarea>
+      {/if}
     </label>
   {/each}
 
@@ -230,16 +237,13 @@
   }
   h2 { font-size: 0.95rem; margin: 0 0 1.25rem; }
   label { display: block; margin-bottom: 0.9rem; font-size: 0.72rem; font-weight: 700; }
-  input, textarea { display: block; width: 100%; font: inherit; font-size: 0.78rem; font-weight: 400;
+  input, textarea, select { display: block; width: 100%; font: inherit; font-size: 0.78rem; font-weight: 400;
     margin-top: 0.3rem; padding: 0.4rem; border: 1px solid var(--rule);
     background: var(--code-bg); color: var(--fg); }
   .hint { font-size: 0.66rem; color: var(--fg-dim); margin: -0.5rem 0 1rem; }
   .site { border: 1px solid var(--rule); padding: 0.6rem 0.8rem 0.2rem; margin: 0 0 0.9rem; }
   .site legend { font-size: 0.7rem; font-weight: 700; padding: 0 0.3rem; }
   .site .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.6rem; }
-  .site select { display: block; width: 100%; font: inherit; font-size: 0.78rem; font-weight: 400;
-    margin-top: 0.3rem; padding: 0.4rem; border: 1px solid var(--rule);
-    background: var(--code-bg); color: var(--fg); }
   .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
   .actions button { font: inherit; font-size: 0.72rem; padding: 0.45rem 0.9rem;
     border: 1px solid var(--fg); background: transparent; color: var(--fg); cursor: pointer; }

@@ -17,6 +17,12 @@ form: [title, work, gallery_text]
 questions:
   - key: program
     label: The program you are enrolled in
+  - key: registration
+    label: What is your registration status?
+    options: ["I'm registered", "Waitlisted", "Neither"]
+  - key: staying
+    label: Do you think you'll stay in this class?
+    options: ["Definitely", "Still shopping"]
   - key: interest
     label: Why you are interested in this class
   - key: suggestions
@@ -41,6 +47,8 @@ On the submission form, please provide:
 And then, a few more things for my benefit:
 
 - The program you are enrolled in
+- What is your registration status? (I'm registered, Waitlisted, or Neither)
+- Do you think you'll stay in this class? (Definitely or Still shopping)
 - Why you are interested in this class
 - Are there any additional demos, sandboxes, tutorials, that you think would be helpful towards the work you want to do in this class? I will use these to tailor the technical support I offer.
 

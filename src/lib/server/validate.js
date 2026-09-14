@@ -117,7 +117,8 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   }
 
   // Short-answer questions from the assignment's `questions:` frontmatter. Each
-  // one needs an answer, and only the keys the assignment asks for are kept.
+  // one needs an answer, a dropdown's must be one of its `options`, and only the
+  // keys the assignment asks for are kept.
   const questions = Array.isArray(a.questions) ? a.questions.filter((q) => q?.key) : [];
   if (questions.length) {
     const given = manifest.answers && typeof manifest.answers === 'object' ? manifest.answers : {};
@@ -127,6 +128,8 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
     for (const q of questions) {
       if (!manifest.answers[q.key]) {
         add('assignment/missing-answer', `"${q.label ?? q.key}" needs an answer.`);
+      } else if (Array.isArray(q.options) && !q.options.includes(manifest.answers[q.key])) {
+        add('assignment/bad-answer', `"${q.label ?? q.key}" must be one of: ${q.options.join(', ')}.`);
       }
     }
   } else {
