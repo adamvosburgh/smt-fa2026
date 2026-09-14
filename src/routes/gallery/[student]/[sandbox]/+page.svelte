@@ -4,6 +4,7 @@
   // frozen screenshot; it runs the real thing at the student's parameters.
   import { load as loadSandbox, defaults } from '$lib/sandboxes/index.js';
   import SandboxFrame from '$lib/components/SandboxFrame.svelte';
+  import { studentMarkdown } from '$lib/student-markdown.js';
   //
   // Assignment uploads are the other case: no sandbox, just the file the
   // student handed in - an image, a PDF, or one self-contained HTML page run in
@@ -116,7 +117,7 @@
 {/if}
 
 {#if data.sub.description}
-  <div class="content-article desc">{@html data.sub.description}</div>
+  <div class="content-article desc">{@html studentMarkdown(data.sub.description)}</div>
 {/if}
 
 {#if isAssignment && data.sub.answers && (data.assignment?.questions ?? []).length}

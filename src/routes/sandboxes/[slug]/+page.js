@@ -3,6 +3,11 @@ import { allSandboxes, bySlug } from '$lib/sandboxes/index.js';
 import { bySandbox } from '$lib/submissions.js';
 import { doc, isLive } from '$lib/content.js';
 import { isPublished } from '$lib/visibility.js';
+import { MODE } from '$lib/data.js';
+
+// Submissions are read at request time in live mode, so this page is rendered
+// per request there and prerendered only for the archive.
+export const prerender = MODE === 'archive';
 
 // Hidden sandboxes still render (as NotBuilt) - their slugs are in old build
 // docs, so they must not 404.
@@ -10,7 +15,7 @@ export function entries() {
   return allSandboxes.map((s) => ({ slug: s.slug }));
 }
 
-export function load({ params }) {
+export async function load({ params, fetch }) {
   const meta = bySlug[params.slug];
   if (!meta) error(404, 'no such sandbox');
 
@@ -35,7 +40,7 @@ export function load({ params }) {
   return {
     meta,
     tutorial: notes && isLive(notes) ? meta.tutorial : null,
-    submissions: bySandbox(params.slug),
+    submissions: await bySandbox(fetch, params.slug),
     title: meta.title,
     showTitle: false,
     wide: 'full'

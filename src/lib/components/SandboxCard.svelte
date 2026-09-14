@@ -152,7 +152,9 @@
   .body :global(p:last-child) { margin-bottom: 0; }
   .body :global(ul) { margin: 0 0 0.9rem; padding-left: 1.1rem; }
   .body :global(li) { margin-bottom: 0.5rem; }
-  .body :global(code) { font-size: 0.9em; background: #f2f2f0; padding: 0 0.2em; }
+  /* app.css sets code text to --fg (white, for the blue ground); the card is
+     white, so the color has to be reset here along with the background. */
+  .body :global(code) { font-size: 0.9em; background: #f2f2f0; color: var(--bg); padding: 0 0.2em; }
   .body :global(strong) { font-weight: 700; }
   /* Sources are links now. Same treatment as body prose elsewhere on the site;
      they open in a new tab, which cards.js sets on the token. */

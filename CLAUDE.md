@@ -32,7 +32,8 @@ match them rather than improving on them.
 
 ```
 npm install
-npm run sync      # mirror content images, submissions and data/processed into static/
+npm run sync      # mirror content images and data/processed into static/ (and
+                  #   submissions, in archive mode only)
                   #   (also runs automatically via predev / prebuild)
 npm run dev       # dev server
 SMT_SHOW_UNPUBLISHED=1 npm run dev
@@ -111,8 +112,9 @@ nothing in the terminal - because the failure is at hydration, not in SSR.
   frontmatter is parsed with `js-yaml` and a regex rather than `gray-matter`,
   which reaches for `Buffer`.
 - **`predev` and `prebuild` are load-bearing.** They run
-  `scripts/sync-assets.js`, which mirrors `src/content/*/images`,
-  `src/submissions` and `data/processed/*` into `static/`. Without them the
+  `scripts/sync-assets.js`, which mirrors `src/content/*/images` and
+  `data/processed/*` into `static/` (and `src/submissions`, for the archive
+  build only). Without them the
   browser silently serves whatever `static/` happened to contain last - which
   looks like a data bug, not a config one. Never edit `package.json` scripts
   without checking both are still there.
@@ -120,6 +122,12 @@ nothing in the terminal - because the failure is at hydration, not in SSR.
   be an inline object literal. A JSON file globbed from outside `src/` is served
   to the browser with a JSON MIME type and rejected by the module loader; that
   is why `src/content/` and `src/submissions/` are where they are.
+- **Submissions are read at request time in live mode.** `/api/submissions`
+  lists the folders and serves their files from disk, so an upload appears with
+  no rebuild. The four pages that list submissions (gallery, gallery detail,
+  assignment, sandbox) set `prerender = MODE === 'archive'`; if one is
+  prerendered in live mode it freezes at build time and new work never shows.
+  See `src/lib/submissions.js`.
 
 ## The sandbox contract
 

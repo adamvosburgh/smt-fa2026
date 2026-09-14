@@ -7,10 +7,9 @@
 //       file lives next to the markdown that uses it.
 //
 //   src/submissions/<student>/<sandbox>/  ->  static/submissions/<student>/<sandbox>/
-//       so cover.png and uploaded assets resolve at /submissions/... in dev,
-//       under adapter-node, and in the frozen static build alike. The manifests
-//       cannot live under static/ because Vite refuses to import out of the
-//       public directory, so this is the way round that.
+//       archive build only (SMT_MODE=archive), so covers and uploaded assets
+//       resolve at /submissions/... in the frozen static build. In live mode
+//       they are served from src/submissions by /api/submissions instead.
 //
 // Runs on predev and prebuild. Everything it writes into static/ is gitignored -
 // src/content/ and src/submissions/ are the source of truth.
@@ -42,7 +41,14 @@ async function mirror(from, to, label) {
 for (const section of ['tutorials', 'assignments', 'resources', 'sandboxes']) {
   await mirror(`src/content/${section}/images`, `static/${section}/images`, `${section}/images`);
 }
-await mirror('src/submissions', 'static/submissions', 'submissions');
+// Submissions only for the archive build. In live mode /api/submissions serves
+// them straight from src/submissions, and a copy here would be baked into the
+// build and go on serving files a student has since replaced.
+if (process.env.SMT_MODE === 'archive') {
+  await mirror('src/submissions', 'static/submissions', 'submissions');
+} else {
+  await rm(path.join(root, 'static/submissions'), { recursive: true, force: true });
+}
 
 // Processed sandbox data. data/original + data/scripts are the source of truth;
 // data/processed is what the pipeline writes; static/data is what ships.

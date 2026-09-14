@@ -4,7 +4,7 @@
 // student token can write under submissions/<their-slug>/<sandbox>/ and nowhere
 // else - not site code, not another student's folder. That containment is the
 // actual security control here; the token being secret is secondary.
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, writeFile, rm, rename } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
@@ -22,6 +22,7 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   const dir = submissionDir(student, sandbox);
   // Replace wholesale: a resubmission is the new state, not a merge.
   await rm(path.join(dir, 'assets'), { recursive: true, force: true });
+  for (const old of ['cover.png', 'cover.jpg']) await rm(path.join(dir, old), { force: true });
   await mkdir(path.join(dir, 'assets'), { recursive: true });
 
   for (const f of files) {
@@ -32,12 +33,23 @@ export async function write({ student, sandbox, manifest, files, cover = null })
     await mkdir(path.dirname(dest), { recursive: true });
     await writeFile(dest, f.buffer);
   }
-  // Assignment uploads arrive with their own cover, drawn in the browser from
-  // the uploaded image. Sandbox submissions get theirs from `npm run covers`,
-  // which screenshots the gallery page; that script also covers an assignment
-  // whose primary is a PDF or an HTML file, since the browser can't draw those.
-  if (cover) await writeFile(path.join(dir, 'cover.png'), cover);
-  await writeFile(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+  // Assignment uploads arrive with their own cover, a JPEG drawn in the browser
+  // from the uploaded image, and the manifest says so. Sandbox submissions get a
+  // cover.png from `npm run covers`, which screenshots the gallery page; that
+  // script also covers an assignment whose primary is a PDF or an HTML file,
+  // since the browser can't draw those.
+  if (cover) {
+    await writeFile(path.join(dir, 'cover.jpg'), cover);
+    manifest.cover_file = 'cover.jpg';
+  } else {
+    delete manifest.cover_file;
+  }
+  // The manifest goes last, and by rename, because /api/submissions reads these
+  // folders live: a half-written manifest would drop the submission from the
+  // gallery for as long as the write takes.
+  const tmp = path.join(dir, 'manifest.json.tmp');
+  await writeFile(tmp, JSON.stringify(manifest, null, 2));
+  await rename(tmp, path.join(dir, 'manifest.json'));
   return dir;
 }
 

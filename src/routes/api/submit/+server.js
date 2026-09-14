@@ -34,6 +34,21 @@ export async function POST({ request }) {
     );
   }
 
+  // Refused on the declared size before reading anything. The form checks the
+  // same cap when a file is chosen; this is for whatever gets past it, and it
+  // answers in words instead of the server's bare body-size error. The extra
+  // megabyte is room for the browser-drawn cover and the manifest.
+  const declared = Number(request.headers.get('content-length') || 0);
+  if (declared > config.maxSubmissionBytes + 1048576) {
+    return json(
+      {
+        ok: false,
+        error: `This upload is ${(declared / 1048576).toFixed(1)}MB. The limit is ${(config.maxSubmissionBytes / 1048576).toFixed(0)}MB for everything together. Export smaller files and try again.`
+      },
+      { status: 413 }
+    );
+  }
+
   let form;
   try {
     form = await request.formData();
@@ -58,7 +73,7 @@ export async function POST({ request }) {
   for (const [key, value] of form.entries()) {
     if (typeof value === 'string') continue;
     if (key === 'cover') {
-      // Client-drawn PNG for assignment uploads. Small by construction (the
+      // Client-drawn JPEG for assignment uploads. Small by construction (the
       // browser resizes to 1200px wide); anything bigger is dropped, not stored.
       const buffer = Buffer.from(await value.arrayBuffer());
       if (manifest.kind === 'assignment' && buffer.length <= 2_000_000) cover = buffer;

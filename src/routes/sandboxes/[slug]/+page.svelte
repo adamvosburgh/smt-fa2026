@@ -45,7 +45,7 @@
     <div class="fork-grid">
       {#each data.submissions as s (s.url)}
         <a href={s.url} class="fork">
-          <img src="{s.assetBase}cover.png" alt="" loading="lazy" />
+          <img src={s.coverUrl} alt="" loading="lazy" />
           <b>{s.title}</b>
           <span>{s.student}</span>
         </a>

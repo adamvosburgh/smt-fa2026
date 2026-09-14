@@ -14,7 +14,7 @@
         {#each sec.items as s (s.url)}
           <a href={s.url} class="project-card">
             <div class="project-card-image">
-              <img src="{s.assetBase}cover.png" alt="Cover image for {s.title}" loading="lazy"
+              <img src={s.coverUrl} alt="Cover image for {s.title}" loading="lazy"
                 onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
             </div>
             <div class="project-card-info">

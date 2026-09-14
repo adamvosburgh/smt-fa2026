@@ -197,7 +197,7 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   if (total > maxBytes) {
     add(
       'assets/too-large',
-      `Submission is ${(total / 1e6).toFixed(1)}MB. The cap is ${(maxBytes / 1e6).toFixed(0)}MB. ` +
+      `Submission is ${(total / 1048576).toFixed(1)}MB. The cap is ${(maxBytes / 1048576).toFixed(0)}MB. ` +
         'Export a smaller image, or a PDF with the images downsampled.'
     );
   }
@@ -252,7 +252,7 @@ export function validate({ manifest, files, sandbox, maxBytes }) {
   if (total > maxBytes) {
     add(
       'assets/too-large',
-      `Submission is ${(total / 1e6).toFixed(1)}MB. The cap is ${(maxBytes / 1e6).toFixed(0)}MB. ` +
+      `Submission is ${(total / 1048576).toFixed(1)}MB. The cap is ${(maxBytes / 1048576).toFixed(0)}MB. ` +
         'Decimating a mesh or dropping a column is an authorial act - decide what to lose.'
     );
   }

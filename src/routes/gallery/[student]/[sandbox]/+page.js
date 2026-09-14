@@ -1,14 +1,22 @@
 import { error } from '@sveltejs/kit';
-import { all, one } from '$lib/submissions.js';
+import { submissions, one } from '$lib/submissions.js';
+import { MODE } from '$lib/data.js';
 import { bySlug } from '$lib/sandboxes/index.js';
 import { doc } from '$lib/content.js';
 
-export function entries() {
-  return all.map((s) => ({ student: s.student, sandbox: s.sandbox }));
+// Submissions are read at request time in live mode, so this page is rendered
+// per request there and prerendered only for the archive.
+export const prerender = MODE === 'archive';
+
+// Only the archive build prerenders, and it reads the manifests without fetch.
+// SvelteKit calls this while analysing the live build too, so it answers empty.
+export async function entries() {
+  if (MODE !== 'archive') return [];
+  return (await submissions()).map((s) => ({ student: s.student, sandbox: s.sandbox }));
 }
 
-export function load({ params }) {
-  const sub = one(params.student, params.sandbox);
+export async function load({ params, fetch }) {
+  const sub = await one(fetch, params.student, params.sandbox);
   if (!sub) error(404, 'not found');
   const isAssignment = sub.kind === 'assignment';
   return {

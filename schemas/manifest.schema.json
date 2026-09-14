@@ -87,6 +87,11 @@
         }
       }
     },
+    "cover_file": {
+      "type": "string",
+      "enum": ["cover.jpg", "cover.png"],
+      "description": "Server-assigned. Set to cover.jpg when an assignment upload brought a browser-drawn cover; absent means cover.png from `npm run covers`."
+    },
     "cover": {
       "type": "object",
       "description": "The state the cover screenshot is taken at. Defaults to params."

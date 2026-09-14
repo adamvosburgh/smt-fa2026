@@ -6,7 +6,7 @@
   // slug where a sandbox slug would go. The gallery then shows the uploaded file
   // instead of running a sandbox at the submitted parameters.
   //
-  // The cover is drawn here, in the browser, from the uploaded image - the
+  // The cover is drawn here, in the browser, as a JPEG from the uploaded image - the
   // server has no image library and the Playwright cover pipeline would only
   // give us a screenshot of the same picture. PDFs and HTML files get no cover
   // from here; `npm run covers -- --submissions` screenshots those.
@@ -61,7 +61,19 @@
 
   const isImage = (f) => /\.(png|jpe?g|webp)$/i.test(f?.name ?? '');
 
-  // A 1200px-wide PNG of the uploaded image, for the Student Work card.
+  // The upload cap, checked here as soon as a file is chosen so nobody finds out
+  // after pressing submit. Keep in step with maxSubmissionBytes in
+  // src/lib/server/config.js, which is what the server enforces. It covers the
+  // work and the extras together; the cover drawn below is not counted.
+  const MAX_BYTES = 15 * 1024 * 1024;
+  const LIMIT = '15MB';
+  const mb = (bytes) => `${(bytes / 1048576).toFixed(1)}MB`;
+  const total = $derived((primary?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0));
+  const tooBig = $derived(total > MAX_BYTES);
+
+  // A 1200px-wide JPEG of the uploaded image, for the Student Work card. The
+  // server drops a cover over 2MB, and a PNG of a phone photo can pass that, so
+  // this is a JPEG and steps its quality down until it is under 1MB.
   async function drawCover(file) {
     if (!isImage(file)) return null;
     try {
@@ -71,8 +83,16 @@
       const canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
-      canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
-      return await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      const ctx = canvas.getContext('2d');
+      // JPEG has no transparency; without a fill, a transparent PNG turns black.
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(bmp, 0, 0, w, h);
+      for (const quality of [0.85, 0.7, 0.5]) {
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
+        if (blob && blob.size < 1_000_000) return blob;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -107,14 +127,22 @@
     fd.append('asset', primary, primary.name);
     for (const f of extras) fd.append('asset', f, f.name);
     const cover = await drawCover(primary);
-    if (cover) fd.append('cover', cover, 'cover.png');
+    if (cover) fd.append('cover', cover, 'cover.jpg');
     try {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: $token ? { authorization: `Bearer ${$token}` } : {},
         body: fd
       });
-      result = await res.json();
+      // /api/submit answers in JSON, including when an upload is too large. The
+      // Node server's own body-size limit does not, so a 413 without JSON still
+      // gets a sentence.
+      const body = await res.json().catch(() => null);
+      result =
+        body ??
+        (res.status === 413
+          ? { ok: false, error: `The upload is too large. The limit is ${LIMIT} for everything together.` }
+          : { ok: false, error: 'Upload failed. Your work is not lost - try again.' });
     } catch {
       result = { ok: false, error: 'Upload failed. Your work is not lost - try again.' };
     } finally {
@@ -155,10 +183,14 @@
         The work ({accepts.join(', ')})
         <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
       </label>
+      {#if primary && primary.size > MAX_BYTES}
+        <p class="err size">This file is {mb(primary.size)}. The limit is {LIMIT}. Export a smaller
+          version and choose it again.</p>
+      {/if}
       <p class="hint">
         {#if isModel}This is the model the gallery runs. One <code>.glb</code>, in meters, under 15MB,
         with the objects named the way the tutorial describes.{:else}This is the file the gallery
-        shows.{/if}
+        shows. It has to be under 15MB.{/if}
         {#if accepts.includes('html')}An HTML file must be one self-contained file - styles, scripts
         and data inline - because the gallery runs it in a sandboxed frame that can't fetch anything
         else.{/if}
@@ -189,6 +221,10 @@
         Anything else (optional, 15MB total)
         <input type="file" multiple onchange={(e) => (extras = [...e.currentTarget.files])} />
       </label>
+      {#if tooBig && !(primary && primary.size > MAX_BYTES)}
+        <p class="err size">These files come to {mb(total)} with the work. The limit is {LIMIT}
+          for everything together. Leave some out or export smaller versions.</p>
+      {/if}
     {/if}
   {/each}
 
@@ -222,7 +258,7 @@
 
   <div class="actions">
     <button type="button" onclick={onclose}>close</button>
-    <button type="button" class="go" disabled={busy || !title || !galleryText || !primary || !answered} onclick={submit}>
+    <button type="button" class="go" disabled={busy || !title || !galleryText || !primary || !answered || tooBig} onclick={submit}>
       {busy ? 'sending…' : 'submit'}
     </button>
   </div>
@@ -253,5 +289,6 @@
   .actions .go:disabled:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
   .ok { color: var(--hi); }
   .err, .errs { color: var(--fg); font-weight: 700; }
+  .size { font-size: 0.72rem; margin: -0.5rem 0 1rem; }
   .errs { padding-left: 1.1rem; font-size: 0.72rem; }
 </style>
