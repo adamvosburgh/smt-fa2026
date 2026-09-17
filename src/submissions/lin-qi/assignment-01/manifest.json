@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "lin-qi",
+  "title": "Fool‘s Rite",
+  "gallery_text": "This Project is an immersive interactive environment composed of multimedia installations. The project creates a space for “useless” dwelling and explores how individuals can coexist with their non-functional selves rather than being pushed toward constant restoration of function.",
+  "description": "",
+  "params": {},
+  "primary": "assets/39869997a08be35de59821e6cb46dbc2.png",
+  "answers": {
+    "program": "CDP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "I’m interested in combining computational design, AI, and interaction to explore how data can shape spatial experiences.",
+    "suggestions": "Still in the process of figuring it out."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-17T04:27:15.362Z",
+  "assets": [
+    {
+      "path": "assets/39869997a08be35de59821e6cb46dbc2.png",
+      "type": "image/png",
+      "bytes": 2051230
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

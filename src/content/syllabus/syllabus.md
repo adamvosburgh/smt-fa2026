@@ -109,11 +109,13 @@ Levin, Noa and Sascha Roesler. "Editorial." *e-flux Architecture*, Simulation, 2
 
 Halpern, Orit. "A Government of Agents: The Experimental Logics of Artificial Intelligence." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783064/](https://www.e-flux.com/architecture/simulation/6783064/a-government-of-agents-the-experimental-logics-of-artificial-intelligence)
 
+<!---
 Epstein, Joshua. "Why Model?" *Journal of Artificial Societies and Social Simulation* 11, no. 4 (2008).
 
 Blum, Andrew. *The Weather Machine: A Journey Inside the Forecast*. Ecco, 2019. [Selections]
 
 Kurgan, Laura, Dan Miller, and Adam Vosburgh. "Two Sides of the Same Coin." Milan Triennale, 2025. [For HYDE: 12,000 years of land use, hindcast.]
+--->
 
 #### Tutorial 2 due – Mapping Where, in Python
 Raster and vector spatial data in Python rather than in a desktop GIS, using the NYC street tree census.
