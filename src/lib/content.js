@@ -117,6 +117,23 @@ export function startOfDayNY(ymd) {
   return Date.parse(`${ymd}T${offset}:00:00Z`);
 }
 
+// 9:00 New York on the due date. The year is the year of `publish:`, so a due
+// date is never ambiguous, and the DST rule above applies. Null when either
+// field is missing.
+export function dueAt(d) {
+  const due = /^(\d{1,2})\/(\d{1,2})$/.exec(String(d?.due ?? '').trim());
+  const year = /^(\d{4})-\d{2}-\d{2}$/.exec(String(d?.publish ?? ''));
+  if (!due || !year) return null;
+  const ymd = `${year[1]}-${due[1].padStart(2, '0')}-${due[2].padStart(2, '0')}`;
+  const start = startOfDayNY(ymd);
+  return Number.isNaN(start) ? null : start + 9 * 3600 * 1000;
+}
+
+// The due date as the pages show it: "9/17", unchanged from the frontmatter.
+export function dueLabel(d) {
+  return d?.due ? String(d.due) : null;
+}
+
 // SMT_SHOW_UNPUBLISHED=1 makes everything live, so Adam can read what students
 // cannot. See src/lib/visibility.js; one switch covers documents, sandboxes and
 // submissions alike.

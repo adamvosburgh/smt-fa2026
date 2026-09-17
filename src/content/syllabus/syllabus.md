@@ -69,14 +69,14 @@ An overview of the semester: the class ambitions, the kinds of output the course
 
 ### 9/17 | Week 2 | Data and Representation {#week-2}
 
-Data, representation, and the politics of each. In-class exercise: look at a set of projects and identify the datasets in them.
+Data, representation, and the politics of each. [In-class exercise](link-to-exercise): look at a set of projects and identify the datasets in them.
 
 <!-- Class plan
 - Review Assignment 1
 - Talk to class about sandboxes they want
 - reading discussion and lecture - data as representation
 - raster vs. vector. what each means about how data is collected
-- tutorial 1 intro - what collecting data is like. talk about the census. talk about remote sensing.
+- tutorial 1 intro - starting with a mapping tutorial because we need to think about data ahead of the rest of the semester. talk about the census. talk about remote sensing.
 - connection to architectural representation (new lecture to be developed.)
 -->
 

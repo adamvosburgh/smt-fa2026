@@ -16,6 +16,10 @@ export const config = {
 
   origin: env.ORIGIN || 'https://simmodeltwin.net',
 
+  // The token slug that may create whiteboards. Nothing else reads it: on a
+  // board's contents the owner and everyone else have the same rights.
+  owner: env.SMT_OWNER || '',
+
   assistant: {
     enabled: env.SMT_ASSISTANT_ENABLED === 'true',
     apiKey: env.ANTHROPIC_API_KEY || '',

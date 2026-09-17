@@ -17,6 +17,7 @@ export const nav = [
   { href: '/assignments/', label: 'Assignments' },
   { href: '/resources/', label: 'Resources' },
   { href: '/gallery/', label: 'Student Work' },
+  { href: '/whiteboard/', label: 'Whiteboard' },
   {
     href: 'https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=oxmdzqvf&dl=0',
     label: 'Folder',

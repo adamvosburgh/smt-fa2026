@@ -13,7 +13,7 @@ import { identify } from '$lib/server/auth.js';
 export async function GET({ request }) {
   const who = await identify(request);
   if (who.kind !== 'student') return json({ ok: false }, { status: 401 });
-  return json({ ok: true, student: who.student, name: who.name }, {
+  return json({ ok: true, student: who.student, name: who.name, role: who.role }, {
     headers: { 'cache-control': 'no-store' }
   });
 }

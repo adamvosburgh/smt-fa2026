@@ -18,6 +18,7 @@
   // from that sandbox's own schema, so there is one place they are written down.
   import { token } from '$lib/token.js';
   import { bySlug, defaults } from '$lib/sandboxes/index.js';
+  import { drawCopy } from '$lib/draw-copy.js';
   let { doc, onclose } = $props();
 
   const accepts = Array.isArray(doc.accepts) && doc.accepts.length ? doc.accepts : ['image', 'pdf'];
@@ -71,33 +72,6 @@
   const total = $derived((primary?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0));
   const tooBig = $derived(total > MAX_BYTES);
 
-  // A 1200px-wide JPEG of the uploaded image, for the Student Work card. The
-  // server drops a cover over 2MB, and a PNG of a phone photo can pass that, so
-  // this is a JPEG and steps its quality down until it is under 1MB.
-  async function drawCover(file) {
-    if (!isImage(file)) return null;
-    try {
-      const bmp = await createImageBitmap(file);
-      const w = Math.min(1200, bmp.width);
-      const h = Math.round((bmp.height / bmp.width) * w);
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      // JPEG has no transparency; without a fill, a transparent PNG turns black.
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(0, 0, w, h);
-      ctx.drawImage(bmp, 0, 0, w, h);
-      for (const quality of [0.85, 0.7, 0.5]) {
-        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
-        if (blob && blob.size < 1_000_000) return blob;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
   async function submit() {
     busy = true;
     result = null;
@@ -126,7 +100,8 @@
     );
     fd.append('asset', primary, primary.name);
     for (const f of extras) fd.append('asset', f, f.name);
-    const cover = await drawCover(primary);
+    // A 1200px-wide JPEG of the uploaded image, for the Student Work card.
+    const cover = isImage(primary) ? await drawCopy(primary, { width: 1200 }) : null;
     if (cover) fd.append('cover', cover, 'cover.jpg');
     try {
       const res = await fetch('/api/submit', {

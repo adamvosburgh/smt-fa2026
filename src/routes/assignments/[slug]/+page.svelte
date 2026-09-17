@@ -27,6 +27,10 @@
     </div>
   {/if}
 
+  {#if data.board}
+    <p class="board-link"><a href="/whiteboard/{data.doc.slug}/">Assignment {data.doc.sequence} Whiteboard</a></p>
+  {/if}
+
   {#if data.submissions.length}
     <section class="handed-in">
       <h2>Handed in</h2>
@@ -58,6 +62,9 @@
   .submit { font: inherit; font-size: 0.78rem; padding: 0.6rem 1.2rem; border: 0; background: var(--fg); color: var(--bg); cursor: pointer; }
   .submit:hover { background: var(--hi); color: var(--hi-fg); }
   .hint { font-size: 0.72rem; color: var(--fg-dim); }
+  .board-link { margin-top: 1rem; font-size: 0.78rem; }
+  .board-link a { color: var(--fg); }
+  .board-link a:hover { background: var(--hi); color: var(--hi-fg); }
   .handed-in { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1.25rem; }
   .handed-in h2 { font-size: 0.8rem; text-transform: lowercase; margin: 0 0 1rem; }
   .fork-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; }

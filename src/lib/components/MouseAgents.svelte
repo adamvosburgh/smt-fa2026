@@ -35,9 +35,10 @@
   let canvas = $state(null);
   let on = $state(true);
 
-  // A sandbox owns the pointer, so the agents never run there. `/sandboxes/`
-  // itself is a reading page; `/sandboxes/<slug>/` is not.
-  const inSandbox = $derived(/^\/sandboxes\/[^/]+\/?$/.test(page.url.pathname));
+  // A sandbox owns the pointer, and so does a whiteboard, so the agents never
+  // run on either. `/sandboxes/` and `/whiteboard/` themselves are reading
+  // pages; `/sandboxes/<slug>/` and `/whiteboard/<slug>/` are not.
+  const inSandbox = $derived(/^\/(sandboxes|whiteboard)\/[^/]+\/?$/.test(page.url.pathname));
 
   function readSwitch() {
     try {

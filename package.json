@@ -14,7 +14,8 @@
     "sync": "node scripts/sync-assets.js",
     "covers": "node scripts/cover.js",
     "audit:freeze": "node scripts/prerender-audit.js",
-    "tokens": "node scripts/issue-tokens.js"
+    "tokens": "node scripts/issue-tokens.js",
+    "boards:export": "node scripts/export-boards.js"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.2.12",

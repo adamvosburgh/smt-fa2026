@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { collection, doc, isLive, pendingLabel, publishDate, publishWeekday } from '$lib/content.js';
 import { bySandbox } from '$lib/submissions.js';
 import { MODE } from '$lib/data.js';
+import { boardExists } from '$lib/boards.js';
 
 // Submissions are read at request time in live mode, so this page is rendered
 // per request there and prerendered only for the archive.
@@ -28,6 +29,8 @@ export async function load({ params, fetch }) {
   return {
     doc: d,
     submissions: d.submit ? await bySandbox(fetch, params.slug) : [],
+    // The board link shows once the board is there, not at the due time.
+    board: d.submit ? await boardExists(fetch, params.slug) : false,
     pending: pendingLabel(d),
     title: d.title
   };

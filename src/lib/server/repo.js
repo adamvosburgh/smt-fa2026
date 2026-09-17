@@ -4,11 +4,12 @@
 // student token can write under submissions/<their-slug>/<sandbox>/ and nowhere
 // else - not site code, not another student's folder. That containment is the
 // actual security control here; the token being secret is secondary.
-import { mkdir, writeFile, rm, rename } from 'node:fs/promises';
+import { mkdir, writeFile, rm, rename, readdir, readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 import { config } from './config.js';
+import { SHOW_UNPUBLISHED } from '$lib/visibility.js';
 
 const run = promisify(execFile);
 const SLUG = /^[a-z0-9-]+$/;
@@ -63,4 +64,42 @@ export async function commit(dir, message) {
 
 export async function writeReview(dir, review) {
   await writeFile(path.join(dir, 'review.json'), JSON.stringify(review, null, 2));
+}
+
+async function folders(dir) {
+  try {
+    return (await readdir(dir, { withFileTypes: true }))
+      .filter((e) => e.isDirectory() && SLUG.test(e.name))
+      .map((e) => e.name);
+  } catch {
+    return [];
+  }
+}
+
+async function readJson(file) {
+  try {
+    return JSON.parse(await readFile(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// Every submission on disk, as { student, sandbox, manifest, review }. Read by
+// /api/submissions and by the whiteboard generator, which must not go through
+// HTTP to get the same list.
+export async function listSubmissions() {
+  const root = config.submissionsDir;
+  const rows = [];
+  for (const student of await folders(root)) {
+    for (const sandbox of await folders(path.join(root, student))) {
+      const dir = path.join(root, student, sandbox);
+      const manifest = await readJson(path.join(dir, 'manifest.json'));
+      if (!manifest) continue;
+      // Held-back submissions are dropped here, not in the browser, so they are
+      // never sent at all.
+      if (!SHOW_UNPUBLISHED && manifest.published === false) continue;
+      rows.push({ student, sandbox, manifest, review: await readJson(path.join(dir, 'review.json')) });
+    }
+  }
+  return rows;
 }

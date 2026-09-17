@@ -16,6 +16,8 @@ import { identify, sameOrigin } from '$lib/server/auth.js';
 import { validate } from '$lib/server/validate.js';
 import { write, commit } from '$lib/server/repo.js';
 import { config } from '$lib/server/config.js';
+import { exists as boardExists } from '$lib/server/boards.js';
+import { buildAssignmentBoard } from '$lib/server/board-generate.js';
 
 export async function POST({ request }) {
   if (!sameOrigin(request, config.origin)) {
@@ -103,6 +105,12 @@ export async function POST({ request }) {
 
   const dir = await write({ student: who.student, sandbox, manifest, files, cover });
   const git = await commit(dir, `submission: ${who.student} / ${sandbox}`);
+
+  // A late submission to an assignment whose board is already up gets its tile
+  // now. Not awaited, for the same reason as the stages below.
+  if (manifest.kind === 'assignment' && (await boardExists(sandbox))) {
+    buildAssignmentBoard(sandbox).catch((err) => console.error(`boards: late tile for ${sandbox}: ${err?.message ?? err}`));
+  }
 
   // Stages 2 and 3 (headless run, then diagnose) are deliberately not awaited.
   // They are non-blocking: if the run capture or the model call fails, the

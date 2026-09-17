@@ -11,6 +11,9 @@
 //       resolve at /submissions/... in the frozen static build. In live mode
 //       they are served from src/submissions by /api/submissions instead.
 //
+//   src/boards/<slug>/  ->  static/boards/<slug>/
+//       archive build only, the same way, for the frozen whiteboards.
+//
 // Runs on predev and prebuild. Everything it writes into static/ is gitignored -
 // src/content/ and src/submissions/ are the source of truth.
 import { cp, mkdir, rm, readdir } from 'node:fs/promises';
@@ -48,6 +51,13 @@ if (process.env.SMT_MODE === 'archive') {
   await mirror('src/submissions', 'static/submissions', 'submissions');
 } else {
   await rm(path.join(root, 'static/submissions'), { recursive: true, force: true });
+}
+// Whiteboards the same way. In live mode /api/boards serves them from var/;
+// src/boards/ is only filled at the freeze, by scripts/export-boards.js.
+if (process.env.SMT_MODE === 'archive') {
+  await mirror('src/boards', 'static/boards', 'boards');
+} else {
+  await rm(path.join(root, 'static/boards'), { recursive: true, force: true });
 }
 
 // Processed sandbox data. data/original + data/scripts are the source of truth;

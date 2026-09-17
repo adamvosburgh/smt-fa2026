@@ -10,6 +10,7 @@
 // one student's own work and nothing else - not site code, not another student.
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { read } from './store.js';
+import { config } from './config.js';
 
 export function hashToken(token) {
   return createHash('sha256').update(token, 'utf8').digest('hex');
@@ -38,7 +39,13 @@ export async function identify(request) {
   const table = await read('tokens.json', { tokens: {} });
   const rec = constantTimeFind(Object.entries(table.tokens), hashToken(token));
   if (!rec || rec.revoked) return { kind: 'anonymous' };
-  return { kind: 'student', student: rec.student, name: rec.name ?? rec.student };
+  return {
+    kind: 'student',
+    student: rec.student,
+    name: rec.name ?? rec.student,
+    // Only the whiteboard reads this, and only to decide who may create a board.
+    role: config.owner && rec.student === config.owner ? 'owner' : 'student'
+  };
 }
 
 // Same-origin check. Trivially spoofable by a script and worth almost nothing

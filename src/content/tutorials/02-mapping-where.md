@@ -22,7 +22,7 @@ Create a new folder for your work on this series of modules. Inside it create a 
 
 ### Data downloads
 
-In this module you will be making a series of maps about the urban forest in New York City. Download the following datasets:
+In this module you will be making a series of maps about NYC street trees. Download the following datasets:
 
 - **New York City Landcover 2010 (3ft version), clipped.** A raster dataset created to describe major land use categories for New York City derived from satellite imagery. The full dataset covers the whole city and is too large for a notebook, so I have clipped it to the same area of Harlem as the other two datasets. **[Download link TBD - Adam to clip and host.]** From the [NYC Open Data page](https://data.cityofnewyork.us/Environment/Landcover-Raster-Data-2010-3ft-Resolution/9auy-76zt) for the full dataset, also download the Data Dictionary: `Landcover2010_DataDictionary_20171012.xlsx`.
 - [New York City 2015 Street Tree Census](https://drive.google.com/open?id=1ZpLafJbA2xRxJ55J8B4DsAveZBNSzUUD&usp=drive_fs). This dataset was collected by more than 2000 volunteers visiting each street tree within the five boroughs of NYC. For more background on this amazing effort (the third such census over the past 30 years) see the NYC Parks department website [here](https://www.nycgovparks.org/trees/treescount). The link above provides a subset of the data for an area in Harlem to make for easier processing. For those interested the full dataset is available for download directly via NYC Open Data [here](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/pi5s-9p35).
