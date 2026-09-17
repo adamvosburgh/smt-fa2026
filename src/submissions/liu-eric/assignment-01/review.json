@@ -1,0 +1,16 @@
+{
+  "stage2": {
+    "url": "http://localhost:3003/gallery/liu-eric/assignment-01/",
+    "ready": true,
+    "rendered": true,
+    "metrics": {
+      "kind": "assignment"
+    },
+    "consoleErrors": [],
+    "failedRequests": [],
+    "exceptions": [],
+    "shot": true,
+    "nothingToShoot": false,
+    "ok": true
+  }
+}

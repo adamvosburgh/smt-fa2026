@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "liu-eric",
+  "title": "Eric Liu",
+  "gallery_text": "An experimental interface for identifying potential areas of gentrification through an analysis of Open Street Map Places and NYU Furman/ACS rent data.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Screenshot_2026-09-16_at_8.26.02_PM.png",
+  "answers": {
+    "program": "CDP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "I'm interested in this class because I'm hoping to explore how simulations can help us explore, understand, and model more complex systems/processes. Additionally, I'm hoping to learn more about creative and critical methods of data analysis/forecasting, as well as how best to represent data in the context of a greater narrative.",
+    "suggestions": "I'm particularly interested in examples like the City Sim and the design and management of a large system of rules and variables."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-17T01:15:24.993Z",
+  "assets": [
+    {
+      "path": "assets/Screenshot_2026-09-16_at_8.26.02_PM.png",
+      "type": "image/png",
+      "bytes": 1911138
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

@@ -74,10 +74,11 @@ Data, representation, and the politics of each. [In-class exercise](link-to-exer
 <!-- Class plan
 - Review Assignment 1
 - Talk to class about sandboxes they want
-- reading discussion and lecture - data as representation
+- reading discussion and lecture - kurgan, data as representation. mattern, modeling doubt.
 - raster vs. vector. what each means about how data is collected
 - tutorial 1 intro - starting with a mapping tutorial because we need to think about data ahead of the rest of the semester. talk about the census. talk about remote sensing.
 - connection to architectural representation (new lecture to be developed.)
+- an overview in how tutorials and assignments will work for the next few weeks.
 -->
 
 #### Readings due (in course folder or linked)
@@ -98,6 +99,10 @@ Tell us a bit about yourself, why you took this class, and what you want to get 
 ### 9/24 | Week 3 | Agents and Action {#week-3}
 
 Forecasts, hindcasts, and simulations use data to make an argument about a time the data does not cover. This week covers what a rule is, what it means to run one, and how to read the output of a simulation someone else built. In-class exercise: intro to the course sandboxes, the [ADU Forecast for Queens](/sandboxes/pencil/), the [Sea Level Flood Map](/sandboxes/bathtub/), [Office to Residential Conversion](/sandboxes/after-five/), and [Anthromes](/sandboxes/anthromes/). For each: what is it trying to say, what is the data, and what is the mechanism?
+
+<!-- Class plan
+consider adding red plenty excerpt?
+-->
 
 #### Readings due
 Levin, Noa and Sascha Roesler. "Editorial." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783068/editorial](https://www.e-flux.com/architecture/simulation/6783068/editorial)
@@ -140,6 +145,10 @@ A sketch of how you could apply rules to your Assignment 2 dataset to turn it in
 ### 10/8 | Week 5 | Sensing and Measuring {#week-5}
 
 Pin-up of the Assignment 4 sandboxes. Second half: data layers on physical space, real-time feedback systems, and the idea of the smart city. What a sensor records, what it does not, and who it reports to. The final project is assigned.
+
+<!-- Class plan
+here it would be good to find section on environemtnal data - twins for the environment etc
+-->
 
 #### Readings due
 House, Brian. "Stalking the Smart City." *Urban Omnibus*, 2019.

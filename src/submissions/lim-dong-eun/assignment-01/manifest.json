@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "lim-dong-eun",
+  "title": "Dong Eun Lim",
+  "gallery_text": "[The Uncensored Library]\nThis is an interactive-wiki exploring The Uncensored Library, a journalism project by Reporters Without Borders. Through the lens of censorship and surveillance, the webpage is designed as a deliberately messy and complex environment, where visitors must navigate through layers of information while avoiding simulated system attacks to access documents. Through this process, the project offers a more tangible understanding of how censorship creates barriers to information.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Screenshot_2026-09-16_at_11.22.10.png",
+  "answers": {
+    "program": "M.S.CDP and M.S.CCCP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "I am interested in experimenting across the dimensional boundaries through computational method. I find this class would be a great opportunity to further explore this initial interest and to examine how data can be translated into spatial and interactive experiences.",
+    "suggestions": "I am very excited to explore the different topics and tools in class. It would also be interesting if we could work with sensory data and explore how it can be translated into spatial or visual forms. For instance, I personally like Janine Antoni's performance piece Slumber, which translates her dream(REM) patterns into textile patterns. I’d love to experiment with how personal or sensory experiences could be represented and explored through simulations."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-16T15:36:45.796Z",
+  "assets": [
+    {
+      "path": "assets/Screenshot_2026-09-16_at_11.22.10.png",
+      "type": "image/png",
+      "bytes": 3554438
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

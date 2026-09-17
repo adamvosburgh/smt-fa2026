@@ -411,7 +411,8 @@ pre code {
 /* Project index grid */
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, ...): a nowrap marquee title must not widen its column. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2rem;
 }
 
@@ -613,7 +614,7 @@ pre code {
 
 @media (max-width: 600px) {
   .project-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

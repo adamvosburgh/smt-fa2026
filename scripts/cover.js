@@ -107,10 +107,16 @@ const browser = await chromium.launch(
 );
 const report = [];
 
+// Directory names only - src/submissions also holds a .gitkeep so the empty
+// gallery still checks into git.
+async function dirs(dir) {
+  return (await readdir(dir, { withFileTypes: true })).filter((e) => e.isDirectory()).map((e) => e.name);
+}
+
 if (args.submissions) {
   const root = 'src/submissions';
-  for (const student of await readdir(root)) {
-    for (const sandbox of await readdir(path.join(root, student))) {
+  for (const student of await dirs(root)) {
+    for (const sandbox of await dirs(path.join(root, student))) {
       const r = await capture(
         browser,
         `${BASE}/gallery/${student}/${sandbox}/`,
