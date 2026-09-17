@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "lilani-krittika",
+  "title": "analog studies",
+  "gallery_text": "These photographs are part of an ongoing experimentation with film, through playful and open-ended explorations. Double exposures, darkroom processes, and pushed / pulled film allow unpredictability to shape the final image.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Film_for_Adam_s_class.jpg",
+  "answers": {
+    "program": "MS CDP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "I’m interested in this class because I’m curious about how simulation and computational models can be tools for experimentation. What happens when the relationships between systems change. I’m still exploring what these might mean within my own research, or how I will situate it.",
+    "suggestions": "Not sure, but waiting to find out."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-17T00:31:26.283Z",
+  "assets": [
+    {
+      "path": "assets/Film_for_Adam_s_class.jpg",
+      "type": "image/jpeg",
+      "bytes": 222388
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

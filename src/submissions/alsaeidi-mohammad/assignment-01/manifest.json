@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "alsaeidi-mohammad",
+  "title": "Mohammad Alsaeidi",
+  "gallery_text": "A performance-based review that tells the story of Manhattan's disappeared water bodies. The story unfolds through a screen and is performed through acts, producing knowledge in the present.",
+  "description": "",
+  "params": {},
+  "primary": "assets/IMG_9299.jpg",
+  "answers": {
+    "program": "MS.AAD",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "I'm interested in accessing interfaces and software that allow for a generative design process, one that simulates progress through the act of making. Not necessarily eliminating labour, but using tools more effectively. Coming from the Arabian Peninsula, a lot of our knowledge is written, but much of our culture is oral and, in some cases, anti-figurative. So I want to experiment and produce a system that can process these networks whether ancient (poetry, the spatial networks of migration) or the literal networks of production. And thinking of simulation in relation to current networks of displaying and broadcasting information, especially through channels that broadcast war, social media, spatial data from imports and exports. The point is to use different non-institutionalized sources of data and knowledge, and to spatialize these systems.",
+    "suggestions": "Not yet in mind"
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-16T00:58:39.841Z",
+  "assets": [
+    {
+      "path": "assets/IMG_9299.jpg",
+      "type": "image/jpeg",
+      "bytes": 6271778
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

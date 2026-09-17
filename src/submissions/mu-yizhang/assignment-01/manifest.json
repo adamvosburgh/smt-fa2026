@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "mu-yizhang",
+  "title": "Food Delivery Route Simulator",
+  "gallery_text": "This project compares different route choices for food delivery riders in the city. It explores how the shortest route is not always the most suitable one, since real-world delivery is also shaped by traffic, bike infrastructure, and access constraints.",
+  "description": "",
+  "params": {},
+  "primary": "assets/image.png",
+  "answers": {
+    "program": "MS CDP",
+    "registration": "Waitlisted",
+    "staying": "Definitely",
+    "interest": "I’m interested in this class because I want to better understand how spatial data, rules, and assumptions can be turned into simulations that represent real-world systems. I’m especially interested in agent-based simulation, world models, and interactive tools, and I want to explore not only what a model can predict, but also what it simplifies or leaves out.",
+    "suggestions": "I would be interested in additional demos or tutorials on agent-based and multi-agent simulation, interactive web-based sandboxes, and spatial world models. I would also find it helpful to see examples of how simulations can be connected to AI agents or natural-language interfaces, especially for projects involving mobility, delivery systems, and urban environments."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-16T23:30:31.542Z",
+  "assets": [
+    {
+      "path": "assets/image.png",
+      "type": "image/png",
+      "bytes": 2077592
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

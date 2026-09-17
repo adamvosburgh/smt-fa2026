@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "yang-qiaochu-poppy",
+  "title": "Poppy Yang",
+  "gallery_text": "An animation explores public surveillance through billboard design. Modeled in ZBrush and rendered in C4D. ",
+  "description": "",
+  "params": {},
+  "primary": "assets/yggdrasil.png",
+  "answers": {
+    "program": "MSCDP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "Exploring possibilities in data visualization and presentation.",
+    "suggestions": "Don't know yet."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-17T00:27:41.461Z",
+  "assets": [
+    {
+      "path": "assets/yggdrasil.png",
+      "type": "image/png",
+      "bytes": 6134450
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

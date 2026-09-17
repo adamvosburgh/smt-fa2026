@@ -1,0 +1,27 @@
+{
+  "sandbox": "assignment-01",
+  "kind": "assignment",
+  "student": "lee-jae-hyun",
+  "title": "Hi, I'm Jae",
+  "gallery_text": "Inefficiency for Desirable Living: This simulated grasshopper model calculates desirability of the everyday walking experience in relation to total distance of the route, to the visibility of the target scenic view.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Screenshot_2026-09-15_at_12.07.20_PM.png",
+  "answers": {
+    "program": "MS.CDP + MS.CCCP",
+    "registration": "I'm registered",
+    "staying": "Definitely",
+    "interest": "To simulate speculative design and create experimental models that may become a window into solving potential urban problems.",
+    "suggestions": "I haven't done enough research to know any good examples, but it would be interesting to learn more on those that involve behavior science and game theory."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-09-15T16:21:56.901Z",
+  "assets": [
+    {
+      "path": "assets/Screenshot_2026-09-15_at_12.07.20_PM.png",
+      "type": "image/png",
+      "bytes": 3326826
+    }
+  ],
+  "cover_file": "cover.jpg"
+}
