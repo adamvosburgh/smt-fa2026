@@ -28,7 +28,7 @@ There are three columns, the same layout as every sandbox on this site. On the l
 
 1. **The clock.** Year, 2015 to 2045, with play and pause.
 2. **How it's drawn.** Which metric tints the blocks; whether to draw trees, blocks or both.
-3. **The main levers.** Trees planted per year and where they go (blocks with the fewest trees first, blocks with the lowest per-tree benefit first, or evenly); the size of a newly planted tree; the growth rate; and mortality, which defaults to zero because I do not have a number I am confident in.
+3. **The main levers.** Trees planted per year and where they go (always on a sidewalk; blocks with the fewest trees first, blocks with the lowest per-tree benefit first, or evenly); the size of a newly planted tree; the growth rate; and mortality, which defaults to zero because I do not have a number I am confident in.
 4. **The finer assumptions.** Everything else that was a constant in the notebook: the crown coefficients `a` and `b`, the three LAI values, the interception fraction, annual precipitation, and the social cost of carbon. Each is labelled with where its default comes from.
 
 The order matters. Someone who has not seen the sandbox before should find the clock first, then the controls for reading the picture, then the controls worth changing, and last the assumptions. The levers are the assumptions from Tutorial 3, made visible. Where I could not find a source for a number, I made it a control and labelled it as mine rather than leaving it as a constant in the code.
@@ -47,13 +47,92 @@ The reason for the middle document is that invented numbers and added features a
 
 ## Step 1: Export the data from the notebook
 
-The sandbox needs the trees and the blocks, in the smallest form that still works. Back in your Tutorial 3 notebook, after Step 7, run this. It writes one JSON file with the block outlines (simplified, since we do not need survey precision) and the per-tree columns the rule uses.
+The sandbox needs the trees and the blocks, in the smallest form that still works. It also needs to know where a new tree could go. These are street trees, so a planted tree has to go on a sidewalk, not in a park, a highway median or the edge of the river. None of our datasets has sidewalks in it, so we will make a list of possible planting sites from a third dataset: the city's street centerline, which has a line down the middle of every street, a code for what kind of road it is, and the street's width from curb to curb.
+
+- **NYC Street Centerline** (`nyc_street_centerline_um.geojson`). In the course folder, under the name of this tutorial. It is a subset of the full citywide file for the same area, with the four columns we use. The full file is [Centerline](https://data.cityofnewyork.us/City-Government/Centerline/inkn-q76z) on NYC Open Data.
+
+Back in your Tutorial 3 notebook, after Step 7, upload it:
+
+```python
+uploaded = files.upload()
+```
+
+The site rule is: take ordinary streets only (`rw_type` 1, which leaves out highways, ramps, bridges and park paths), and not the ones flagged as closed to pedestrians. Find the curb on each side, which is half the street's width from the centerline, and step 3 feet back from it onto the sidewalk. Put a site every 25 feet along that line, starting 40 feet from each end of the segment so that corners stay clear. Then drop any site that is not inside a block, that falls in the roadway of another street, or that is within 15 feet of a tree that is already there. Those four distances are mine, not a planting standard, and the brief says so.
+
+```python
+# Planting sites along sidewalks. All four distances are ours, in feet.
+curb_setback_ft = 3     # behind the curb
+site_spacing_ft = 25    # between sites
+corner_clear_ft = 40    # from each end of a segment
+tree_clear_ft = 15      # from an existing tree
+
+gdf_Streets = gpd.read_file('/content/nyc_street_centerline_um.geojson').to_crs(epsg=2263)
+gdf_Streets = gdf_Streets[(gdf_Streets['rw_type'] == '1')
+                          & gdf_Streets['nonped'].isna()
+                          & gdf_Streets['streetwidth'].notna()]
+gdf_Streets['streetwidth'] = gdf_Streets['streetwidth'].astype(float)
+
+# Walk along a line set back from each curb, dropping a point every 25 ft
+points = []
+for geom, width in zip(gdf_Streets.geometry, gdf_Streets['streetwidth']):
+    for line in getattr(geom, 'geoms', [geom]):
+        for side in (1, -1):
+            sidewalk = line.offset_curve(side * (width / 2 + curb_setback_ft))
+            for part in getattr(sidewalk, 'geoms', [sidewalk]):
+                for d in np.arange(corner_clear_ft, part.length - corner_clear_ft, site_spacing_ft):
+                    points.append(part.interpolate(d))
+gdf_Sites = gpd.GeoDataFrame(geometry=points, crs='EPSG:2263')
+
+# Keep sites inside a block, and take that block's id
+blocks_ft = gdf_Blocks[['BCTCB2010', 'geometry']].to_crs(epsg=2263)
+gdf_Sites = gpd.sjoin(gdf_Sites, blocks_ft, how='inner', predicate='within').drop(columns='index_right')
+
+# Drop sites in the roadway of another street (this happens near intersections)
+roadways = gpd.GeoDataFrame(geometry=gdf_Streets.geometry.buffer(gdf_Streets['streetwidth'] / 2), crs='EPSG:2263')
+in_road = gpd.sjoin(gdf_Sites, roadways, how='inner', predicate='within').index.unique()
+gdf_Sites = gdf_Sites.drop(in_road)
+
+# Drop sites next to a tree that is already there
+trees_ft = gdf_StreetTree[['geometry']].to_crs(epsg=2263)
+near_tree = gpd.sjoin_nearest(gdf_Sites, trees_ft, max_distance=tree_clear_ft, how='inner').index.unique()
+gdf_Sites = gdf_Sites.drop(near_tree)
+
+# Avenues with a median have a centerline for each side, so some sites land on top of each other. Keep one.
+halos = gdf_Sites.set_geometry(gdf_Sites.buffer(site_spacing_ft / 2))[['geometry']]
+pairs = gpd.sjoin(gdf_Sites[['geometry']], halos, predicate='within')
+gdf_Sites = gdf_Sites.drop(pairs[pairs.index > pairs['index_right']].index.unique())
+
+print(f"{len(gdf_Sites):,} planting sites in {gdf_Sites['BCTCB2010'].nunique()} of {len(gdf_Blocks)} blocks")
+gdf_Sites = gdf_Sites.to_crs(epsg=4326)
+```
+
+Draw them over the trees before going on, and zoom in on a few streets. The sites should sit in the gaps between existing trees, on both sides of every ordinary street, and nowhere else.
+
+```python
+chart_Sites = alt.Chart(pd.DataFrame({'lon': gdf_Sites.geometry.x, 'lat': gdf_Sites.geometry.y})).mark_circle(
+    size=4, color='red'
+).encode(
+    longitude='lon:Q',
+    latitude='lat:Q'
+)
+
+chart_Trees = alt.Chart(df_StreetTree).mark_circle(size=4, color='darkgreen').encode(
+    longitude='longitude:Q',
+    latitude='latitude:Q'
+)
+
+(chart_Trees + chart_Sites).project(type='mercator').properties(width=700, height=700)
+```
+
+![planting sites][SITES]
+
+Now write one JSON file with the block outlines (simplified, since we do not need survey precision), the per-tree columns the rule uses, and the sites.
 
 ```python
 import json
 
 # Blocks: simplified outlines plus an id. ~5 m tolerance is plenty at this scale.
-blocks_out = gdf_blocks[['BCTCB2010', 'geometry']].copy()
+blocks_out = gdf_Blocks[['BCTCB2010', 'geometry']].copy()
 blocks_out['geometry'] = blocks_out['geometry'].to_crs(epsg=2263).simplify(15).to_crs(epsg=4326)
 blocks_geojson = json.loads(blocks_out.to_json())
 
@@ -63,7 +142,7 @@ trees_out = gdf_joined[['longitude', 'latitude', 'tree_dbh', 'health', 'BCTCB201
 trees_out['h'] = trees_out['health'].map(health_code).fillna(-1).astype(int)
 
 data = {
-    'source': '2015 Street Tree Census (subset, upper Manhattan); 2010 Census Blocks (subset)',
+    'source': '2015 Street Tree Census (subset, upper Manhattan); 2010 Census Blocks (subset); NYC Street Centerline (subset)',
     'blocks': blocks_geojson,
     'trees': {
         'lon': trees_out['longitude'].round(6).tolist(),
@@ -72,6 +151,11 @@ data = {
         'health': trees_out['h'].tolist(),
         # A few hundred trees at the edge of the subset fall outside every block; they get ''
         'block': trees_out['BCTCB2010'].fillna('').tolist()
+    },
+    'sites': {
+        'lon': gdf_Sites.geometry.x.round(6).tolist(),
+        'lat': gdf_Sites.geometry.y.round(6).tolist(),
+        'block': gdf_Sites['BCTCB2010'].tolist()
     }
 }
 
@@ -81,7 +165,7 @@ with open('street-trees.json', 'w') as f:
 files.download('street-trees.json')
 ```
 
-Check the size of the file it downloads. It should be under one megabyte. That, plus the HTML around it, has to stay under the site's 15MB cap. If it is bigger, round the coordinates to fewer decimals or simplify the outlines more.
+Check the size of the file it downloads. It should be about 1.3 megabytes, most of it the planting sites. That, plus the HTML around it, has to stay under the site's 15MB cap. If it is bigger, round the coordinates to fewer decimals or simplify the outlines more.
 
 While you are in the notebook, write down three numbers: the total gallons per year at 2015 from Step 10's baseline run, the same figure at 2045, and the 2045 figure from the slow run. These are the acceptance checks. If the sandbox does not reproduce them at its defaults, it is not implementing the model you built.
 
@@ -93,12 +177,14 @@ Make a folder on your computer called `street-trees` and put `street-trees.json`
 # Street Trees, Run Forward
 
 ## What it shows
-The 12,715 street trees of a piece of upper Manhattan (roughly 105th to 141st
-Street), each run through one set of equations for the rain it intercepts and
+The 12,479 street trees of a piece of upper Manhattan (roughly 105th to 141st
+Street) that have a recorded trunk diameter, out of 12,715 in the census
+subset, each run through one set of equations for the rain it intercepts and
 the CO2 it takes in, summed by census block, and grown forward one year at a
-time from 2015 to 2045. A planting lever adds trees each year and a slider says
-where they go. It is meant to show the pattern of estimated benefit across
-blocks, and how much that pattern changes when the assumptions change.
+time from 2015 to 2045. A planting lever adds trees each year, on sidewalk
+planting sites only, and a choice says which blocks get them first. It is
+meant to show the pattern of estimated benefit across blocks, and how much
+that pattern changes when the assumptions change.
 
 ## The data
 `street-trees.json`, exported from a notebook.
@@ -110,34 +196,58 @@ blocks, and how much that pattern changes when the assumptions change.
   that fall outside every block; they count in totals but in no block). 2015
   Street Tree Census (NYC Open Data pi5s-9p35), subset. Trees with dbh_in 0 are
   excluded from everything.
+- `sites`: parallel arrays `lon`, `lat`, `block` (BCTCB2010). 15,787 possible
+  planting spots on sidewalks, made in the notebook from NYC Street Centerline
+  (NYC Open Data inkn-q76z): ordinary streets only (rw_type 1, not flagged
+  non-pedestrian), 3 ft behind the curb (curb = half the street width), every
+  25 ft, 40 ft clear of each segment end, 15 ft clear of an existing tree. All
+  four distances ours. 529 of the 580 blocks have at least one site.
 Nothing else is fetched. The file is embedded in the page.
 
 ## The rule (per tree, per year)
 Units in brackets. Sources after each number; "ours" means I chose it.
-1. dbh_cm = dbh_in * 2.54
-2. crown_width_m = a * dbh_cm ^ b          a = 1.22, b = 0.65 (ours, generalized
-   deciduous urban tree)
-3. crown_area_m2 = pi * (crown_width_m / 2)^2
-4. lai = 4.0 good / 2.5 fair / 1.0 poor / 0 unrated (Nowak 1996)
-5. leaf_area_m2 = crown_area_m2 * lai
-6. stormwater_gal_yr = leaf_area_m2 * 1.181 * 0.15 * 264.17
-   (1.181 m/yr NOAA normal 1991-2020; 0.15 interception fraction, conservative,
-   from the i-Tree Eco validation range)
-7. biomass_kg = exp(-2.4800 + 2.4835 * ln(dbh_cm))   (Jenkins et al. 2003,
-   mixed hardwood)
-8. co2_kg_yr = biomass_kg * 0.5 * growth * 3.667   (Nowak & Crane 2002;
-   growth default 0.04)
-9. co2_value_usd = co2_kg_yr / 1000 * scc          (scc 51 or 190, EPA)
+Defaults for the named values are under Controls.
+1. dbh_cm = dbh_in * 2.54                  [cm]
+2. crown_width_m = a * dbh_cm ^ b          [m]  a = 1.22, b = 0.65 (ours,
+   generalized deciduous urban tree)
+3. crown_area_m2 = pi * (crown_width_m / 2)^2   [m2]
+4. lai = lai_good / lai_fair / lai_poor / 0 unrated   [m2 leaf per m2 crown]
+   (4.0 / 2.5 / 1.0, Nowak 1996)
+5. leaf_area_m2 = crown_area_m2 * lai      [m2]
+6. stormwater_gal_yr = leaf_area_m2 * precip_m * interception * 264.17   [gal/yr]
+   (precip_m 1.181 m/yr, NOAA normal 1991-2020; interception 0.15, conservative,
+   from the i-Tree Eco validation range; 264.17 gal per m3)
+7. biomass_kg = exp(-2.4800 + 2.4835 * ln(dbh_cm))   [kg]  (Jenkins et al.
+   2003, mixed hardwood)
+8. co2_kg_yr = biomass_kg * 0.5 * growth * 3.667   [kg/yr]  (Nowak & Crane
+   2002; growth default 0.04)
+9. co2_value_usd = co2_kg_yr / 1000 * scc          [$/yr]  (scc $51 or $190
+   per metric ton, EPA)
 Each year: dbh_in *= growth_factor where growth_factor = (1 + growth)^(1/2.4835)
 (derived from 8, so that growth is one assumption rather than two). Then remove a `mortality` share of
 trees at random (default 0, ours). Then plant `planted_per_year` new trees at
-`planting_dbh_in`, placed per `planting_rule`, at a random location inside the
-chosen block.
+`planting_dbh_in`, in good health (ours). A new tree only ever goes on a free
+site: pick a block per `planting_rule` from the blocks that still have a free
+site, then take one of that block's free sites at random. Pick the block again
+for every tree. A site holds one planted tree and is not freed if that tree
+dies (ours). When no free sites are left, planting stops.
+- fewest_trees: the block with the fewest living trees
+- lowest_per_tree: the block with the lowest stormwater per living tree (a
+  block with no trees counts as 0)
+- even: go through the blocks in BCTCB2010 order, one tree each, and carry on
+  from the same place next year
+Ties go to the lower BCTCB2010. Random choices use a fixed seed, so the same
+controls always give the same run.
 
 ## Controls, in this order, with defaults
 Clock:            year [2015..2045], default 2015, plays at 2 years/second, loops
 Drawing:          tint = stormwater | co2 | count | per_tree (default stormwater);
                   draw = trees | blocks | both (default both)
+Map:              fits the height of the window. Zoom in and out with the
+                  scroll wheel and + / - buttons (out to a quarter of the
+                  starting view, in to 20x; ours), drag to pan, and a button
+                  to reset the view. Zooming changes
+                  only the view, never the run.
 Main levers:      planted_per_year [0..500] default 0 (ours)
                   planting_rule = fewest_trees | lowest_per_tree | even (default fewest_trees)
                   planting_dbh_in [2..4] default 3 (ours)
@@ -147,22 +257,26 @@ Finer:            a [0.8..1.6] default 1.22; b [0.5..0.8] default 0.65 (ours)
                   lai_good [2..6] 4.0; lai_fair [1..4] 2.5; lai_poor [0..2] 1.0 (Nowak 1996)
                   interception [0.05..0.4] default 0.15 (i-Tree Eco range)
                   precip_m [0.8..1.6] default 1.181 (NOAA)
-                  scc = 51 | 190 (EPA, two administrations' figures)
+                  scc = 51 | 190, default 51 (EPA, two administrations' figures)
 
 ## Metrics, recomputed on every change
 trees alive; total stormwater gal/yr; total co2 kg/yr; value $/yr; median per-tree
-stormwater; blocks with zero trees; share of total stormwater in the top 10% of
-blocks.
+stormwater; blocks with zero trees; free planting sites left; share of total
+stormwater in the top 10% of blocks (58 of 580).
 
 ## What you should see
 At the defaults in 2015: about 150 million gal/yr from 12,479 trees (the
 notebook's figure; put your exact one here). At 2045: about 277 million. With
-growth at 0.02, 2045: about 204 million. Planting 200 a
-year, fewest-trees-first, should visibly fill the empty blocks by the 2030s and
-lower the top-10% share.
+growth at 0.02, 2045: about 204 million. 99 blocks have no trees in 2015.
+Planting 200 a year, fewest-trees-first: every new tree lands on a sidewalk,
+never in a park, on a highway or at the river's edge. By 2016, 50 of the empty
+blocks have trees; the other 49 have no sites and stay empty in every year.
+In 2045: 18,479 trees, about 303 million gal/yr, 9,787 sites left, and the
+top-10% share down from 35.5% to about 32.6%.
 
 ## What it can't see
-Species. Sidewalk width, utilities, budgets, who plants. Park trees and yard
+Species. Sidewalk width, and whether a site really has room (driveways,
+hydrants, bus stops, cellar doors). Utilities, budgets, who plants. Park trees and yard
 trees. Storms, drought, disease. Real mortality. Anything after 2015 that
 actually happened.
 
@@ -231,3 +345,4 @@ Module by Adam Vosburgh, Fall 2026.
 
 [WIRE]: /tutorials/images/w4/street-trees-wireframe.svg#img-full
 [DOCS]: /tutorials/images/w4/three-documents.svg#img-full
+[SITES]: /tutorials/images/w4/01-planting-sites.png

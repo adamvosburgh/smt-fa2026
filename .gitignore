@@ -43,3 +43,6 @@ __pycache__/
 *.log
 .DS_Store
 Thumbs.db
+
+# Tutorial demos: local runs of the tutorials, kept off git entirely.
+/demos/
