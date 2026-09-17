@@ -17,7 +17,7 @@
   let rows = $state(data.boards);
   let who = $state(null);
   let rejected = $state(false);
-  let tab = $state('assignment');
+  let tab = $state('all');
   let covers = $state({});
   let tip = $state(false);
   let tipTimer = 0;
@@ -30,7 +30,8 @@
 
   onMount(() => {
     try {
-      if (localStorage.getItem(TAB_KEY) === 'exercise') tab = 'exercise';
+      const saved = localStorage.getItem(TAB_KEY);
+      if (saved === 'assignment' || saved === 'exercise') tab = saved;
     } catch {
       // Default tab.
     }
@@ -93,7 +94,7 @@
     return Number.isNaN(d.getTime()) ? 'Exercise' : `Exercise · ${DAY.format(d)}`;
   }
 
-  const shown = $derived((rows ?? []).filter((b) => b.kind === tab));
+  const shown = $derived((rows ?? []).filter((b) => tab === 'all' || b.kind === tab));
 
   function newBoard() {
     if (who?.role !== 'owner') {
@@ -141,15 +142,16 @@
   <TokenGate {rejected} />
 {:else if rows}
   <div class="toggle" role="tablist">
+    <button type="button" role="tab" class:on={tab === 'all'} aria-selected={tab === 'all'} onclick={() => setTab('all')}>All</button>
     <button type="button" role="tab" class:on={tab === 'assignment'} aria-selected={tab === 'assignment'} onclick={() => setTab('assignment')}>Assignments</button>
     <button type="button" role="tab" class:on={tab === 'exercise'} aria-selected={tab === 'exercise'} onclick={() => setTab('exercise')}>Exercises</button>
   </div>
 
   {#if !shown.length}
     <p class="empty">
-      {tab === 'assignment'
-        ? 'Nothing here yet. An assignment board appears at 9am on the morning it is due.'
-        : 'Nothing here yet.'}
+      {tab === 'exercise'
+        ? 'Nothing here yet.'
+        : 'Nothing here yet. An assignment board appears at 9am on the morning it is due.'}
     </p>
   {/if}
 
