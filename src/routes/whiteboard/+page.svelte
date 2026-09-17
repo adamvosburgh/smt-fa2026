@@ -8,6 +8,7 @@
   import { loadAsset, needsToken } from '$lib/board/assets.js';
   import TokenGate from '$lib/components/TokenGate.svelte';
   import BoardSketch from '$lib/components/BoardSketch.svelte';
+  import { marquee } from '$lib/marquee.js';
 
   let { data } = $props();
 
@@ -159,7 +160,7 @@
           <BoardSketch sketch={b.sketch} srcs={covers} />
         </div>
         <div class="project-card-info">
-          <h3 class="project-card-title">{b.title}</h3>
+          <h3 class="project-card-title marquee" use:marquee={b.title}><span>{b.title}</span></h3>
           <p class="project-card-author">{line2(b)}</p>
           <p class="project-card-author">{b.count === 1 ? '1 item' : `${b.count} items`}</p>
         </div>

@@ -52,6 +52,6 @@ export default {
   ],
   cannotSee:
     "Who any person is. Station flows are counted by hour but not split by who is riding, so treating morning arrivals as workers is the model's assumption, and residents' hours come from a national survey, not a New York count. Anyone who is not a subway rider or a resident of the district is not counted: ferry, bus, bike, car and foot commuters, visitors, and people who work in the district's shops, hotels and restaurants. The sidewalk numbers are people a building sends out and takes in each hour, spread over the street within 50 m of it, not people observed on a street. There is no sidewalk dataset; the 15 m band around each street centerline is our choice, and ground away from a street, such as the World Trade Center memorial plaza, is not in the model. Where the 2014 survey is missing a building on a lot, the lot's floor area goes to the buildings it has, so 1 WTC carries more floor area than it has; the cap that holds each building to its own outline bounds that error without removing it. Conversion is instant, every apartment is occupied, rents are uniform, no height is added, and the incentive is a gate and a tax figure with no time value of money. It cannot see who moves in, who is displaced, or where a displaced job goes. The date is 2040 because the incentive requires completion by the end of 2039; the model has no other clock.",
-  tutorial: '/tutorials/02-after-five/',
+  tutorial: null,
   live: false
 };

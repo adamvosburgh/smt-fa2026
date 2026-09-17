@@ -39,7 +39,7 @@ npm run dev       # dev server
 SMT_SHOW_UNPUBLISHED=1 npm run dev
                   # ...also showing everything held back: pages past a
                   #   `publish:` date, anything with `published: false`
-                  #   (dev notes, the sunlight sandbox), and hidden
+                  #   (the sunlight sandbox), and hidden
                   #   sandboxes. Each is tagged
                   #   `unpublished` or `publishes 9/17` so a preview is never
                   #   mistaken for the live site. See src/lib/visibility.js.
@@ -74,6 +74,7 @@ component tag:
 ```
 src/content/        markdown, images beside it
   syllabus/ tutorials/ assignments/ resources/
+archive/devnotes/   the sandbox dev notes and their images, off the site
 src/submissions/    <student>/<sandbox>/manifest.json + assets/ + review.json
 src/lib/
   content.js        markdown pipeline + collections
@@ -160,15 +161,23 @@ The course vocabulary collides with the discipline's, so these are load-bearing:
 - "Pithy two-sentence summary" and "gallery text" are the recurring deliverable
   phrasings, carried over from Methods.
 
-## Two kinds of tutorial
+## Tutorials and the archived dev notes
 
-`src/content/tutorials/` holds both the **weekly tutorials** (`01-setting-up`,
-`02-mapping-where`, `03-simulating-trees`, `04-notebook-to-sandbox`, ...) and
-the **sandbox dev notes** (`01-pencil` ... `05-bathtub`, frontmatter
-`devnotes: true`). The Tutorials tab lists only the weekly ones; dev notes are
-linked from each sandbox page. Weekly tutorials follow the Methods shape and
-voice (`utilities/writing-style-guide.md` § 2); dev notes follow the flat shape
-below. Images: `images/w<n>/` for weekly, `images/<nn>/` for dev notes.
+`src/content/tutorials/` holds the **weekly tutorials** (`01-setting-up`,
+`02-mapping-where`, `03-simulating-trees`, `04-notebook-to-sandbox`, ...). They
+follow the Methods shape and voice (`utilities/writing-style-guide.md` § 2).
+Images go under `images/w<n>/`.
+
+The **sandbox dev notes** (`01-pencil` ... `06-sunlight`, frontmatter
+`devnotes: true`) have been pulled off the site until they are rewritten. They
+and their images (`images/01/` ... `images/06/`) are in `archive/devnotes/`.
+While they are archived:
+
+- Every sandbox's `meta.js` has `tutorial: null`, so no page links to a dev note.
+- The assistant's prompt (`src/lib/assistant-prompt.js`) does not index them,
+  and the Tutorials page does not mention them.
+- Don't move them back, link to them, or cite them in course prose unless Adam
+  asks.
 
 Assignments take uploads when their frontmatter says `submit: true`, with
 `accepts: [image, pdf, html]` and `due: "M/DD"`. Uploads go through the same
@@ -178,22 +187,22 @@ assignment. See `src/lib/server/validate.js` (`validateAssignment`).
 
 ## Tutorial anchors are an API
 
-The build doctor points students at `#what-came-out` and `#the-parts`, and
-`FAILURE_MAP` in `src/lib/server/validate.js` hardcodes them. Renaming a
-tutorial heading breaks it silently.
+`FAILURE_MAP` in `src/lib/server/validate.js` hardcodes `#what-came-out` and
+`#the-parts`, which the build doctor appends to a sandbox's `meta.tutorial`.
+With the dev notes archived, `tutorial` is null and those errors carry no link.
+If the dev notes come back, the headings must match again; renaming one breaks
+the pointer silently.
 
-Every dev note is "<sandbox title> dev notes" and has the same four `##`
-sections in the same order, and nothing more: **The ambition** (what we set out
-to do, one short paragraph), **The parts** (bullets: dataset, then what is
-derived from it), **Roadblocks** (bullets, one sentence each), **What came out**
-(with `### What you should see` and `### Limitations` under it, bullets). No
-Challenge section. Keep them short - they are a works-cited and model card, not
-an essay - and put two or three images in each (the cover from `/covers/`, and
-charts or diagrams under `src/content/tutorials/images/<nn>/`).
+When the dev notes are rewritten, the shape they had was: "<sandbox title> dev
+notes", with the same four `##` sections in the same order and nothing more:
+**The ambition** (one short paragraph), **The parts** (bullets: dataset, then
+what is derived from it), **Roadblocks** (bullets, one sentence each), **What
+came out** (with `### What you should see` and `### Limitations` under it,
+bullets). Each had two or three images and a `.gap` callout stating what the
+sandbox can do that a rebuild won't.
 
-Every dev note also states explicitly what the sandbox can do that a rebuild
-won't - use the `.gap` callout. Don't hide it. Weekly tutorials use the same
-callout for what the class version has that the student's won't.
+Weekly tutorials use the same `.gap` callout for what the class version has
+that the student's won't. Don't hide it.
 
 ## Sandbox prose
 

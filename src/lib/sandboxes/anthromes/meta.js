@@ -42,6 +42,6 @@ export default {
     "Any observation. Every input is a model's output: HYDE spreads national and regional estimates across cells, and that allocation is the larger uncertainty and has no slider. The potential vegetation model underneath has no controls either. The further back the timeline runs, the more of the map is reconstruction, though it looks equally confident at every date. The inputs are HYDE 3.2, because 3.5's distribution is missing its 2000-2023 input grids, so the timeline ends at 2017. The thresholds are the published ones at the defaults, but the paper presents them without derivation, and aggregating to 33 km before classifying means the default map will not match the published one everywhere.",
   provenanceNote:
     'The inputs are HYDE 3.2, not 3.5, for two reasons the card spells out: 3.5\'s own distribution is missing the 2000-2023 input grids (verified 2026-09-04 from the archive\'s file headers), and its classification paper is in preparation, so 3.2 remains the documented method of record. The 3.5 classified series rides along as a comparison layer to 2025AD.',
-  tutorial: '/tutorials/04-anthromes/',
+  tutorial: null,
   live: false
 };

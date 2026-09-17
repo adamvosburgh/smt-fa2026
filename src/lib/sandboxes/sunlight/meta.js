@@ -47,6 +47,6 @@ export default {
   ],
   cannotSee:
     'Everything except the direct beam. There is no sky, so an overcast day and a clear one are the same to it; no reflected light off the buildings opposite or off the floor; no glass, so a window is a hole; no curtains, no trees, no interior partitions beyond the ones in the file. A north-facing room reads as dark here and may be perfectly well lit in the world. It also does not know that this building was converted to apartments from 2023 with two courtyards cut into the plate, which is exactly where the light would now come from.',
-  tutorial: '/tutorials/06-sunlight/',
+  tutorial: null,
   live: false
 };

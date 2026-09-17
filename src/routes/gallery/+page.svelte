@@ -1,4 +1,5 @@
 <script>
+  import { marquee } from '$lib/marquee.js';
   let { data } = $props();
 </script>
 
@@ -18,7 +19,7 @@
                 onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
             </div>
             <div class="project-card-info">
-              <h3 class="project-card-title">{s.title}</h3>
+              <h3 class="project-card-title marquee" use:marquee={s.title}><span>{s.title}</span></h3>
               <p class="project-card-author">{s.student}</p>
             </div>
           </a>

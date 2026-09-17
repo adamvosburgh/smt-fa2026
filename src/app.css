@@ -411,7 +411,7 @@ pre code {
 /* Project index grid */
 .project-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
 }
 
@@ -614,6 +614,36 @@ pre code {
 @media (max-width: 600px) {
   .project-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* A card title longer than one line scrolls right and back rather than
+   wrapping. The element holds one inner span; src/lib/marquee.js measures the
+   overflow and adds .scrolling with --marquee-shift and --marquee-time. */
+.marquee {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.marquee > span {
+  display: inline-block;
+}
+
+.marquee.scrolling > span {
+  animation: marquee var(--marquee-time, 8s) ease-in-out infinite;
+}
+
+@keyframes marquee {
+  0%, 15% { transform: translateX(0); }
+  50%, 65% { transform: translateX(var(--marquee-shift, 0)); }
+  100% { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee.scrolling > span {
+    animation: none;
   }
 }
 

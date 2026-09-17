@@ -1,4 +1,5 @@
 <script>
+  import { marquee } from '$lib/marquee.js';
   import Prose from '$lib/components/Prose.svelte';
   import AssignmentSubmit from '$lib/components/AssignmentSubmit.svelte';
   import { MODE } from '$lib/data.js';
@@ -38,7 +39,7 @@
         {#each data.submissions as s (s.url)}
           <a href={s.url} class="fork">
             <img src={s.coverUrl} alt="" loading="lazy" onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
-            <b>{s.title}</b>
+            <b class="marquee" use:marquee={s.title}><span>{s.title}</span></b>
             <span>{s.student}</span>
           </a>
         {/each}
@@ -67,7 +68,8 @@
   .board-link a:hover { background: var(--hi); color: var(--hi-fg); }
   .handed-in { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1.25rem; }
   .handed-in h2 { font-size: 0.8rem; text-transform: lowercase; margin: 0 0 1rem; }
-  .fork-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem; }
+  .fork-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+  @media (max-width: 600px) { .fork-grid { grid-template-columns: 1fr; } }
   .fork { text-decoration: none; color: inherit; font-size: 0.72rem; display: block; }
   .fork img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: var(--code-bg); border: 1px solid var(--rule); transition: opacity 0.15s ease; }
   .fork:hover img { opacity: 0.85; }

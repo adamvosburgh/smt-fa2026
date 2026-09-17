@@ -6,12 +6,10 @@ const tag = (d) => ({ ...d, pending: pendingLabel(d) });
 
 export function load() {
   const all = collection('tutorials');
-  // The weekly tutorials. The sandbox dev notes (`devnotes: true`) keep their
-  // URLs - the build doctor's FAILURE_MAP points into them - but are reached
-  // from each sandbox's page rather than listed here.
+  // The weekly tutorials only. The sandbox dev notes are archived
+  // (archive/devnotes/) and never listed here.
   return {
     items: all.filter((d) => d.devnotes !== true).map(tag),
-    devnotes: all.filter((d) => d.devnotes === true),
     title: 'Tutorials'
   };
 }

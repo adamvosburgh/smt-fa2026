@@ -37,7 +37,7 @@ const CATALOG = sandboxes
 
 // The heading index: every live tutorial, its url, and its `##` and `###`
 // headings with the anchor ids the page actually uses. This is what buys the
-// assistant the ability to say "see The parts in the bathtub dev notes" instead
+// assistant the ability to say "see Step 3 in the notebook-to-sandbox tutorial" instead
 // of guessing at what a section contains.
 //
 // Measured 2026-09-10: 5,315 chars with all eleven tutorials live, which is
@@ -60,14 +60,11 @@ function part(label, docs) {
   return docs.length ? `${label}\n\n${docs.map(entry).join('\n\n')}` : '';
 }
 
+// The sandbox dev notes are archived (archive/devnotes/) and kept out of the
+// index even if one comes back with `devnotes: true`.
 function tutorialIndex() {
   const live = collection('tutorials');
-  return [
-    part('The weekly tutorials:', live.filter((d) => !d.devnotes)),
-    part('The dev notes, one per sandbox:', live.filter((d) => d.devnotes))
-  ]
-    .filter(Boolean)
-    .join('\n\n');
+  return part('The weekly tutorials:', live.filter((d) => !d.devnotes));
 }
 
 export function systemPrompt(context = {}) {

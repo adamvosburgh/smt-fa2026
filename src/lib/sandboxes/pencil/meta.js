@@ -56,6 +56,6 @@ export default {
   ],
   cannotSee:
     "Basement units and conversions of existing space, which the city's program also covers. Whether a homeowner can raise the money, wants a tenant, or trusts the city; lots that pass are not lots that build, and the count is an upper bound. The required rear yard is sized as a rectangle the full width of the lot, because MapPLUTO's table has no lot shape; the drawing uses the real outline and footprint to place the unit, and a corner lot's front is taken as its longest street edge, which is our rule. It cannot see who lives in the house, so the program's owner-occupancy requirement is not tested. There is no contractor, no financing rejection, no family, and nothing about what the units do to the block.",
-  tutorial: '/tutorials/01-pencil/',
+  tutorial: null,
   live: false
 };

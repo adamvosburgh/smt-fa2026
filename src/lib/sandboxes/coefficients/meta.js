@@ -49,6 +49,6 @@ export default {
     'Anyone. The model has densities, rates and a growth valve, but no people, no households and no migration. It cannot see a city whose most valuable place is not its center, because land value is written as a distance from one center. There is no data anywhere in it: every rule is a typed-in constant, and no city it produces can differ in kind from another. Access is a random walk with no routes or journey times, policing has no limit, and the ground is flat and empty. It could not see its own failures either: the crime scan never ran in the original port, and the game still looked like a working simulation.',
   license:
     'GPLv3 with additional terms, plus the Micropolis Public Name License. This site is AGPL-3.0 and its repository is public, which satisfies GPLv3 section 13 and the source-availability obligation. Student submissions are modified GPL code redistributed here under the same license. See NOTICE.md.',
-  tutorial: '/tutorials/03-coefficients/',
+  tutorial: null,
   live: false
 };

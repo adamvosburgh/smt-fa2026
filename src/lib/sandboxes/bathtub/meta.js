@@ -45,6 +45,6 @@ export default {
   ],
   cannotSee:
     "Water moving. There is no time in this model, so there is no rain, no drainage, no waves, no storm that arrives and then leaves, no pump, and no sea wall built later. It is a line drawn where the ground meets a number, including when that number is a hundred-year storm, which arrives as a still water surface with no waves in it. That is also, more or less, the model most cities publish. It draws the range in the projections, but it cannot say which of the four is more likely, because the panel does not.",
-  tutorial: '/tutorials/05-bathtub/',
+  tutorial: null,
   live: false
 };

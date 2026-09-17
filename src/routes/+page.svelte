@@ -173,6 +173,8 @@
   .syllabus :global(section.week) {
     position: relative;
     margin: 1.75rem 0;
+    /* Clears the fixed header and nav when a table row jumps here. */
+    scroll-margin-top: calc(var(--chrome-top) + 1rem);
   }
 
   .syllabus :global(.week-toggle) {
