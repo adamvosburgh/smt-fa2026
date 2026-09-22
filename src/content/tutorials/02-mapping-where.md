@@ -25,8 +25,8 @@ Create a new folder for your work on this series of modules. Inside it create a 
 In this module you will be making a series of maps about NYC street trees. The following datasets are in the course folder, under the name of this tutorial:
 
 - **New York City Landcover 2010 (3ft version), clipped** (`landcover_2010_um.tif`). A raster dataset created to describe major land use categories for New York City derived from satellite imagery. The full dataset covers the whole city and is too large for a notebook, so I have clipped it to the same area of Harlem as the other two datasets. From the [NYC Open Data page](https://data.cityofnewyork.us/Environment/Landcover-Raster-Data-2010-3ft-Resolution/9auy-76zt) for the full dataset, also download the Data Dictionary: `Landcover2010_DataDictionary_20171012.xlsx`.
-- **New York City 2015 Street Tree Census** (`2015_Street_Tree_Census_subset_um.csv`). This dataset was collected by more than 2000 volunteers visiting each street tree within the five boroughs of NYC. For more background on this amazing effort (the third such census over the past 30 years) see the NYC Parks department website [here](https://www.nycgovparks.org/trees/treescount). The course folder has a subset of the data for an area in Harlem to make for easier processing. For those interested the full dataset is available for download directly via NYC Open Data [here](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/pi5s-9p35).
-- **New York City Census Blocks 2010** (`nycb2010_um.gpkg`). As with the street trees above, this is a subset of the full NYC Census Blocks file for an area of Harlem. I exported the blocks as a geopackage (`.gpkg`) so that we do not have to upload the several files that accompany a shapefile. The original dataset for all of NYC is available [here](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/v2h8-6mxf).
+- **New York City 2015 Street Tree Census** (`2015_Street_Tree_Census_subset_um.csv`). This dataset was collected by more than 2000 volunteers visiting each street tree within the five boroughs of NYC. For more background on this amazing effort (the third such census over the past 30 years) see the NYC Parks department website [here](https://www.nycgovparks.org/trees/treescount). The course folder has a subset of the data for an area in Harlem to make for easier processing. For those interested the full dataset is available for download directly via NYC Open Data [here](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh).
+- **New York City Census Blocks 2010** (`nycb2010_um.gpkg`). As with the street trees above, this is a subset of the full NYC Census Blocks file for an area of Harlem. I exported the blocks as a geopackage (`.gpkg`) so that we do not have to upload the several files that accompany a shapefile. The original dataset for all of NYC is available [here](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/y9w2-ph8n).
 
 ### The notebook
 
@@ -129,8 +129,8 @@ To do this we will add two new datasets to our project, a geopackage containing 
 To reduce processing times you will conduct the next section with a subset of data covering part of upper Manhattan (from 105th Street to 141st Street). This is the dataset you downloaded at the beginning of this tutorial module.
 
 If you have a powerful computer (or don't mind waiting several minutes between steps) feel free to download the complete versions of the datasets for NYC as a whole.
-- [Download NYC Street Tree Census for all of NYC.](https://data.cityofnewyork.us/api/views/5rq2-4hqu/rows.csv?accessType=DOWNLOAD) Metadata available [here](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/pi5s-9p35).
-- [Download Census Blocks for all of NYC.](https://data.cityofnewyork.us/api/geospatial/v2h8-6mxf?method=export&format=Shapefile) Metadata available [here](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/v2h8-6mxf).
+- [Download NYC Street Tree Census for all of NYC.](https://data.cityofnewyork.us/api/views/uvpi-gqnh/rows.csv?accessType=DOWNLOAD) Metadata available [here](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh).
+- [Download Census Blocks for all of NYC.](https://data.cityofnewyork.us/api/geospatial/y9w2-ph8n?method=export&format=Shapefile) Metadata available [here](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/y9w2-ph8n).
 
 ### Adding the street tree census
 
@@ -360,6 +360,10 @@ chart_TreeDiameter
 ```
 
 ![tree diameter][CHORO]
+
+The blocks drawn in white are the 99 blocks with no street trees on them. Their
+total diameter and their tree count are both zero, and dividing zero by zero
+gives `NaN`, which Altair leaves unfilled.
 
 In QGIS, the classification mode determined the groups that your data are assembled into, and the classification mode you choose will greatly influence the argument that your map conveys. Altair's default is a continuous color ramp, which is also a choice. Compare it with a quantile classification by swapping in this line and running the cell again:
 

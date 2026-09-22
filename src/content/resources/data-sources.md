@@ -11,8 +11,8 @@ The datasets the tutorials use, and places to look for more. Each sandbox's sour
 
 ## Used in the tutorials
 
-- **2015 Street Tree Census.** NYC Parks, via [NYC Open Data](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/pi5s-9p35). About 666,000 trees, each visited by a volunteer. The tutorials use [a subset for upper Manhattan](https://drive.google.com/open?id=1ZpLafJbA2xRxJ55J8B4DsAveZBNSzUUD&usp=drive_fs) as a CSV. Coordinates are WGS 84.
-- **2010 Census Blocks.** NYC Department of City Planning, via [NYC Open Data](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/v2h8-6mxf). The tutorials use [a subset](https://drive.google.com/open?id=1uIVLheQ73t7TlCwjRtuhjvSM9_4T0itM&usp=drive_fs) as a GeoPackage. `CT2010` is the tract, `CB2010` the block within it.
+- **2015 Street Tree Census.** NYC Parks, via [NYC Open Data](https://data.cityofnewyork.us/Environment/2015-Street-Tree-Census-Tree-Data/uvpi-gqnh). About 666,000 trees, each visited by a volunteer. The tutorials use [a subset for upper Manhattan](https://drive.google.com/open?id=1ZpLafJbA2xRxJ55J8B4DsAveZBNSzUUD&usp=drive_fs) as a CSV. Coordinates are WGS 84.
+- **2010 Census Blocks.** NYC Department of City Planning, via [NYC Open Data](https://data.cityofnewyork.us/City-Government/2010-Census-Blocks/y9w2-ph8n). The tutorials use [a subset](https://drive.google.com/open?id=1uIVLheQ73t7TlCwjRtuhjvSM9_4T0itM&usp=drive_fs) as a GeoPackage. `CT2010` is the tract, `CB2010` the block within it.
 - **Land Cover 2010, 3 ft.** Made from aerial imagery for the city; the full attribution is in the metadata on [NYC Open Data](https://data.cityofnewyork.us/Environment/Landcover-Raster-Data-2010-3ft-Resolution/9auy-76zt), along with the data dictionary. EPSG:2263. The full raster is very large; Tutorial 2 uses a clip to the same area as the other two. **[Clip download: TBD.]**
 
 ## Where to look

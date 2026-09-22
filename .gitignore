@@ -46,3 +46,5 @@ Thumbs.db
 
 # Tutorial demos: local runs of the tutorials, kept off git entirely.
 /demos/
+
+/temp/

@@ -189,12 +189,12 @@ that pattern changes when the assumptions change.
 ## The data
 `street-trees.json`, exported from a notebook.
 - `blocks`: GeoJSON FeatureCollection, property `BCTCB2010`. 2010 Census Blocks
-  (NYC Open Data v2h8-6mxf), subset and simplified.
+  (NYC Open Data y9w2-ph8n), subset and simplified.
 - `trees`: parallel arrays `lon`, `lat`, `dbh_in` (trunk diameter, inches; 0
   means unknown, treat as missing), `health` (2 good, 1 fair, 0 poor, -1
   unrated), `block` (the tree's BCTCB2010, or '' for the few hundred at the edge
   that fall outside every block; they count in totals but in no block). 2015
-  Street Tree Census (NYC Open Data pi5s-9p35), subset. Trees with dbh_in 0 are
+  Street Tree Census (NYC Open Data uvpi-gqnh), subset. Trees with dbh_in 0 are
   excluded from everything.
 - `sites`: parallel arrays `lon`, `lat`, `block` (BCTCB2010). 15,787 possible
   planting spots on sidewalks, made in the notebook from NYC Street Centerline
