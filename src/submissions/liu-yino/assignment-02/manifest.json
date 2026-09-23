@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "liu-yino",
+  "title": "Cropland Dsirtibution in Liuhe, northern China ",
+  "gallery_text": "Liuhe and its cropland share the same valley landscape instead of forming a clear city–country boundary. Rivers and contours show how both settlement and farming follow the flatter terrain.",
+  "description": "Sources: ESA WorldCover 2021 was created from satellite images to map global land cover. I use its cropland and built-up classes to show the relationship between farming and urban growth in Liuhe.\nCopernicus DEM GLO-30 was created to map surface elevation. I use it to draw contours and show how terrain shapes urban and agricultural land.\nOpenStreetMap provides the river and stream lines.\nProjection: EPSG:4551\nPrecedent: I wanted to learn from Uncharted (like the simplicity)\nNotebook:\nhttps://colab.research.google.com/drive/10FWq8tsJ9lac70YXUSGt1VM3mwHMzErj#scrollTo=d90a0bf5",
+  "params": {},
+  "primary": "assets/liuhe.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-20T21:56:56.273Z",
+  "assets": [
+    {
+      "path": "assets/liuhe.png",
+      "type": "image/png",
+      "bytes": 1717887
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

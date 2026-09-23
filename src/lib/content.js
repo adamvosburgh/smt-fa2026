@@ -129,6 +129,14 @@ export function dueAt(d) {
   return Number.isNaN(start) ? null : start + 9 * 3600 * 1000;
 }
 
+// Midnight New York at the end of the due date: fifteen hours after dueAt. The
+// clocks change at 2am, so midnight is always on the due date's side of it.
+// Student Work folds an assignment's section from this moment on.
+export function closesAt(d) {
+  const due = dueAt(d);
+  return due === null ? null : due + 15 * 3600 * 1000;
+}
+
 // The due date as the pages show it: "9/17", unchanged from the frontmatter.
 export function dueLabel(d) {
   return d?.due ? String(d.due) : null;

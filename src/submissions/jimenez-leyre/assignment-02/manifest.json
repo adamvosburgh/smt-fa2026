@@ -1,0 +1,19 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "jimenez-leyre",
+  "title": "Lost Land Versus Flood Insurance in New Orleans",
+  "gallery_text": "This map compares where land has turned to water since 1932 with what people pay for flood insurance today. The map reveals that the two factors don't line up as the areas that lost the most land aren't the ones paying the most.",
+  "description": "This map looks at Orleans and some of it surrounding parishes, Louisiana.\n\nDataset 1: Land loss. The USGS tracked where coastal Louisiana land turned into open water between 1932 and 2016, using old surveys, aerial photos, and satellite images. They built this to measure how much wetland the state has lost overall. (Couvillion, Beck, Schoolmaster & Fischer, 2018, USGS data release, https://doi.org/10.5066/F74B30JM)\n\nDataset 2: Flood insurance. FEMA collects records on every National Flood Insurance Program policy to run the program itself. I pulled policies effective in September 2025 for these two parishes, through FEMA's public API. (OpenFEMA, FIMA NFIP Redacted Policies v2, https://www.fema.gov/api/open/v2/FimaNfipPolicies)\n\n Instead of using these for wetland tracking or insurance administration, I put them on the same map to compare where land has physically disappeared with what people are charged to insure their homes against flooding. Lost land is shown as a shape. Premiums are shown as a color per census tract as a gradient.\n\nThe map revealed high premium doesn't mean a place is more exposed to flooding but it can reflect other factors like flood zone rules, coverage amount, and building details, not just physical risk. The USGS data shows land that has become water at some point since 1932, not how recently or how fast. In fact, the tracts with the most lost land aren't the ones with the highest premiums but the priciest tracts are the ones with the least.\n\nProjection: NAD83 / Louisiana South (EPSG:26982)\n\nNotebook: https://colab.research.google.com/drive/1FdV7WnFHX13JXhfds509h0lv67A6tjSH?usp=sharing",
+  "params": {},
+  "primary": "assets/Assigment2_Leyre.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-23T02:21:12.072Z",
+  "assets": [
+    {
+      "path": "assets/Assigment2_Leyre.pdf",
+      "type": "application/pdf",
+      "bytes": 1327180
+    }
+  ]
+}

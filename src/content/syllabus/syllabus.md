@@ -101,7 +101,10 @@ Tell us a bit about yourself, why you took this class, and what you want to get 
 Forecasts, hindcasts, and simulations use data to make an argument about a time the data does not cover. This week covers what a rule is, what it means to run one, and how to read the output of a simulation someone else built. In-class exercise: intro to the course sandboxes, the [ADU Forecast for Queens](/sandboxes/pencil/), the [Sea Level Flood Map](/sandboxes/bathtub/), [Office to Residential Conversion](/sandboxes/after-five/), and [Anthromes](/sandboxes/anthromes/). For each: what is it trying to say, what is the data, and what is the mechanism?
 
 <!-- Class plan
-consider adding red plenty excerpt?
+Key word: ACTION - extrapolating into the future (or past) using contemporaneous data, and a rule about how to apply them in time
+
+here it would be good to find section on environemtnal data - twins for the environment etc
+
 -->
 
 #### Readings due
@@ -129,6 +132,14 @@ A place you know, two datasets that were not collected to say anything about eac
 
 What is design practice? In class: live demo of taking a sketch to a build doc, to an app.
 
+<!-- Class plan
+Key word: ARGUMENTS - how these things can be a part of practices of the built environment 
+Fully about simulation in design practice
+WXY Labs
+KPF 42nd street
+look for others
+-->
+
 #### Readings due
 Turkle, Sherry. *Simulation and Its Discontents*. MIT Press, 2009. [Introduction, New Ways of Knowing / New Ways of Forgetting]
 
@@ -144,12 +155,15 @@ A sketch of how you could apply rules to your Assignment 2 dataset to turn it in
 
 #### [Projects to review](/resources/references/#week-4)
 
-### 10/8 | Week 5 | Sensing and Measuring {#week-5}
+### 10/8 | Week 5 | Feedback, Sensing and Measuring {#week-5}
 
 Pin-up of the Assignment 4 sandboxes. Second half: data layers on physical space, real-time feedback systems, and the idea of the smart city. What a sensor records, what it does not, and who it reports to. The final project is assigned.
 
 <!-- Class plan
-here it would be good to find section on environemtnal data - twins for the environment etc
+Key word: FEEDBACK
+Cybernetics, this is the cybernetics day
+consider adding red plenty excerpt?
+
 -->
 
 #### Readings due
