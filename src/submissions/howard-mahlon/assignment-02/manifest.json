@@ -1,0 +1,19 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "howard-mahlon",
+  "title": "Landmarks / Height Exceptions",
+  "gallery_text": "Individual landmarks within Manhattan are mapped as vertical exceptions within the dense building fabric. The map compares each landmark’s roof height with the median height of buildings within a 500-foot radius, showing where landmark buildings rise above, fall below, or are an identical height to their immediate surrounding urban context.",
+  "description": "Sources: 1)The first dataset is NYC Building Footprints, which contains the geographic footprints and associated physical attributes of buildings across New York City. It was used to analyze the height of buildings surrounding individual landmarks. 2) The second dataset is Designated and Calendared Buildings and Sites, produced by the NYC Landmarks Preservation Commission, which documents properties that have been designated or calendared for landmark protection. It is used to identify individual landmarks and compare their height to the surrounding building fabric.\n\nProjection: The analysis uses NAD83 / New York Long Island (EPSG:2263), a projected coordinate system in feet, allowing the 500-foot radius to be calculated spatially.\n\nAlternative use: The two datasets are joined by building identification (BIN) to create a new measure: the difference between an individual landmark's roof height and the median roof height of buildings within a 500-foot radius.\n\nNotebook: https://colab.research.google.com/drive/1jui4v3XjySyc9NnQ5QMYdENEf0JqA7jz?usp=sharing",
+  "params": {},
+  "primary": "assets/Landmarks_Vertical_Exceptions.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-23T14:21:03.971Z",
+  "assets": [
+    {
+      "path": "assets/Landmarks_Vertical_Exceptions.pdf",
+      "type": "application/pdf",
+      "bytes": 460537
+    }
+  ]
+}

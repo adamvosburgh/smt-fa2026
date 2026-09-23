@@ -103,6 +103,8 @@ Forecasts, hindcasts, and simulations use data to make an argument about a time 
 <!-- Class plan
 Key word: ACTION - extrapolating into the future (or past) using contemporaneous data, and a rule about how to apply them in time
 
+Assignment 2 Pin-up
+Reading Discussion
 here it would be good to find section on environemtnal data - twins for the environment etc
 
 -->
