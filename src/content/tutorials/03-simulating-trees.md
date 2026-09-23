@@ -10,26 +10,27 @@ publish: "2026-09-24"
 
 This tutorial builds directly on [Tutorial 2](/tutorials/02-mapping-where/). We'll use the same two datasets, the 2015 NYC Street Tree Census and the census block geopackage, and repeat the same spatial join. The difference is what we do before the join. Instead of just counting trees, we'll estimate two ecological services each tree provides: stormwater interception and CO₂ sequestration. Then we'll aggregate those benefit estimates spatially to see which neighborhoods are getting the most (and least) out of the city's urban forest. At the end, we will run the estimate forward in time.
 
-In the vocabulary of this class, last week's map was a record. This week we apply a rule to the record, which is a model. Then we give the rule time, which is a simulation.
+In the vocabulary of this class, last week's map was a *record*. This week we apply a *rule*, which is a model. Then we *run* the rule, or give it time, which is a simulation.
 
-The calculations follow the methodology of [i-Tree Eco](https://www.itreetools.org/) (Nowak et al. 2008), a widely-used urban forestry model from the USDA Forest Service, using published allometric equations from the peer-reviewed literature. One thing to be clear about upfront: the individual numbers are **model estimates, not direct measurements**. Each tree's benefit is inferred from its trunk diameter and health condition rather than measured in the field. What matters for this tutorial isn't the precision of any individual estimate, it's the *pattern* across the city, and what that pattern might tell us about where ecological infrastructure is concentrated and where it isn't.
+NYC Parks puts a number on these services for every street tree on its [Tree Map](https://tree-map.nycgovparks.org/tree-map/learn/benefits). The numbers come from [i-Tree Streets](https://www.nycgovparks.org/trees/treescount/report), a model from the USDA Forest Service. We will follow the same method, as closely as a notebook allows. i-Tree Streets' assumptions for the Northeast are written down in the [Northeast Community Tree Guide](https://research.fs.usda.gov/treesearch/28759) (McPherson et al. 2007, Appendix 3), and the equations it uses are published in the [Urban Tree Database](https://research.fs.usda.gov/treesearch/52933) (McPherson, van Doorn and Peper 2016). Every number below comes from one of those two reports unless I say otherwise.
 
 <div class="gap">
 
-**What this version leaves out.** i-Tree matches each of hundreds of species to its own crown and growth equations. This tutorial uses one equation for every tree. The [street tree sandbox](/tutorials/04-notebook-to-sandbox/) built from this notebook next week has the same limitation.
+A note: this is a best approximation of NYC Parks' published "ecological benefits of street trees," using what is published about the i-Tree Streets app. I'll name what is coming from where, and when I am making educated guesses. As you'll see below, we're going to get mildly lost in some coefficients and crown diameter's for a bit, but stay with it and just try to understand the *general* logic.
 
 </div>
 
-Both files you need are the same ones from Tutorial 2:
+You need three files. The first two are the same ones from Tutorial 2. The third is in the course folder, under the name of this tutorial:
 
 - `2015_Street_Tree_Census_subset_um.csv`
 - `nycb2010_um.gpkg`
+- `queens_tree_equations.csv`
 
 ## Setup
 
 We will use Google Colab again this week. If you would rather run this on your own computer, the setup is in [Running Python on Your Own Computer](/resources/local-python/); the code is the same apart from the upload step.
 
-Same imports as Tutorial 2, with `numpy` added. We need it for the logarithm in the CO₂ calculation.
+Same imports as Tutorial 2, with `numpy` added. We need it for the logarithms in the equations.
 
 ```python
 from google.colab import files
@@ -43,7 +44,7 @@ import altair as alt
 alt.data_transformers.disable_max_rows()
 ```
 
-Upload the two files:
+Upload the three files:
 
 ```python
 uploaded = files.upload()
@@ -51,9 +52,7 @@ uploaded = files.upload()
 
 ## Step 1: Load the data
 
-Load the street tree CSV exactly as in Tutorial 2. The columns we'll use most are `tree_dbh` (diameter at breast height, in inches), `spc_common` (species name), `health` (Good / Fair / Poor), and the lat/lon coordinates.
-
-DBH is the single most important variable here. Nearly every ecological benefit estimate we calculate traces back to it.
+Load the street tree CSV exactly as in Tutorial 2. The columns we'll use most are `tree_dbh` (diameter at breast height, in inches), `spc_latin` (species name), and the lat/lon coordinates.
 
 ```python
 df_StreetTree = pd.read_csv('/content/2015_Street_Tree_Census_subset_um.csv')
@@ -62,144 +61,166 @@ df_StreetTree = pd.read_csv('/content/2015_Street_Tree_Census_subset_um.csv')
 df_StreetTree.head()
 ```
 
-Before calculating anything, let's check for trees with DBH = 0. These are stump records or missing data. We don't want them skewing the allometric equations, so we'll replace them with `NaN`:
+Before calculating anything, let's check the `status` column. The census records stumps and dead trees as well as living ones. Stumps have a DBH of 0, and dead trees have a diameter but no species. Neither catches rain or takes up carbon, so we keep only the living trees:
 
 ```python
-# Check how many trees have DBH = 0. These are stump or missing records
-zero_dbh_count = (df_StreetTree['tree_dbh'] == 0).sum()
-print(f"Trees with DBH = 0: {zero_dbh_count} ({zero_dbh_count / len(df_StreetTree) * 100:.1f}% of records)")
+# Count living trees, dead trees and stumps
+print(df_StreetTree['status'].value_counts())
 
-# Replace 0 with NaN so downstream equations return NaN instead of incorrect values
-df_StreetTree['tree_dbh'] = df_StreetTree['tree_dbh'].replace(0, np.nan)
+# Keep only the living trees. .copy() makes this a table of its own, so pandas doesn't warn when we change it
+df_StreetTree = df_StreetTree[df_StreetTree['status'] == 'Alive'].copy()
 ```
 
-We should also check the other end of the range. Run `df_StreetTree['tree_dbh'].describe()`. The maximum in this subset is 228 inches, which is a trunk nineteen feet across, and is a data entry error. Because every estimate below is a power of diameter, one wrong value like this can outweigh a large number of correct ones, so we will treat anything above 60 inches as missing as well. The 60 inch cutoff is my choice.
+We should also check the range of the diameters. Run `df_StreetTree['tree_dbh'].describe()`. The maximum in this subset is 228 inches, which is a trunk nineteen feet across, and is a data entry error. We will replace anything above 60 inches with `NaN`, which means "Not A Number", so the equations return nothing for that tree instead of a wrong value. The 60 inch cutoff is my choice.
 
 ```python
 # One record claims a 228-inch trunk. Treat anything over 60 inches as a data entry error.
 df_StreetTree.loc[df_StreetTree['tree_dbh'] > 60, 'tree_dbh'] = np.nan
 ```
 
-## Step 2: Crown projection area from DBH
+## Step 2: Match each tree to a species from Queens
 
-Before we can estimate any ecological benefit, we need to know how large each tree's canopy is. The goal here is **crown projection area** (CPA), the footprint of the canopy as seen from above, modeled as a circle. CPA is the foundation for everything that follows: leaf area, stormwater interception, and CO₂ sequestration all trace back to it.
+In 2005 the Forest Service measured the trunk, height and crown of 910 street trees of 21 species in Queens, and dated 150 of them from tree cores. From those measurements they fitted equations that predict the size of a tree of each species from its trunk diameter. Fitting an equation to measurements like this is called a regression, and every equation in the file we load below is a regression. Queens is i-Tree's reference city for the whole Northeast, so these are the equations behind Parks' numbers ([Northeast Community Tree Guide](https://research.fs.usda.gov/treesearch/28759), pp. 92-93).
 
-i-Tree estimates crown area using species-specific lookup tables matched to climate zones. For each of hundreds of species, it has empirically fitted equations relating trunk diameter to crown width. Replicating that in this notebook would require mapping every `spc_common` value in the census to an i-Tree species code, then pulling the right equation for each one. That's a significant undertaking and not the point of this tutorial.
-
-Instead, we use a single generalized **power-law equation** applied to all trees:
-
-`crown_width (m) = a × DBH_cm ^ b`
-
-The coefficients (a = 1.22, b = 0.65) are approximate values for deciduous urban trees, chosen to produce reasonable estimates across the DBH range in this dataset. A 10 cm DBH tree gets a crown width of about 5.5 m, a 30 cm tree about 9.5 m, which is in the right range for open-grown urban trees. These aren't from a single citable source; they're a generalized estimate.
-
-This is an approximation and should be understood as one. It will over- or under-estimate individual trees. But because the same equation applies to every tree in the dataset, the *relative differences* across the city (which blocks have more canopy, which have less) are still meaningful. The spatial pattern holds even when the absolute numbers are approximate.
+`queens_tree_equations.csv` has five equations for each of the 21 species, copied from the [Urban Tree Database](https://doi.org/10.2737/RDS-2016-0005). Each row is one equation for one species, with its coefficients in `a` to `d`:
 
 ```python
-# Convert DBH from inches to cm
-df_StreetTree['dbh_cm'] = df_StreetTree['tree_dbh'] * 2.54
-
-# Estimate crown width (m) from DBH using a generalized power-law equation
-# crown_width = a * dbh_cm^b
-# Coefficients (a=1.22, b=0.65) are approximate values for deciduous urban trees.
-# i-Tree does this with species-specific lookup tables; this is a simplified stand-in
-a = 1.22
-b = 0.65
-df_StreetTree['crown_width_m'] = a * (df_StreetTree['dbh_cm'] ** b)
-
-# Crown projection area (m²), the footprint of the canopy, modeled as a circle
-df_StreetTree['crown_area_m2'] = 3.14159 * (df_StreetTree['crown_width_m'] / 2) ** 2
-
-# Quick sanity check: median crown area
-print(f"Median crown projection area: {df_StreetTree['crown_area_m2'].median():.1f} m²")
-print(f"Max crown projection area: {df_StreetTree['crown_area_m2'].max():.1f} m²")
+utd = pd.read_csv('/content/queens_tree_equations.csv')
+utd.head(10)
 ```
 
-## Step 3: Leaf area from crown projection area
-
-Crown projection area tells us the footprint of the canopy, but what matters ecologically is the total surface area of leaves, because leaves are where photosynthesis, transpiration, and rainfall interception actually happen.
-
-Leaf area is estimated from crown projection area using a **Leaf Area Index (LAI)** multiplier. LAI is the ratio of total leaf area to the ground area covered by the crown (m² of leaf per m² of crown footprint). An LAI of 4.0 means there are effectively 4 m² of leaf surface stacked above every 1 m² of crown footprint.
-
-Following Nowak (1996), LAI varies with tree condition. A tree in poor health has fewer, less functional leaves than a healthy one. So rather than applying a single constant, we use condition-adjusted values.
+Now give each tree in the census one of the 21 species. About three quarters of the trees in our subset are one of the 21. For the rest, we use a species of the same genus (a white oak is treated as a pin oak), and anything left over is treated as a honeylocust, the most common tree in the subset. This ovbiously isn't the most accurate choice, but is a necessary simplification to keep things straightforward.
 
 ```python
-# LAI multiplier by health condition (from Nowak 1996 methodology)
-# Good condition: LAI ≈ 4.0  |  Fair: ≈ 2.5  |  Poor: ≈ 1.0
-# Trees with no health record (NaN) get 0.0. They contribute no leaf area
-lai_map = {'Good': 4.0, 'Fair': 2.5, 'Poor': 1.0}
-df_StreetTree['lai'] = df_StreetTree['health'].map(lai_map).fillna(0.0)
+# The 21 Queens species, by scientific name
+species = dict(zip(utd['scientific_name'], utd['SpCode']))
 
-# Total leaf area (m²) = crown footprint × LAI
-df_StreetTree['leaf_area_m2'] = df_StreetTree['crown_area_m2'] * df_StreetTree['lai']
+# For a species that isn't one of the 21, the most common Queens species of the same genus 
+same_genus = {'Acer': 'ACRU', 'Quercus': 'QUPA', 'Tilia': 'TICO', 'Ulmus': 'ULAM',
+              'Prunus': 'PRSE2', 'Malus': 'MA2', 'Fraxinus': 'FRPE', 'Pinus': 'PIST'}
 
-# Verify condition breakdown
-print(df_StreetTree['health'].value_counts(dropna=False))
+def match_species(latin):
+    if pd.isna(latin):
+        return 'GLTR'
+    if latin in species:
+        return species[latin]
+    first_two = ' '.join(latin.split()[:2])   # 'Gleditsia triacanthos var. inermis' -> 'Gleditsia triacanthos'
+    if first_two in species:
+        return species[first_two]
+    # Anything else is treated as a honeylocust (GLTR), the most common tree in the subset 
+    return same_genus.get(latin.split()[0], 'GLTR')
+
+df_StreetTree['SpCode'] = df_StreetTree['spc_latin'].map(match_species)
+df_StreetTree['SpCode'].value_counts()
 ```
+
+## Step 3: The equations
+
+The Urban Tree Database uses six kinds of equation, listed in Table 3 of the [report](https://research.fs.usda.gov/treesearch/52933). The `form` column says which one a row uses. 
+
+A function that evaluates one equation. `x` is the input (trunk diameter in centimeters, or age in years). In the log-log and exponential forms, `c` is the equation's mean squared error.
+
+```python
+def equation(form, a, b, c, d, x):
+    if form == 'lin':      return a + b*x
+    if form == 'quad':     return a + b*x + c*x**2
+    if form == 'cub':      return a + b*x + c*x**2 + d*x**3
+    if form == 'loglogw1': return np.exp(a + b*np.log(np.log(x + 1) + c/2))
+    if form == 'loglogw2': return np.exp(a + b*np.log(np.log(x + 1)) + np.sqrt(x)*c/2)
+    if form == 'expow1':   return np.exp(a + b*x + c/2)
+```
+
+A function that applies one kind of equation to every tree, using each tree's own species. The dry weight equation takes height as well as diameter, and has the same form for every species. `x_max` is only set on the age equation: it is the largest tree that equation should be used for, so a bigger tree is treated as that size when we estimate its age.
+
+```python
+def predict(what, sp, x, height=None):
+    out = np.full(len(x), np.nan)
+    # This loops over the species, since each species has its own coefficients
+    for code in np.unique(sp):
+        # This is the one row of the equations file for this species and this equation
+        row = utd[(utd['SpCode'] == code) & (utd['predicts'] == what)].iloc[0]
+        i = (sp == code)
+        # This caps the input at x_max, the largest tree the equation is meant for
+        xi = x[i] if pd.isna(row['x_max']) else np.minimum(x[i], row['x_max'])
+        if what == 'dry_weight_from_dbh_height':
+            # This estimates wood volume from diameter and height, times the wood's density (d)
+            out[i] = row['a'] * xi**row['b'] * height[i]**row['c'] * row['d']
+        else:
+            # This is every other equation, using the forms in equation() above
+            out[i] = equation(row['form'], row['a'], row['b'], row['c'], row['d'], xi)
+    return out
+```
+
+Go ahead and copy both cells into your notebook before we proceed.
 
 ## Step 4: Stormwater interception
 
-One of the most economically significant services street trees provide is **intercepting rainfall** before it reaches the ground. In a dense urban environment like New York, stormwater that hits impervious surfaces flows directly into the combined sewer system, which can overflow during heavy rain, releasing untreated sewage into waterways. Trees reduce that volume.
+Purportedly, one of the most economically significant services street trees provide is **intercepting rainfall** before it reaches the ground. NYC's stormwater drainage and sewage system share the same pipes, and heavy rainfall onto impervious surfaces cause CSO's, or "Combined Sewer Overflow", which is why it is typically [not recommended](https://a816-dohbesp.nyc.gov/IndicatorPublic/Beaches/) to head to the beach after heavy rainfall. Trees reduce the volume of stormwater entering the system.
 
-For this tutorial, we apply an annual interception fraction (15% of precipitation) to leaf area, a conservative estimate based on i-Tree Eco validation data, where modeled interception averaged 61% across sites. The full model uses hourly rainfall data, evaporation rates, and canopy storage capacity; our version captures the order of magnitude while staying interpretable.
+First we need the size of each tree's canopy. The goal here is **crown projection area**, the footprint of the canopy as seen from above, modeled as a circle. The crown diameter comes from the species' equation.
 
-NYC gets about 1,181 mm of rain per year (NOAA 30-year normal). We'll calculate intercepted volume in gallons per year, a useful and concrete unit. For context, NYC Parks and the USDA Forest Service estimated from the 2015 street tree census that NYC's roughly 666,000 street trees together intercept about 916 million gallons per year, with a stormwater benefit of approximately $35 million annually (calculated using i-Tree Streets). That is about 1,400 gallons per tree.
+i-Tree estimates interception by simulating a year of hourly rainfall at JFK airport, filling and emptying each crown's leaves storm by storm. That is too much for this notebook. Instead we take one number from a field study: [Xiao et al. (2000)](https://research.fs.usda.gov/treesearch/61750) put rain gauges above and below two trees in Davis, California for two winters, and found that the crown of a Callery pear caught about 15% of the rain falling on it. (A cork oak in the same study caught 27%.) We apply that 15% to the rain over each crown's footprint. For the rain, we use the same year i-Tree used for the Northeast: 41.0 inches at JFK in 2000 ([Northeast Community Tree Guide](https://research.fs.usda.gov/treesearch/28759), p. 100).
 
 ```python
-# NYC annual precipitation: 1,181 mm (NOAA, 30-year normal 1991–2020)
-# Interception fraction: ~15% of annual precipitation for deciduous trees
-nyc_annual_precip_m = 1.181   # meters
-interception_fraction = 0.15  # conservative midpoint from i-Tree validation range
+rain_m = 41.0 * 0.0254          # JFK airport, 2000 (Northeast Community Tree Guide, p. 100)
+interception_fraction = 0.15    # a Callery pear in Davis, CA (Xiao et al. 2000)
 
-df_StreetTree['stormwater_m3_yr'] = (
-    df_StreetTree['leaf_area_m2'] * nyc_annual_precip_m * interception_fraction
-)
+def stormwater_gal_yr(sp, dbh_cm):
+    # Crown diameter (m) from trunk diameter (cm). Very small trees can come out below zero; count those as zero.
+    crown_m = np.maximum(predict('crown_diameter_from_dbh', sp, dbh_cm), 0)
+    # Crown projection area (m²), modeled as a circle
+    crown_area_m2 = np.pi * (crown_m / 2) ** 2
+    # Rain over the crown (m³) x the share the crown catches, in gallons (1 m³ = 264.17 gallons)
+    return crown_area_m2 * rain_m * interception_fraction * 264.17
 
-# Convert m³ to gallons (1 m³ = 264.17 gallons)
-df_StreetTree['stormwater_gal_yr'] = df_StreetTree['stormwater_m3_yr'] * 264.17
+sp = df_StreetTree['SpCode'].to_numpy()
+dbh_cm = df_StreetTree['tree_dbh'].to_numpy() * 2.54
 
-# Summary statistics
+df_StreetTree['stormwater_gal_yr'] = stormwater_gal_yr(sp, dbh_cm)
+
 print(f"Total stormwater intercepted per year: {df_StreetTree['stormwater_gal_yr'].sum():,.0f} gallons")
 print(f"Median per-tree interception: {df_StreetTree['stormwater_gal_yr'].median():,.0f} gal/yr")
-print(f"(NYC Parks / i-Tree Streets 2015 estimate for all ~666k trees: 916 million gal/yr, about 1,400 per tree)")
 ```
 
-The median tree in our subset comes out at about 9,000 gallons per year, which is several times the city's average of about 1,400. I don't know for certain which of our assumptions is responsible for the difference. My guess is Step 3: we multiply the crown footprint by the leaf area index and then apply the interception fraction to the whole of that leaf area, whereas i-Tree treats interception as a property of the canopy footprint. The generalized crown equation may also produce crowns that are too large. The pattern across blocks is still worth looking at, and this gap is the first thing to fix if you take this further.
+The median tree comes out at about 1,450 gallons a year. The Parks department average for the 2015 census is 1,376 gallons per street tree citywide ([TreesCount! 2015](https://www.nycgovparks.org/trees/treescount/report)). So we're in the ballpark of the correct number, but that number is also over an average for the full city, instead of this subset.
 
 ## Step 5: CO₂ sequestration
 
-Trees sequester carbon as they grow, converting atmospheric CO₂ into woody biomass. We estimate annual CO₂ sequestration in three steps, following Nowak & Crane (2002):
+Trees sequester carbon as they grow, converting atmospheric CO₂ into wood. We estimate how much CO₂ each tree stores now, how big it will be next year, and take the difference. The steps are the ones in Appendix 5 of the [Urban Tree Database](https://research.fs.usda.gov/treesearch/52933) (p. 73):
 
-1. Estimate **aboveground dry weight biomass** from DBH using an allometric equation (Jenkins et al. 2003, mixed hardwood equation)
-2. **Carbon storage** = 0.5 × dry biomass (approximately half of wood dry weight is carbon)
-3. **Annual sequestration** = carbon storage × annual growth rate, then converted from C to CO₂
+1. Height from trunk diameter, from the species' equation
+2. Dry weight of the wood above ground, from diameter and height
+3. Multiply by 1.28 to add the roots, by 0.5 because about half of dry wood is carbon, and by 3.67 to convert carbon to CO₂
 
-We apply a fixed 4% annual growth rate, a conservative estimate for open-grown urban trees. The full i-Tree method uses species-specific growth rates by climate zone, which would be more precise. For the dollar value we use the **EPA Social Cost of Carbon** at $51/metric ton (Obama-era baseline; the Biden-era figure was ~$190/metric ton). Unlike the stormwater case, this is a verifiable published figure, though it represents a policy estimate, not a market price, and the number has shifted significantly across administrations.
+For growth, the database has two more equations per species: the tree's age from its diameter, and its diameter at each age. We estimate each tree's age, then add one year's growth from the diameter-at-age curve.
 
 ```python
-# Aboveground dry weight biomass (kg), Jenkins et al. 2003, mixed hardwood equation
-# biomass = exp(β₀ + β₁ * ln(dbh_cm))
-# Mixed hardwood coefficients (β₀ = -2.4800, β₁ = 2.4835), appropriate for NYC's
-# predominantly hardwood street tree population (London plane, Norway maple, Callery pear, etc.)
-df_StreetTree['biomass_kg'] = np.exp(
-    -2.4800 + 2.4835 * np.log(df_StreetTree['dbh_cm'])
-)
+def co2_stored_kg(sp, dbh_cm):
+    height_m = predict('height_from_dbh', sp, dbh_cm)
+    dry_weight_kg = predict('dry_weight_from_dbh_height', sp, dbh_cm, height_m)
+    return dry_weight_kg * 1.28 * 0.5 * 3.67   # roots, carbon, CO2 (Urban Tree Database, p. 73)
 
-# Carbon storage (kg C) = 0.5 × biomass (Nowak & Crane 2002)
-df_StreetTree['carbon_kg'] = df_StreetTree['biomass_kg'] * 0.5
+def grow_one_year(sp, dbh_cm, age):
+    # How much a tree of this species and age thickens in a year. Past the end of the curve, it stops.
+    step = predict('dbh_from_age', sp, age + 1) - predict('dbh_from_age', sp, age)
+    return dbh_cm + np.maximum(step, 0)
 
-# Annual sequestration: 4% annual growth rate, converted kg C → kg CO₂
-# Multiply by 3.667 (molecular weight ratio of CO₂/C = 44/12)
-growth_rate = 0.04
-df_StreetTree['co2_seq_kg_yr'] = df_StreetTree['carbon_kg'] * growth_rate * 3.667
+age = np.maximum(predict('age_from_dbh', sp, dbh_cm), 0)
+df_StreetTree['age'] = age
+df_StreetTree['co2_seq_kg_yr'] = co2_stored_kg(sp, grow_one_year(sp, dbh_cm, age)) - co2_stored_kg(sp, dbh_cm)
 
-# Dollar value: EPA social cost of carbon at $51/metric ton (conservative baseline)
-df_StreetTree['co2_value_usd'] = (df_StreetTree['co2_seq_kg_yr'] / 1000) * 51
+# Dollar value: $0.00334 per pound of CO2 (Northeast Community Tree Guide, Table 18)
+# To try another price, swap it in for 0.00334:
+#   $0.0231 per pound of CO2 ($51 a metric ton, Biden admin, 2021)
+#   $0.0862 per pound of CO2 ($190 a metric ton, EPA, 2023)
+df_StreetTree['co2_value_usd'] = df_StreetTree['co2_seq_kg_yr'] * 2.2046 * 0.00334
 
-# Summary statistics
 print(f"Total CO₂ sequestered per year: {df_StreetTree['co2_seq_kg_yr'].sum():,.0f} kg")
 print(f"Total CO₂ value per year: ${df_StreetTree['co2_value_usd'].sum():,.0f}")
 print(f"Median per-tree sequestration: {df_StreetTree['co2_seq_kg_yr'].median():.1f} kg CO₂/yr")
 ```
+
+The $0.00334 a pound (about $7 a metric ton) is the price in the Northeast guide, and it is also the price on the Parks Department Tree Map. It is an estimate of the damage a ton of CO₂ does, taken from the average of a 2003 survey of such estimates (Pearce 2003). The Biden Administration's figure for the "social cost of carbon" was $51 a ton in 2021, and the EPA's was $190 in 2023; this is a key metric in understanding the impact of carbon and was used in the writing of policy until the Trump administration directed the EPA to stop using the [social cost of carbon in 2025.](https://eelp.law.harvard.edu/tracker/the-social-cost-of-carbon/). I used the 2003 number to keep it simple, but swap in either number.
 
 ## Step 6: Map individual trees colored by stormwater benefit
 
@@ -221,8 +242,8 @@ chart_StreetTree_Storm = alt.Chart(df_StreetTree).mark_circle().encode(
     ),
     tooltip=[
         alt.Tooltip('spc_common:N', title='Species'),
+        alt.Tooltip('SpCode:N', title='Equations used'),
         alt.Tooltip('tree_dbh:Q', title='DBH (in)', format='.1f'),
-        alt.Tooltip('health:N', title='Health'),
         alt.Tooltip('stormwater_gal_yr:Q', title='Stormwater (gal/yr)', format=',.0f'),
         alt.Tooltip('co2_seq_kg_yr:Q', title='CO₂ sequestered (kg/yr)', format='.1f')
     ]
@@ -237,7 +258,7 @@ chart_StreetTree_Storm = alt.Chart(df_StreetTree).mark_circle().encode(
 chart_StreetTree_Storm
 ```
 
-Hover over a few trees. Notice how much the stormwater value varies. A large healthy tree can intercept many times more rainfall than a small or poor-condition one.
+Hover over a few trees. Notice how much the stormwater value varies, and that two trees of the same diameter give different numbers if they are different species.
 
 ![trees by stormwater][STORM]
 
@@ -363,7 +384,7 @@ chart_Stormwater | chart_CO2 | chart_StormPerTree
 
 ![three choropleths, one shared scale][SHARED]
 
-And... it didn't work! The second and third maps are almost blank. What is going on here? Look at the legend. There is only one, and it is labelled with all three fields. When you put charts side by side, Altair assumes they share a color scale, so the CO₂ map (thousands of kilograms) and the per-tree map (tens of thousands of gallons) are being drawn on the stormwater scale (millions of gallons). Tell it to keep the three scales separate:
+And... it didn't work! The second and third maps are almost blank. What is going on here? Look at the legend. There is only one, and it is labeled with all three fields. When you put charts side by side, Altair assumes they share a color scale, so the CO₂ map (thousands of kilograms) and the per-tree map (thousands of gallons) are being drawn on the stormwater scale (hundreds of thousands of gallons). Tell it to keep the three scales separate:
 
 ```python
 (chart_Stormwater | chart_CO2 | chart_StormPerTree).resolve_scale(color='independent')
@@ -373,73 +394,57 @@ And... it didn't work! The second and third maps are almost blank. What is going
 
 ## Step 9: Reflection
 
-Look at the three maps and think through what each one is actually showing.
+If we look at the three maps, we can see a few trends emerge:
 
-The first two maps (total stormwater, total CO₂) will tend to track the *number* of trees. Blocks with more trees simply generate more total benefit. The more interesting question is whether the distribution of trees matches the distribution of need. Which neighborhoods have the most trees, and which have the fewest? Does that pattern correspond to differences in income, race, or historical investment? (If you've looked at the redlining maps of Manhattan, you already have some hypotheses.)
+The first two maps (total stormwater, total CO₂) will tend to track the *number* of trees. Blocks with more trees simply generate more total benefit. Are trees evenly distributed, or do they reflect historical investment in communities?
 
-The stormwater-per-tree map removes the effect of count. A block with a high per-tree value has large, healthy trees that are individually providing significant benefit. A block with a low per-tree value may have many small or poor-condition trees. Where are the high-performing individual trees located relative to the areas that need the most infrastructure relief?
+The stormwater-per-tree map removes the effect of count. A block with a high per-tree value has large trees of species with wide crowns. A block with a low per-tree value may have many small or narrow trees. Where are the high-performing individual trees located relative to the areas that need the most infrastructure relief?
 
-There's a broader methodological point here. When researchers or city agencies report that NYC's street trees provide $151M/year in ecological benefits, that number is technically accurate, but it's an average distributed across the whole city. These maps show that the distribution is far from even. A single aggregate figure can be used to justify *any* planting strategy, including ones that concentrate resources where they're already concentrated.
-
-If you wanted to shift the benefit map toward underserved areas, you have two levers: number of trees (planting more) and quality of trees (prioritizing larger species, better stewardship, fewer removals). Which is more tractable in a dense urban environment? What constraints (sidewalk width, underground utilities, maintenance budgets) would shape where new trees can actually go?
+There's a broader methodological point here, in that the city provides estimates for the benefits of street trees from a similar kind of model, averaged across the whole city. This does not take into account which areas may be more or less in need of green infrastructure—rather it is a straightforward projection based on the observed physical qualities of trees, generalized by species. What would a more spatially precise model look like? A more equitable one?
 
 ## Step 10: Run it forward
 
-So far we have applied a rule to a record. In this last step we give the rule time.
+So far we have applied a rule to a record. In this last step we give the rule time, and make our first bona-fide simulation.
 
-The simplest change a tree undergoes over time is growth. We already assumed a growth rate in Step 5: 4% more biomass a year. Biomass is `exp(b0 + b1 × ln(dbh))`, so 4% more biomass corresponds to the diameter growing by `1.04 ^ (1 / 2.4835)`, which is about 1.6% a year. I am deriving the diameter growth from the assumption we already made rather than adding a new one. Trees also die, and a real forecast would include a mortality rate. I do not have a figure for street tree mortality that I am confident in, so it is a variable set to zero below. If you want to use a number, do, and note that it is yours.
+Each year, every tree grows by its species' curve, as in Step 5, but trees also die. The Northeast guide assumes 2.8% of trees die each year for their first five years and 0.57% a year after that (p. 94). Rather than removing trees at random, we keep track of the share of each tree that is still standing, and weight its benefits by that share. That way the run gives the same answer every time.
 
-The code below recomputes the chain from Steps 2 to 4 (crown, leaf area, stormwater) for each year from 2015 to 2045. **Let's go line by line here, don't copy this code just yet:**
-
-A function that takes a diameter and returns gallons per year. This is Steps 2 to 4 in one place:
+The code below recomputes stormwater for each year from 2015 to 2045. Each year, the function records the stormwater of every tree, weighted by how much of it is still standing. Then it applies the year's deaths, grows every tree by one year, and moves on.
 
 ```python
-def stormwater_from_dbh(dbh_in, lai):
-    dbh_cm = dbh_in * 2.54
-    crown_w = a * dbh_cm ** b
-    crown_area = 3.14159 * (crown_w / 2) ** 2
-    leaf_area = crown_area * lai
-    return leaf_area * nyc_annual_precip_m * interception_fraction * 264.17
-```
-
-The yearly step. Each year the diameter of every surviving tree is multiplied by the growth factor, a share of trees is removed at random if `mortality` is above zero, and the total is recorded:
-
-```python
-dbh_growth = 1.04 ** (1 / 2.4835)   # ~1.6%/yr, derived from the 4% biomass growth in Step 5
-mortality = 0.0                     # annual share of trees lost. Assumed; no source. Change it and note that you did.
-
-def run(df, years=range(2015, 2046), growth=dbh_growth, mortality=mortality, seed=0):
-    rng = np.random.default_rng(seed)
-    dbh = df['tree_dbh'].to_numpy(dtype=float)
-    lai = df['lai'].to_numpy()
-    alive = ~np.isnan(dbh)
+def run(df, years=range(2015, 2046), mortality=True):
+    sp = df['SpCode'].to_numpy()
+    dbh_cm = df['tree_dbh'].to_numpy() * 2.54
+    age = np.maximum(predict('age_from_dbh', sp, dbh_cm), 0)
+    standing = np.where(np.isnan(dbh_cm), 0.0, 1.0)   # the share of each tree still standing
     rows = []
     for year in years:
-        gal = stormwater_from_dbh(dbh, lai)
-        rows.append({'year': year, 'trees': int(alive.sum()), 'stormwater_gal': float(np.nansum(gal[alive]))})
-        dbh = dbh * growth
-        if mortality > 0:
-            alive &= rng.random(len(dbh)) > mortality
+        gal = stormwater_gal_yr(sp, dbh_cm)
+        rows.append({'year': year, 'trees': standing.sum(), 'stormwater_gal': np.nansum(standing * gal)})
+        if mortality:
+            # 2.8% a year for trees under 5 years old, 0.57% after (Northeast Community Tree Guide, p. 94)
+            standing = standing * np.where(age < 5, 1 - 0.028, 1 - 0.0057)
+        dbh_cm = grow_one_year(sp, dbh_cm, age)
+        age = age + 1
     return pd.DataFrame(rows)
 ```
 
-**Go ahead and copy both cells into your notebook**, then run the baseline:
+Then run the baseline:
 
 ```python
 baseline = run(df_StreetTree)
 baseline.tail()
 ```
 
-With this subset and these defaults, 2015 comes out at about 150 million gallons a year for 12,479 trees with a usable diameter, and 2045 at about 277 million. Write your two numbers down. You will need them next week.
+With this subset, 2015 comes out at about 25.0 million gallons a year from 12,093 trees with a usable diameter, and 2045 at about 62.9 million from about 10,140 trees. 
 
-Now a second run that differs from the first by exactly one value. This is the shape every comparison in this class takes: change one thing, name it, and look at the difference. Here I will change the growth rate to 2% biomass a year.
+Now a second run that differs from the first by exactly one thing. Here I will turn off deaths.
 
 ```python
-slow = run(df_StreetTree, growth=1.02 ** (1 / 2.4835))
+no_deaths = run(df_StreetTree, mortality=False)
 
-baseline['scenario'] = '4% biomass growth'
-slow['scenario'] = '2% biomass growth'
-runs = pd.concat([baseline, slow])
+baseline['scenario'] = 'Northeast guide mortality'
+no_deaths['scenario'] = 'no trees die'
+runs = pd.concat([baseline, no_deaths])
 
 alt.Chart(runs).mark_line().encode(
     x='year:O',
@@ -450,16 +455,134 @@ alt.Chart(runs).mark_line().encode(
 
 ![two runs][RUNS]
 
-Both lines rise smoothly for thirty years because growth is the only process in the rule. There are no storms, no construction, no removals, no disease, and no planting. Everything the chart shows was put there by the assumptions in Steps 2 to 5 and the two values in the cell above. Next week you will write those assumptions down as a specification and hand them to a machine.
+Both lines rise for thirty years because the trees keep growing and nothing is planted to replace the ones that die. There are no storms, no construction, no disease, and no planting. Everything the chart shows was put there by the equations and the numbers above. 
+
+### Adding chance
+
+Both runs above give one line each. In a statistics course, a line like this is called a point forecast: the average of everything the rule says could happen ([Hyndman and Athanasopoulos, *Forecasting: Principles and Practice*, section 1.7](https://otexts.com/fpp3/perspective.html)). 
+
+Our `standing` share is exactly that kind of average. A simulation, in the statistical sense, draws the random parts of the rule at random, runs many times, and looks at how far apart the runs end up ([section 5.5](https://otexts.com/fpp3/prediction-intervals.html)). In our rule, the part that should be more random, is which trees die.
+
+As a final step, let's set that up. A tree's growth doesn't depend on chance, so we can work out each tree's stormwater for every year once, and reuse it in every run:
+
+```python
+# Each tree's stormwater and age in every year, 2015-2045, if it survives
+sp = df_StreetTree['SpCode'].to_numpy()
+dbh_cm = df_StreetTree['tree_dbh'].to_numpy() * 2.54
+age = np.maximum(predict('age_from_dbh', sp, dbh_cm), 0)
+gal_by_year, age_by_year = [], []
+for year in range(2015, 2046):
+    gal_by_year.append(stormwater_gal_yr(sp, dbh_cm))
+    age_by_year.append(age)
+    dbh_cm = grow_one_year(sp, dbh_cm, age)
+    age = age + 1
+gal_by_year = np.array(gal_by_year)
+age_by_year = np.array(age_by_year)
+```
+
+Now one random run. Each year, every living tree dies with the Northeast guide's probability. The `seed` sets the random numbers, so the same seed always gives the same run. `which` lets us total only some of the trees, which we will use in a moment.
+
+Go ahead and copy the below into your notebook. This will run an estimate of stormwater intercepted over time 100 times and draw the middle 90% of the runs as a band, with the average run from above on top of it:
+
+```python
+def run_random(seed, which=None):
+    rng = np.random.default_rng(seed)
+    alive = ~np.isnan(gal_by_year[0])
+    if which is not None:
+        alive = alive & which
+    totals = []
+    for t in range(len(gal_by_year)):
+        totals.append(np.nansum(gal_by_year[t][alive]))
+        death_rate = np.where(age_by_year[t] < 5, 0.028, 0.0057)
+        alive = alive & (rng.random(len(alive)) >= death_rate)
+    return totals
+
+years = list(range(2015, 2046))
+random_runs = pd.DataFrame([run_random(seed) for seed in range(100)], columns=years)
+
+band = pd.DataFrame({
+    'year': years,
+    'low': random_runs.quantile(0.05).to_numpy(),
+    'high': random_runs.quantile(0.95).to_numpy(),
+})
+
+chart_Band = alt.Chart(band).mark_area(opacity=0.3).encode(
+    x='year:O',
+    y=alt.Y('low:Q', title='Stormwater intercepted (gal/yr)'),
+    y2='high:Q'
+)
+chart_Average = alt.Chart(baseline).mark_line(color='black').encode(x='year:O', y='stormwater_gal:Q')
+
+(chart_Band + chart_Average).properties(width=600, height=300, title='100 random runs and the average run')
+```
+
+![random runs][RANDOM]
+
+You will have to look closely to see the band at all. In 2045, 90% of the runs fall between 62.4 and 63.3 million gallons, around an average of 62.9 million. Across 12,000 trees and a large area, the trees that happen to die in one run are balanced by the ones that happen to survive.
+
+A single block is different. Here is one block of 11 trees, bounded by East 130th and East 131st Streets and Park and Lexington Avenues, and with every run drawn as its own line.:
+
+```python
+# The block each tree is in, from the spatial join in Step 7.
+tree_block = gdf_joined['BCTCB2010'].groupby(level=0).first().reindex(df_StreetTree.index).to_numpy()
+
+# A filter to narrow down the trees to just one block.
+one_block = (tree_block == '10242001004')
+
+# 100 random runs that total only this block's trees. 
+block_runs = pd.DataFrame([run_random(seed, which=one_block) for seed in range(100)], columns=years)
+
+# The spread of the 100 runs in 2045: the lowest, the 5th, 50th and 95th percentiles, and the highest
+print(block_runs[2045].describe(percentiles=[0.05, 0.5, 0.95]))
+
+# Altair wants one row per run per year, so turn the wide table into a long one
+block_long = block_runs.reset_index(names='run').melt(id_vars='run', var_name='year', value_name='stormwater_gal')
+
+# One faint line per run. detail='run:N' draws a separate line for each run without giving each its own color
+chart_BlockRuns = alt.Chart(block_long).mark_line(opacity=0.15).encode(
+    x='year:O',
+    y=alt.Y('stormwater_gal:Q', title='Stormwater intercepted (gal/yr)'),
+    detail='run:N'
+).properties(width=600, height=300, title='One block, 100 random runs')
+
+chart_BlockRuns
+```
+
+![one block, 100 runs][BLOCK]
+
+In this block, 90% of the runs fall between about 48,700 and 77,700 gallons in 2045, and the worst run is 40,200. The top of that range, 77,700, is the run where no tree in the block dies. Whether two or three of its larger trees survive makes a large difference, and the average line hides that. Try a block of your own.
+
+So with that, you have made your first proper simulation in the statistical sense, a Monte Carlo simulation: the same rule, run many times with its random part drawn fresh each time. Note that it doesn't cover doubt about the rule itself: If the right interception figure were the cork oak's 27% rather than the pear's 15%, every tree would catch 80% more rain, and no number of runs would show it.
+
+## How close is this to Parks' numbers?
+
+The Parks Department publishes its stormwater figure for every tree on the Tree Map (the [Eco Benefits](https://data.cityofnewyork.us/Environment/NYC-Street-Tree-Map-Eco-Benefits/yne3-pqfu) table on NYC Open Data, last built in 2022). Here are ten trees from our subset, matched to Parks' records by location and species. Parks' trunk diameters were measured later than the census, so both columns use Parks' diameter.
+
+| Tree | Species | DBH (in) | Our rule (gal/yr) | Parks (gal/yr) |
+| --- | --- | --- | --- | --- |
+| 608 West 139th St | green ash | 9 | 2,054 | 938 |
+| 256 West 136th St | ginkgo | 8 | 826 | 468 |
+| 73 East 118th St | Callery pear | 10 | 1,901 | 2,031 |
+| 127 West 136th St | Callery pear | 26 | 12,015 | 3,720 |
+| 62 West 119th St | pin oak | 14 | 3,513 | 1,667 |
+| 471 Central Park West | pin oak | 37 | 14,984 | 7,122 |
+| 75 West 115th St | northern red oak | 13 | 2,872 | 822 |
+| 325 East 118th St | littleleaf linden | 11 | 2,199 | 616 |
+| 2 West 106th St | Japanese zelkova | 11 | 2,830 | 959 |
+| 1 Hamilton Terrace | Japanese zelkova | 26 | 8,236 | 4,663 |
+
+How did we do? Not so great. Only the 10-inch Callery pear comes out close. For the other nine, our number is about two to three and a half times Parks'. I don't know for certain which part of our rule is responsible. The 15% from two trees in Davis is the step that differs most from i-Tree, so it is the first place I would look. Parks' numbers also come in steps: trees of the same size often get exactly the same figure, which suggests that i-Tree Streets works in diameter classes rather than tree by tree.
 
 ## Assignment 3
 
-Think of a forecast (or a hindcast, or a run) that could come out of the dataset you used for Assignment 2, and sketch what its interface would look like. No code. Details on the [assignment page](/assignments/assignment-03/). Due 10/1.
+Think of a forecast (or a hindcast) that could come out of the dataset you used for Assignment 2, and sketch out it's rule and run. No code. Details on the [assignment page](/assignments/assignment-03/). 
 
 ---
-Module by Adam Vosburgh, Spring 2026. Updated for Colab, with Step 10 added, Fall 2026.
+Module by Adam Vosburgh, Spring 2026. Updated for Colab, with Step 10 added, Fall 2026. Revised to follow i-Tree Streets and the Urban Tree Database, September 2026.
 
 [STORM]: /tutorials/images/w3/01-trees-stormwater.png
 [SHARED]: /tutorials/images/w3/02a-three-shared.png
 [CHORO]: /tutorials/images/w3/02-three-choropleths.png
 [RUNS]: /tutorials/images/w3/03-two-runs.png
+[RANDOM]: /tutorials/images/w3/04-random-runs.png
+[BLOCK]: /tutorials/images/w3/05-block-runs.png

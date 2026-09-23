@@ -105,21 +105,30 @@ Key word: ACTION - extrapolating into the future (or past) using contemporaneous
 
 Assignment 2 Pin-up
 Reading Discussion
-here it would be good to find section on environemtnal data - twins for the environment etc
+End with JASSS article - introduce reasons why we would simulate or model the future
+go into lecture about street trees. how they are collected, why they are important. political context around justifying their spending. 
+models serve a role in advocating for a time not available to use now - give examples and say we will go into this later.
+intorduce framework of record, rule, run in the context of tutorial 3. introduce monte carlo simulation for for more technically accurate definition. 
+we can look back in time too - lecture about two sides of the same coin.
+explain assignment 3 - submitting a sketch in the form of what you would like to model / simulate. do some reseerach about your topic, think about ways that you could use it to make a prediction. in the next phase we will essentially thrown an ai model at this, so the thinking stage is very improtant here.
 
+side lecture about the use of simulation in natural sciences. connect it to sts debates about quanitifaction, and limitations on over-fitting historical records
 -->
 
 #### Readings due
-Levin, Noa and Sascha Roesler. "Editorial." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783068/editorial](https://www.e-flux.com/architecture/simulation/6783068/editorial)
+[Levin, Noa and Sascha Roesler. "Editorial." *e-flux Architecture*, Simulation, 2026.](https://www.e-flux.com/architecture/simulation/6783068/editorial)
 
-Halpern, Orit. "A Government of Agents: The Experimental Logics of Artificial Intelligence." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783064/](https://www.e-flux.com/architecture/simulation/6783064/a-government-of-agents-the-experimental-logics-of-artificial-intelligence)
+[Halpern, Orit. "A Government of Agents: The Experimental Logics of Artificial Intelligence." *e-flux Architecture*, Simulation, 2026.](https://www.e-flux.com/architecture/simulation/6783064/a-government-of-agents-the-experimental-logics-of-artificial-intelligence)
+
+[Kurgan, Laura, Dan Miller, and Adam Vosburgh. "Two Sides of the Same Coin."](https://twosides.earth/)
+*Check out the data-visualization, and click through to the original studies and data linked in the "info" button on either side*
+
+Optional: Epstein, Joshua. "Why Model?" *Journal of Artificial Societies and Social Simulation* 11, no. 4 (2008).
 
 <!---
-Epstein, Joshua. "Why Model?" *Journal of Artificial Societies and Social Simulation* 11, no. 4 (2008).
 
 Blum, Andrew. *The Weather Machine: A Journey Inside the Forecast*. Ecco, 2019. [Selections]
 
-Kurgan, Laura, Dan Miller, and Adam Vosburgh. "Two Sides of the Same Coin." Milan Triennale, 2025. [For HYDE: 12,000 years of land use, hindcast.]
 --->
 
 #### Tutorial 2 due – Mapping Where, in Python
