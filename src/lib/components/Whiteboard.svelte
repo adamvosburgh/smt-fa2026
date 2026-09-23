@@ -398,6 +398,40 @@
     }
   }
 
+  // Shrink-to-fit for a note's body, as Miro does: the largest font size at
+  // which the text fits the space left above the footer, so nothing is clipped.
+  // Whole words are kept whenever they fit; a word wider than the note breaks
+  // only once the text is already at the smallest size.
+  const NOTE_REF = 220;
+  const noteScale = (el) => Math.min(el.w, el.h) / NOTE_REF;
+
+  function fitNote(node, el) {
+    let args = el;
+    function fit() {
+      if (args.type !== 'note') return;
+      const s = noteScale(args);
+      const lo0 = 6 * s, hi0 = 48 * s;
+      const fits = () => node.scrollHeight <= node.clientHeight + 0.5 && node.scrollWidth <= node.clientWidth + 0.5;
+      node.style.overflowWrap = 'normal';
+      let lo = lo0, hi = hi0;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        node.style.fontSize = `${mid}px`;
+        if (fits()) lo = mid;
+        else hi = mid;
+      }
+      node.style.fontSize = `${lo}px`;
+      if (!fits()) node.style.overflowWrap = '';
+    }
+    fit();
+    node.addEventListener('input', fit);
+    document.fonts?.ready.then(fit);
+    return {
+      update(next) { args = next; fit(); },
+      destroy() { node.removeEventListener('input', fit); }
+    };
+  }
+
   // ---------------------------------------------------------------- editing --
   function editable_(node, el) {
     node.textContent = el.text ?? '';
@@ -998,7 +1032,7 @@
           class:locked={el.locked}
           class:large={el.size === 'large'}
           data-id={el.id}
-          style="left: {el.x}px; top: {el.y}px; width: {el.w}px; {el.type === 'text' ? 'min-height' : 'height'}: {el.h}px; z-index: {el.z}"
+          style="left: {el.x}px; top: {el.y}px; width: {el.w}px; {el.type === 'text' ? 'min-height' : 'height'}: {el.h}px; z-index: {el.z}{el.type === 'note' ? `; --s: ${noteScale(el)}` : ''}"
         >
           {#if el.type === 'image'}
             {#if src(urlOf(el))}<img src={src(urlOf(el))} alt="" draggable="false" />{/if}
@@ -1013,14 +1047,15 @@
                 data-editing
                 data-placeholder={placeholder(el)}
                 use:editable_={el}
+                use:fitNote={{ type: el.type, w: el.w, h: el.h }}
                 onblur={(e) => finishEdit(e.currentTarget)}
                 onkeydown={editKeydown}
                 onpaste={editPaste}
               ></div>
             {:else if el.text}
-              <div class="body">{@html inlineMarkdown(el.text)}</div>
+              <div class="body" use:fitNote={{ type: el.type, w: el.w, h: el.h, text: el.text }}>{@html inlineMarkdown(el.text)}</div>
             {:else}
-              <div class="body empty">{placeholder(el)}</div>
+              <div class="body empty" use:fitNote={{ type: el.type, w: el.w, h: el.h }}>{placeholder(el)}</div>
             {/if}
             {#if el.type === 'note'}
               <div class="foot">{el.name}</div>
@@ -1150,11 +1185,14 @@
 
   .note {
     display: flex; flex-direction: column;
-    background: var(--hi); color: var(--hi-fg); font-size: 0.8rem; padding: 0.75rem;
+    background: var(--hi); color: var(--hi-fg); padding: calc(0.75rem * var(--s));
     border: 1px solid color-mix(in srgb, var(--hi-fg) 25%, transparent);
   }
-  .note .body { flex: 1; overflow: auto; }
-  .note .foot { font-size: 0.62rem; margin-top: 0.4rem; }
+  .note .body { flex: 1; min-height: 0; overflow: hidden; }
+  .note .foot {
+    font-size: calc(0.62rem * var(--s)); margin-top: calc(0.4rem * var(--s));
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
 
   .tile .project-card-image { margin-bottom: 0.6rem; }
   .tile .project-card-image img { object-fit: cover; }

@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "chen-qizhen",
+  "title": "Population Exposure to the Projected 2050s Floodplain",
+  "gallery_text": "This map examines where population concentration and projected 2050s flood exposure spatially coincide in Manhattan and Brooklyn. An exposure index combines population density with the share of each census tract within the projected floodplain, highlighting areas where these two conditions overlap most strongly.",
+  "description": "Dataset A: 2010 Population in Manhattan and Brooklyn, Columbia GeoData.\nDataset B: Future Floodplain 2050s, NYC Open Data / NYC Mayor’s Office of Climate & Environmental Justice.\nProjection: NAD83 / New York Long Island (ftUS), EPSG:2263.\nVisual precedent: the Flood Plan in Sandbox\nNotebook:https://colab.research.google.com/drive/114PpLbDvjg5Ca6L2JQATWyDrbirTVTBb#scrollTo=ve2rNxYMjRLm",
+  "params": {},
+  "primary": "assets/Qizhen_Chen_Assignment2.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-23T19:23:56.523Z",
+  "assets": [
+    {
+      "path": "assets/Qizhen_Chen_Assignment2.png",
+      "type": "image/png",
+      "bytes": 223642
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

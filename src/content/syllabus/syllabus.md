@@ -123,7 +123,7 @@ side lecture about the use of simulation in natural sciences. connect it to sts 
 [Kurgan, Laura, Dan Miller, and Adam Vosburgh. "Two Sides of the Same Coin."](https://twosides.earth/)
 *Check out the data-visualization, and click through to the original studies and data linked in the "info" button on either side*
 
-Optional: Epstein, Joshua. "Why Model?" *Journal of Artificial Societies and Social Simulation* 11, no. 4 (2008).
+Optional: [Epstein, Joshua. "Why Model?" *Journal of Artificial Societies and Social Simulation* 11, no. 4 (2008).](https://www.jasss.org/11/4/12.html)
 
 <!---
 
