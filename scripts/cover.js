@@ -15,7 +15,7 @@
 //   node scripts/cover.js --base http://localhost:3000            # all sandboxes
 //   node scripts/cover.js --base http://localhost:3000 --submissions
 import { chromium } from 'playwright';
-import { mkdir, writeFile, readdir } from 'node:fs/promises';
+import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const args = Object.fromEntries(
@@ -117,6 +117,14 @@ if (args.submissions) {
   const root = 'src/submissions';
   for (const student of await dirs(root)) {
     for (const sandbox of await dirs(path.join(root, student))) {
+      // A PDF upload's cover is its first page, rendered by the server when it
+      // was submitted. Headless Chromium has no PDF viewer, so a screenshot here
+      // would be the page's "Open the PDF" fallback link.
+      const manifest = JSON.parse(await readFile(path.join(root, student, sandbox, 'manifest.json'), 'utf8').catch(() => '{}'));
+      if (manifest.kind === 'assignment' && /\.pdf$/i.test(manifest.primary ?? '')) {
+        console.log(`skip ${student}/${sandbox} - PDF, cover rendered at upload`);
+        continue;
+      }
       const r = await capture(
         browser,
         `${BASE}/gallery/${student}/${sandbox}/`,

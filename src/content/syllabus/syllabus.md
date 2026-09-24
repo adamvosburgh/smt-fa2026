@@ -242,7 +242,7 @@ Optional: Hao, Karen. *Empire of AI*. Penguin Press, 2025. [Selections]
 Final lecture. Feedback loops between representations of the world. Look back on the semester and speculate on what it means.
 
 <!-- Class plan
--
+david gelernter mirror worlds
 -->
 
 #### Readings due

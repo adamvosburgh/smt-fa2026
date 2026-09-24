@@ -35,10 +35,14 @@ export async function write({ student, sandbox, manifest, files, cover = null })
     await writeFile(dest, f.buffer);
   }
   // Assignment uploads arrive with their own cover, a JPEG drawn in the browser
-  // from the uploaded image, and the manifest says so. Sandbox submissions get a
-  // cover.png from `npm run covers`, which screenshots the gallery page; that
-  // script also covers an assignment whose primary is a PDF or an HTML file,
-  // since the browser can't draw those.
+  // from the uploaded image, and the manifest says so. The browser can't draw a
+  // PDF, so for one of those the first page is rendered here instead. Sandbox
+  // submissions get a cover.png from `npm run covers`, which screenshots the
+  // gallery page; that script also covers an assignment whose primary is an
+  // HTML file.
+  if (!cover && manifest.kind === 'assignment' && /\.pdf$/i.test(manifest.primary ?? '')) {
+    cover = await pdfCover(path.resolve(dir, manifest.primary));
+  }
   if (cover) {
     await writeFile(path.join(dir, 'cover.jpg'), cover);
     manifest.cover_file = 'cover.jpg';
@@ -52,6 +56,23 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   await writeFile(tmp, JSON.stringify(manifest, null, 2));
   await rename(tmp, path.join(dir, 'manifest.json'));
   return dir;
+}
+
+// The first page of a PDF as a 1200px-wide JPEG, the same size the browser draws
+// for an image upload. Uses poppler's pdftoppm, which is on the server. A PDF it
+// can't read, or a box without it, gets no cover rather than a failed submission.
+async function pdfCover(pdf) {
+  const prefix = path.join(path.dirname(pdf), '..', 'cover-pdf');
+  try {
+    await run('pdftoppm', ['-jpeg', '-singlefile', '-f', '1', '-l', '1', '-scale-to-x', '1200', '-scale-to-y', '-1', pdf, prefix], { timeout: 30_000 });
+    const buffer = await readFile(`${prefix}.jpg`);
+    return buffer.length <= 2_000_000 ? buffer : null;
+  } catch (err) {
+    console.error(`pdf cover: ${pdf}: ${err?.message ?? err}`);
+    return null;
+  } finally {
+    await rm(`${prefix}.jpg`, { force: true });
+  }
 }
 
 export async function commit(dir, message) {

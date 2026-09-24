@@ -8,8 +8,9 @@
   //
   // The cover is drawn here, in the browser, as a JPEG from the uploaded image - the
   // server has no image library and the Playwright cover pipeline would only
-  // give us a screenshot of the same picture. PDFs and HTML files get no cover
-  // from here; `npm run covers -- --submissions` screenshots those.
+  // give us a screenshot of the same picture. PDFs get no cover from here; the
+  // server renders their first page (src/lib/server/repo.js). HTML files get
+  // theirs from `npm run covers -- --submissions`.
   //
   // A `model` assignment is the exception to "the gallery shows the file": the
   // gallery RUNS it, in the sandbox named by the assignment's `sandbox_ref`. The
