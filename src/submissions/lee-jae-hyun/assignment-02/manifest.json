@@ -1,0 +1,30 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "lee-jae-hyun",
+  "title": "SoHo: Early Cultural Locations and Contemporary Infrastructure",
+  "gallery_text": "This map overlays historical cultural venues documented between 1965 and 1971 with contemporary cultural institution records from NYC’s Facilities Database across SoHo and nearby blocks. Hexagons show contemporary record counts, while red circles scale by historical records sharing an address, inviting comparison of cultural locations without treating differences between the datasets as evidence of displacement.",
+  "description": "Acquired the census tract and current cultural facilities dataset from NYC gov (https://data.cityofnewyork.us/City-Government/Facilities-Database/ji82-xba5/data)\n\nExtracted historic data and locations of SoHo's cultural locations from the attached documents. The data was cleaned and organized the geolocations through AI assistance.\n\nhttps://colab.research.google.com/drive/1aEeU-zgW0PvFmqYwCJL6GbPNuZCTCMFx?usp=sharing",
+  "params": {},
+  "primary": "assets/soho_history_and_infrastructure_jl7559.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T03:29:48.327Z",
+  "assets": [
+    {
+      "path": "assets/soho_history_and_infrastructure_jl7559.png",
+      "type": "image/png",
+      "bytes": 551724
+    },
+    {
+      "path": "assets/000-Sasajima.pdf",
+      "type": "application/pdf",
+      "bytes": 499001
+    },
+    {
+      "path": "assets/Int_J_Urban_Regional_Res_-_2009_-_MOLOTCH_-_Changing_Art__SoHo__Chelsea_and_the_Dynamic_Geography_of_Galleries_in_New_York.pdf",
+      "type": "application/pdf",
+      "bytes": 850891
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "yang-qiaochu-poppy",
+  "title": "Citi Bike Across Manhattan",
+  "gallery_text": "The map visualizes Citi Bike activity across Manhattan on an average September weekday, revealing how cycling intensity and daily rhythms vary across the city.",
+  "description": "This map uses September 2025 Citi Bike trip records and 2020 NYC Neighborhood Tabulation Areas (NTAs). Station arrivals and departures are aggregated within each NTA and divided by September’s 22 weekdays to show average weekday neighborhood throughput. Colors represent total activity within each neighborhood, rather than activity per station or per unit area. Hourly profiles highlight the five busiest Manhattan stations, with each station normalized to its own peak hour.",
+  "params": {},
+  "primary": "assets/assignment02.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T13:57:52.077Z",
+  "assets": [
+    {
+      "path": "assets/assignment02.png",
+      "type": "image/png",
+      "bytes": 7721851
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

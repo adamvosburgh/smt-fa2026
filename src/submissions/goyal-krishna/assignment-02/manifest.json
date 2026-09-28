@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "goyal-krishna",
+  "title": "Burned Fields and Inhabited Landscape",
+  "gallery_text": "Having lived in the Jalandhar area, I combined documented crop-residue-burning fields with modeled population data to examine how closely agricultural burning and inhabited land occupy the same landscape. In this selected cluster, 85 of 125 documented fields were partially or completely burnt, while population grid cells representing approximately 14,600 residents had their centres within one kilometre of a documented burnt field—suggesting proximity, not measured smoke exposure.",
+  "description": "I wanted to examine how crop-residue burning overlaps with inhabited land. I combined CEEW’s Patterns of Crop Residue Burning dataset—field conditions interpreted from high-resolution satellite imagery—with WorldPop’s modeled 2020 population grid. CEEW created its data to evaluate satellite methods for detecting burnt fields, while WorldPop estimates population distribution for research and planning. I instead use them to measure proximity between documented burning and nearby residents.\nUsing Python, I selected one cluster of 125 fields and created one-kilometre buffers around the 85 partially or completely burnt fields. Population cells representing approximately 14,600 modeled residents had their centres inside these buffers. This indicates proximity, not smoke exposure or health effects.",
+  "params": {},
+  "primary": "assets/Jalandhar_Map.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T12:02:29.506Z",
+  "assets": [
+    {
+      "path": "assets/Jalandhar_Map.png",
+      "type": "image/png",
+      "bytes": 674546
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

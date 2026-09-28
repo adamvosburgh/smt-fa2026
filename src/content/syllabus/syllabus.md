@@ -152,9 +152,10 @@ look for others
 -->
 
 #### Readings due
-Turkle, Sherry. *Simulation and Its Discontents*. MIT Press, 2009. [Introduction, New Ways of Knowing / New Ways of Forgetting]
+Turkle, Sherry. *Simulation and Its Discontents*. MIT Press, 2009. [What Does Simulation Want (Introduction), New Ways of Knowing / New Ways of Forgetting]
 
 Corner, James. "The Agency of Mapping." 2014.
+*This is a classic reading in inter-disciplinary design courses. However, it is a bit long and meandering. Feel free to skim for bits of insight on why mapping is relevant to design practices.*
 
 Silver, Joshua. "Observing the Future: Ecologies of Architectural Simulation." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783059/](https://www.e-flux.com/architecture/simulation/6783059/observing-the-future-ecologies-of-architectural-simulation)
 

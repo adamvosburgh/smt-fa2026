@@ -5,6 +5,7 @@
 // else - not site code, not another student's folder. That containment is the
 // actual security control here; the token being secret is secondary.
 import { mkdir, writeFile, rm, rename, readdir, readFile } from 'node:fs/promises';
+import { renderPdf } from './pdf-pages.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
@@ -23,6 +24,7 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   const dir = submissionDir(student, sandbox);
   // Replace wholesale: a resubmission is the new state, not a merge.
   await rm(path.join(dir, 'assets'), { recursive: true, force: true });
+  await rm(path.join(dir, 'pages'), { recursive: true, force: true });
   for (const old of ['cover.png', 'cover.jpg']) await rm(path.join(dir, old), { force: true });
   await mkdir(path.join(dir, 'assets'), { recursive: true });
 
@@ -36,12 +38,20 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   }
   // Assignment uploads arrive with their own cover, a JPEG drawn in the browser
   // from the uploaded image, and the manifest says so. The browser can't draw a
-  // PDF, so for one of those the first page is rendered here instead. Sandbox
-  // submissions get a cover.png from `npm run covers`, which screenshots the
-  // gallery page; that script also covers an assignment whose primary is an
-  // HTML file.
-  if (!cover && manifest.kind === 'assignment' && /\.pdf$/i.test(manifest.primary ?? '')) {
-    cover = await pdfCover(path.resolve(dir, manifest.primary));
+  // PDF, so for one of those the pages are rendered here instead: the first is
+  // the cover, and a PDF of two or more pages keeps them all under pages/ (see
+  // pdf-pages.js). Sandbox submissions get a cover.png from `npm run covers`,
+  // which screenshots the gallery page; that script also covers an assignment
+  // whose primary is an HTML file.
+  delete manifest.pages;
+  delete manifest.page_count;
+  if (manifest.kind === 'assignment' && /\.pdf$/i.test(manifest.primary ?? '')) {
+    const r = await renderPdf(path.resolve(dir, manifest.primary), dir);
+    cover ??= r.cover;
+    if (r.pages.length) {
+      manifest.pages = r.pages;
+      manifest.page_count = r.count;
+    }
   }
   if (cover) {
     await writeFile(path.join(dir, 'cover.jpg'), cover);
@@ -56,23 +66,6 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   await writeFile(tmp, JSON.stringify(manifest, null, 2));
   await rename(tmp, path.join(dir, 'manifest.json'));
   return dir;
-}
-
-// The first page of a PDF as a 1200px-wide JPEG, the same size the browser draws
-// for an image upload. Uses poppler's pdftoppm, which is on the server. A PDF it
-// can't read, or a box without it, gets no cover rather than a failed submission.
-async function pdfCover(pdf) {
-  const prefix = path.join(path.dirname(pdf), '..', 'cover-pdf');
-  try {
-    await run('pdftoppm', ['-jpeg', '-singlefile', '-f', '1', '-l', '1', '-scale-to-x', '1200', '-scale-to-y', '-1', pdf, prefix], { timeout: 30_000 });
-    const buffer = await readFile(`${prefix}.jpg`);
-    return buffer.length <= 2_000_000 ? buffer : null;
-  } catch (err) {
-    console.error(`pdf cover: ${pdf}: ${err?.message ?? err}`);
-    return null;
-  } finally {
-    await rm(`${prefix}.jpg`, { force: true });
-  }
 }
 
 export async function commit(dir, message) {

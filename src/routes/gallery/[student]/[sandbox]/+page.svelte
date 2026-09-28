@@ -82,6 +82,15 @@
   <div class="work" data-cover-target data-cover-ready="true" data-timeline-paused="true">
     {#if primaryKind === 'image'}
       <img src={primary} alt={data.sub.title} />
+    {:else if primaryKind === 'pdf' && data.sub.pages?.length}
+      <!-- Every page as an image, drawn at upload, because a phone's browser
+           shows only the first page of an embedded PDF, or nothing. -->
+      {#each data.sub.pages as p, i (p)}
+        <img class="page" src="{data.sub.assetBase}{p}" alt="{data.sub.title}, page {i + 1}" loading="lazy" />
+      {/each}
+      <p class="open">
+        {#if data.sub.page_count > data.sub.pages.length}First {data.sub.pages.length} of {data.sub.page_count} pages. {/if}<a href={primary} target="_blank" rel="noopener">Open the PDF</a>
+      </p>
     {:else if primaryKind === 'pdf'}
       <object data={primary} type="application/pdf" title={data.sub.title}>
         <p><a href={primary}>Open the PDF</a>.</p>
@@ -152,6 +161,7 @@
   .params-dump pre { background: var(--code-bg); padding: 0.75rem; overflow-x: auto; margin-top: 0.5rem; }
   .work { border: 1px solid var(--rule); background: var(--code-bg); }
   .work img { display: block; width: 100%; height: auto; }
+  .work img.page + img.page { border-top: 1px solid var(--rule); }
   .work object, .work iframe { display: block; width: 100%; height: min(80vh, 900px); border: 0; background: #fff; }
   /* the embedded file is the student's own page; it keeps a white ground */
   .work .open { font-size: 0.72rem; margin: 0; padding: 0.4rem 0.6rem; border-top: 1px solid var(--rule); }

@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "bakri-aqila",
+  "title": "Jakarta - Food Vendor and MRT Distribution Map",
+  "gallery_text": "The map shows a choropleth of official street vendor density by sub-district, overlaid with Jakarta's MRT (Mass Rapid Transit) North–South line and its stations. It shows how limited the MRT network still is, a single line serves only a narrow part of the city. ",
+  "description": "Sources: \nSubdistrict Map - https://github.com/SakifAbdillah/jakartaKecamatanGeoJSON/blob/master/kecamatan.geojson\nMRT: https://data.go.id/dataset/dataset/data-stasiun-mass-rapid-transit-mrt\nStreet Vendors: https://data.go.id/dataset/dataset/lokasi-resmi-pedagang-kaki-lima-menurut-kecamatan\n\nThese official government datasets combine data from several government departments into a standardized format, mainly for policy-making and public services. I used them to look for a pattern between public transit accessibility and street food vendors. The map isn't modelled on a specific reference; it's an exploration of how to represent data as a choropleth map. It uses the WGS 84 / UTM zone 48S projection (EPSG:32748).\n\nNotebook  Link: https://colab.research.google.com/drive/17g3fQXWhixTqsC4YMu5Tl-YZpoA-8z9J#scrollTo=KjWlnDn9Q9gB",
+  "params": {},
+  "primary": "assets/Jakarta-Train-Vendors.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T12:20:05.132Z",
+  "assets": [
+    {
+      "path": "assets/Jakarta-Train-Vendors.png",
+      "type": "image/png",
+      "bytes": 129150
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

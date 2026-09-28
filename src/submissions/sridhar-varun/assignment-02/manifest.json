@@ -1,0 +1,25 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "sridhar-varun",
+  "title": "Bengaluru's Disappearing Lakes",
+  "gallery_text": "Some of Bengaluru's lakes have been encroached on. Many are dried up, dead lakes.",
+  "description": "Historical legal lake boundaries (date unsure 👀) sourced from KSRSAC. This data was originally collected and digitized from older revenue maps.\nhttps://data.opencity.in/dataset/lakes-and-ponds-in-bengaluru-district/resource/11617e96-5aa2-4f2d-8df3-89727b6a75f3\n\nCurrent lake boundaries (2026) sourced from ATREE. Current legal boundaries of lakes.\nhttps://data.opencity.in/dataset/map-lakes-streams-bengaluru-urban-within-bbmp-area/resource/0ab3a8a4-3b1a-4817-853e-376bce810aa7\n\nI have also overlayed an image of the water outlines of the lakes from Google Earth. These shapes come from satellite imagery. Becuase it is an image overlay, I was unnable to correct its projection, hence the distorted map.\n\nhttps://drive.google.com/drive/folders/1Yun7ma2yKq-e0BUh3yqQhgHSx2JIPXeB?usp=sharing",
+  "params": {},
+  "primary": "assets/wrong_projection_map.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T06:51:13.125Z",
+  "assets": [
+    {
+      "path": "assets/wrong_projection_map.png",
+      "type": "image/png",
+      "bytes": 5206615
+    },
+    {
+      "path": "assets/bengaluru_old_new_lakes_annotated_sheet.png",
+      "type": "image/png",
+      "bytes": 4474381
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

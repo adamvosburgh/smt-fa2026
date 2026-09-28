@@ -19,9 +19,10 @@ const TYPES = {
   '.json': 'application/json'
 };
 
-// Only the cover and what is under assets/. The manifest and review are read
-// through /api/submissions, which applies `published: false`.
-const FILE = /^(cover\.(jpg|png)|assets\/[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*)$/;
+// Only the cover, a PDF's rendered pages, and what is under assets/. The
+// manifest and review are read through /api/submissions, which applies
+// `published: false`.
+const FILE = /^(cover\.(jpg|png)|pages\/\d+\.jpg|assets\/[A-Za-z0-9._-]+(\/[A-Za-z0-9._-]+)*)$/;
 
 export async function GET({ params, request }) {
   const { student, sandbox, file } = params;

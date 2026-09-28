@@ -17,6 +17,7 @@ import { readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { read, update } from './store.js';
 import { config } from './config.js';
+import { MAX_PAGES } from './pdf-pages.js';
 import { hashToken, bearer } from './auth.js';
 import {
   SLUG,
@@ -159,6 +160,14 @@ function cleanElement(raw, who, elements) {
     el.gallery_text = str(raw.gallery_text, LIMITS.text);
     el.cover = localUrl(raw.cover, '/api/submissions/') ?? localUrl(raw.cover, '/submissions/');
     el.href = localUrl(raw.href, '/gallery/');
+    // Height over width of the cover, so it shows uncropped. Tiles made before
+    // this have none and keep the 4:3 crop.
+    el.ratio = num(raw.ratio) ? clamp(raw.ratio, 0.1, 10) : null;
+    // A PDF of two or more pages: every page, so the tile can page through them.
+    const pages = Array.isArray(raw.pages)
+      ? raw.pages.slice(0, MAX_PAGES).map((v) => localUrl(v, '/api/submissions/') ?? localUrl(v, '/submissions/'))
+      : [];
+    el.pages = pages.length > 1 && pages.every(Boolean) ? pages : [];
   }
   return el;
 }

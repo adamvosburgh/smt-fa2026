@@ -245,6 +245,8 @@
     : el.type === 'tile' ? el.cover
     : null;
   const src = (url) => (needsToken(url) ? srcs[url] : url);
+  // Which page a multi-page PDF tile is showing. Each viewer's own, not synced.
+  let pageAt = $state({});
 
   $effect(() => {
     if (!editable) return;
@@ -1061,11 +1063,21 @@
               <div class="foot">{el.name}</div>
             {/if}
           {:else if el.type === 'tile'}
-            <div class="project-card-image">
-              {#if el.cover && src(el.cover)}
-                <img src={src(el.cover)} alt="" draggable="false" onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+            {@const n = el.pages?.length ?? 0}
+            {@const at = Math.min(pageAt[el.id] ?? 0, Math.max(n - 1, 0))}
+            {@const shown = n ? el.pages[at] : el.cover}
+            <div class="project-card-image" class:whole={el.ratio} style={el.ratio ? `aspect-ratio: 1 / ${el.ratio}` : ''}>
+              {#if shown && src(shown)}
+                <img src={src(shown)} alt="" draggable="false" onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
               {/if}
             </div>
+            {#if n > 1}
+              <div class="pager">
+                <button type="button" aria-label="Previous page" disabled={at === 0} onclick={() => (pageAt[el.id] = at - 1)}>‹</button>
+                <span>{at + 1} / {n}</span>
+                <button type="button" aria-label="Next page" disabled={at === n - 1} onclick={() => (pageAt[el.id] = at + 1)}>›</button>
+              </div>
+            {/if}
             <h3 class="project-card-title">{el.title}</h3>
             <p class="project-card-author">{el.student}</p>
             {#if el.gallery_text}<p class="gallery-text">{el.gallery_text}</p>{/if}
@@ -1196,6 +1208,14 @@
 
   .tile .project-card-image { margin-bottom: 0.6rem; }
   .tile .project-card-image img { object-fit: cover; }
+  .tile .project-card-image.whole img { object-fit: contain; }
+  .pager { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.6rem; font-size: 0.8rem; color: var(--fg-dim); }
+  .pager button {
+    font: inherit; font-size: 1.1rem; line-height: 1; width: 2rem; height: 2rem; padding: 0;
+    background: none; color: var(--fg); border: 1px solid var(--rule); cursor: pointer;
+  }
+  .pager button:hover:not(:disabled) { background: var(--hi); color: var(--hi-fg); }
+  .pager button:disabled { opacity: 0.35; cursor: default; }
   .tile .project-card-title { display: block; margin: 0 0 0.2rem; }
   .tile .project-card-author { margin: 0 0 0.5rem; }
   .tile .gallery-text { font-size: 0.8rem; line-height: 1.5; margin: 0 0 0.5rem; }

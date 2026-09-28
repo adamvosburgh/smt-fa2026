@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-02",
+  "kind": "assignment",
+  "student": "agrawal-ishika",
+  "title": "Squirrels vs. Us",
+  "gallery_text": "In October 2018, about 300 volunteers walked Central Park with clipboards and asked 3,023 squirrels one question: stay or bolt? Down south, among the tourists and pretzel carts, most shrugged. Up north, in the quiet woods, 2 in 5 ran for it. The crowd that day didn't explain it, and neither did the benches where people always sit. Something about the north end is spooking the squirrels, and nobody was counting it.",
+  "description": "Sources. (1) 2018 Central Park Squirrel Census: Squirrel Data and Hectare Data, NYC Open Data (vfnx-vebw, ej9h-v6g2). Made by The Squirrel Census, a volunteer science-and-storytelling project led by writer Jamie Allen. About 300 volunteers walked each of the park's ~350 hectares once in the morning and once in the afternoon over 11 days in October 2018. They logged every squirrel's location, age, fur, activities and reaction to the observer, plus notes for each hectare such as weather, litter, animals seen and whether the area was busy or calm. It was made to count the squirrels and tell their story (it was also sold as a $75 report with a vinyl record). (2) OpenStreetMap, Central Park benches, paths and water, retrieved Sept 2026 via osmnx. Made by volunteer contributors since 2004 from GPS traces, aerial imagery and local knowledge, as a free map for navigation.\n\nWhat I used them for instead. The squirrel's reaction becomes a measure of how used to people it is. The hectare notes give the crowd on that day, joined to each squirrel by hectare ID and shift. OSM's 477 benches stand in for the people who are always there, joined spatially by counting benches within 150 ft of each squirrel. A logistic regression tests all three together, with a check for which volunteer did the counting.\n\nWhat it found. 23% of squirrels ran south of the Reservoir and 40% north of it. A busy vs. calm spot made no clear difference, and neither did nearby benches. Each mile north raised the odds of running by about 67%, even after accounting for the volunteer.\n\nWhat it can't see. The census measured reactions to volunteers with clipboards, not everyday parkgoers. \"Busy\" was each volunteer's own judgment. OSM may be missing benches. The north end also differs in tree cover, dogs, hawks and food, and none of that was measured.\n\nProjection: EPSG:2263, NAD83 / New York Long Island (ftUS), rotated 61° so the park lies flat; the arrow shows true north.\nPrecedent: NYC Parks' Street Tree Map, imitating its one-dot-per-living-thing style on a pale basemap.\nNotebook: [paste your Colab link]",
+  "params": {},
+  "primary": "assets/squirrels_map_16x9__1_.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-24T09:48:51.128Z",
+  "assets": [
+    {
+      "path": "assets/squirrels_map_16x9__1_.png",
+      "type": "image/png",
+      "bytes": 1024935
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

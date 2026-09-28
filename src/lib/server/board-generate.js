@@ -6,22 +6,60 @@
 // already has a tile gets nothing new, and tiles already on the board are never
 // moved or changed.
 import { randomInt } from 'node:crypto';
-import { stat } from 'node:fs/promises';
+import { stat, open } from 'node:fs/promises';
 import path from 'node:path';
 import { doc } from '$lib/content.js';
 import { newId } from '$lib/board/model.js';
 import { listSubmissions, submissionDir } from './repo.js';
 import { get, create, apply, SITE } from './boards.js';
 
+// A tile is as tall as its cover at full width, uncropped, plus room for the
+// title, name, gallery text and link below it. Tiles go into whichever column
+// is shortest, so the grid comes out irregular when the covers differ.
 const COLUMNS = 4;
 const TILE = { w: 480, h: 600 };
+const TEXT_H = 240;
+// The page-turning buttons under a multi-page PDF's cover.
+const PAGER_H = 48;
 const PITCH = { x: 720, y: 840 };
+const GAP = PITCH.y - TILE.h;
 
 async function isFile(p) {
   try {
     return (await stat(p)).isFile();
   } catch {
     return false;
+  }
+}
+
+// Height over width of a JPEG or PNG, read from its header. Null for anything
+// else, or a file it can't parse; the tile then gets the old 4:3 box.
+async function coverRatio(file) {
+  let fh;
+  try {
+    fh = await open(file, 'r');
+    const { buffer: b, bytesRead } = await fh.read(Buffer.alloc(65536), 0, 65536, 0);
+    if (bytesRead >= 24 && b.readUInt32BE(0) === 0x89504e47) {
+      const w = b.readUInt32BE(16), h = b.readUInt32BE(20);
+      return w && h ? h / w : null;
+    }
+    if (b[0] === 0xff && b[1] === 0xd8) {
+      let i = 2;
+      while (i + 9 < bytesRead) {
+        if (b[i] !== 0xff) { i++; continue; }
+        const marker = b[i + 1];
+        if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+          const h = b.readUInt16BE(i + 5), w = b.readUInt16BE(i + 7);
+          return w && h ? h / w : null;
+        }
+        i += 2 + b.readUInt16BE(i + 2);
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    await fh?.close();
   }
 }
 
@@ -87,34 +125,50 @@ async function build(slug) {
   );
   shuffle(rows);
 
+  // Where each column ends now. Tiles already on the board stay where they are.
+  const bottoms = Array(COLUMNS).fill(-GAP);
+  for (const t of tiles) {
+    const c = Math.round(t.x / PITCH.x);
+    if (c >= 0 && c < COLUMNS) bottoms[c] = Math.max(bottoms[c], t.y + t.h);
+  }
+
   const ops = [];
-  let cell = tiles.length;
   let z = Object.values(board.elements).reduce((m, e) => Math.max(m, e.z ?? 0), 0);
   for (const s of rows) {
     const dir = submissionDir(s.student, slug);
     const base = `/api/submissions/${s.student}/${slug}/`;
     let cover = null;
-    if (s.manifest.cover_file && (await isFile(path.join(dir, s.manifest.cover_file)))) cover = base + s.manifest.cover_file;
-    else if (await isFile(path.join(dir, 'cover.png'))) cover = base + 'cover.png';
+    let file = null;
+    if (s.manifest.cover_file && (await isFile(path.join(dir, s.manifest.cover_file)))) file = s.manifest.cover_file;
+    else if (await isFile(path.join(dir, 'cover.png'))) file = 'cover.png';
+    if (file) cover = base + file;
+    const ratio = file ? await coverRatio(path.join(dir, file)) : null;
+    const pages = (s.manifest.pages ?? []).map((p) => base + p);
+    const h = (ratio ? Math.round(TILE.w * ratio) + TEXT_H : TILE.h) + (pages.length > 1 ? PAGER_H : 0);
+
+    const c = bottoms.indexOf(Math.min(...bottoms));
+    const y = bottoms[c] + GAP;
+    bottoms[c] = y + h;
     ops.push({
       op: 'add',
       element: {
         id: newId(),
         type: 'tile',
-        x: (cell % COLUMNS) * PITCH.x,
-        y: Math.floor(cell / COLUMNS) * PITCH.y,
+        x: c * PITCH.x,
+        y,
         w: TILE.w,
-        h: TILE.h,
+        h,
         z: ++z,
         locked: true,
         student: s.student,
         title: s.manifest.title ?? '',
         gallery_text: s.manifest.gallery_text ?? '',
         cover,
+        ratio,
+        pages,
         href: `/gallery/${s.student}/${slug}/`
       }
     });
-    cell++;
   }
 
   let added = 0;
