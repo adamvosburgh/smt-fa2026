@@ -1,0 +1,25 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "jimenez-leyre",
+  "title": "Simulating Future Flood Insurance in New Orleans",
+  "gallery_text": "This project sketches out how flood insurance coverage in New Orleans might change from 2025 to 2045 as more coastal land turns into water. It uses USGS land-loss data and FEMA NFIP policy trends from 2020 to 2025 to map places where coastal risk could grow faster than insurance coverage. It uses several assumptions like water proximity, land loss, and coastal protection.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Assigment3_Leyre.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-29T23:47:34.765Z",
+  "assets": [
+    {
+      "path": "assets/Assigment3_Leyre.pdf",
+      "type": "application/pdf",
+      "bytes": 4761709
+    }
+  ],
+  "pages": [
+    "pages/1.jpg",
+    "pages/2.jpg"
+  ],
+  "page_count": 2,
+  "cover_file": "cover.jpg"
+}

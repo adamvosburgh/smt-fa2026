@@ -21,5 +21,10 @@
       "bytes": 9485530
     }
   ],
-  "cover_file": "cover.jpg"
+  "cover_file": "cover.jpg",
+  "pages": [
+    "pages/1.jpg",
+    "pages/2.jpg"
+  ],
+  "page_count": 2
 }
