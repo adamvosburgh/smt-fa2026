@@ -1,13 +1,13 @@
 // A JPEG copy of an uploaded image, drawn in the browser. The server has no
 // image library, so this is where a phone photo gets made small.
 //
-// Used for the Student Work cover of an assignment upload (1200px wide) and for
-// the display copy of an image on a whiteboard (1600px on the long side). The
+// Used for the Student Work cover of an assignment upload (2000px wide) and for
+// the display copy of an image on a whiteboard (2400px on the long side). The
 // server drops a copy over 2MB, and a PNG of a phone photo can pass that, so
 // this is a JPEG and steps its quality down until it is under `maxBytes`.
 const isImage = (f) => /\.(png|jpe?g|webp|gif)$/i.test(f?.name ?? '');
 
-export async function drawCopy(file, { width = null, longSide = null, qualities = [0.85, 0.7, 0.5], maxBytes = 1_000_000 } = {}) {
+export async function drawCopy(file, { width = null, longSide = null, qualities = [0.92, 0.85, 0.75, 0.6], maxBytes = 1_900_000 } = {}) {
   if (!isImage(file)) return null;
   try {
     const bmp = await createImageBitmap(file);

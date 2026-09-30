@@ -357,7 +357,7 @@
       fd.append('file', file, file.name || `pasted.${ext}`);
       // No copy for a small file, a GIF (a copy would stop it moving) or a video.
       if (ext !== 'mp4' && ext !== 'gif' && file.size >= 400_000) {
-        const copy = await drawCopy(file, { longSide: 1600 });
+        const copy = await drawCopy(file, { longSide: 2400 });
         if (copy) fd.append('display', copy, 'display.jpg');
       }
       const res = await fetch(`/api/boards/${slug}/assets`, {

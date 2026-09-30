@@ -1,5 +1,5 @@
-// The pages of an uploaded PDF as JPEGs, 1200px wide, the same size the browser
-// draws for an image upload. Uses poppler (pdfinfo, pdftoppm), which is on the
+// The pages of an uploaded PDF as JPEGs, 2000px wide at quality 90, the same
+// width the browser draws for an image upload. Uses poppler (pdfinfo, pdftoppm), which is on the
 // server. Node built-ins only, so scripts/pdf-pages.js can import it directly.
 //
 // Page 1 is the cover. A PDF of two or more pages also keeps every page under
@@ -38,7 +38,7 @@ export async function renderPdf(pdf, dir) {
   try {
     await run(
       'pdftoppm',
-      ['-jpeg', '-f', '1', '-l', String(last), '-scale-to-x', '1200', '-scale-to-y', '-1', pdf, path.join(tmp, 'p')],
+      ['-jpeg', '-jpegopt', 'quality=90', '-f', '1', '-l', String(last), '-scale-to-x', '2000', '-scale-to-y', '-1', pdf, path.join(tmp, 'p')],
       { timeout: 30_000 + 10_000 * last }
     );
     // pdftoppm pads the page number to the width of the last one (p-01.jpg),

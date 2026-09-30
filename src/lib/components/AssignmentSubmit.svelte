@@ -101,8 +101,8 @@
     );
     fd.append('asset', primary, primary.name);
     for (const f of extras) fd.append('asset', f, f.name);
-    // A 1200px-wide JPEG of the uploaded image, for the Student Work card.
-    const cover = isImage(primary) ? await drawCopy(primary, { width: 1200 }) : null;
+    // A 2000px-wide JPEG of the uploaded image, for the Student Work card.
+    const cover = isImage(primary) ? await drawCopy(primary, { width: 2000 }) : null;
     if (cover) fd.append('cover', cover, 'cover.jpg');
     try {
       const res = await fetch('/api/submit', {
