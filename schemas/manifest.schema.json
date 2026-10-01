@@ -30,6 +30,12 @@
       "pattern": "^assets/[A-Za-z0-9._-]+$",
       "description": "Assignment submissions only: the asset the gallery renders (an image, a PDF, or one self-contained HTML file)."
     },
+    "link": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$",
+      "maxLength": 2000,
+      "description": "Assignment submissions only, where the assignment's `form:` has a `link` box: an https:// address (a GitHub Pages site) handed in in place of, or beside, the file. The gallery page frames it in live mode; the archive keeps the link and the screenshot."
+    },
     "student": {
       "type": "string",
       "pattern": "^[a-z0-9-]+$",
@@ -89,7 +95,10 @@
     },
     "cover_file": {
       "type": "string",
-      "enum": ["cover.jpg", "cover.png"],
+      "enum": [
+        "cover.jpg",
+        "cover.png"
+      ],
       "description": "Server-assigned. Set to cover.jpg when an assignment upload brought a browser-drawn cover; absent means cover.png from `npm run covers`."
     },
     "cover": {

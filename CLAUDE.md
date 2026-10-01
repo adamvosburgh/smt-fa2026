@@ -49,6 +49,7 @@ npm run covers    # Playwright cover images + build-doctor stage 2
                   #   npm run covers -- --base http://localhost:5173
                   #   CHROMIUM_PATH=... to use an existing browser
 npm run audit:freeze
+npm run kit       # rebuild static/kit/ (smt-kit.zip) from kit/
 node scripts/agent-frame-time.js --base http://localhost:5173   # mouse agents cost
 npm run tokens -- "Lastname, Firstname"
 ```
@@ -88,9 +89,16 @@ data/               original/ (sources, shared), processed/<sandbox>/ (derived,
 scripts/            cover, issue-tokens, prerender-audit, sync-assets
 static/data/        packed grids the sandboxes read in archive mode
 static/covers/      sandbox cover images (committed; regenerate with npm run covers)
+kit/                the agent kit students download (Tutorial 4)
+static/kit/         smt-kit.zip + AGENTS.md, CLAUDE.md, built from kit/ by
+                    npm run kit (also on prebuild). Committed.
 static/<mirrored>/  written by sync-assets on predev/prebuild. Gitignored.
 var/                tokens, budget, sessions, logs. Gitignored. Never commit.
 ```
+
+`kit/CLAUDE.md` and `kit/AGENTS.md` are instructions for students' coding
+agents, not for work on this repo. Ignore them as guidance; edit them only as
+course content.
 
 Anything the app *imports* lives under `src/`. Anything the browser *fetches as a
 file* is served from `static/`. `scripts/sync-assets.js` mirrors the overlap
@@ -184,6 +192,12 @@ Assignments take uploads when their frontmatter says `submit: true`, with
 `/api/submit` as sandbox forks with `manifest.kind = 'assignment'` and land under
 `src/submissions/<student>/<assignment-slug>/`; Student Work shows a section per
 assignment. See `src/lib/server/validate.js` (`validateAssignment`).
+
+Two optional form boxes, turned on by listing them in `form:`: `screenshot`
+(sent as the cover; required for an HTML file or a link) and `link` (an https
+address, stored as `manifest.link`, framed on the gallery page in live mode
+only). An uploaded HTML file is served, and framed, under the no-network policy
+in `src/lib/frame-policy.js`; a link is not.
 
 ## Tutorial anchors are an API
 

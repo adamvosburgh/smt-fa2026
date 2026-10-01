@@ -25,7 +25,7 @@ Write two sentences of gallery text about what the simulation showed you that yo
 - The space modeled as surfaces, named the way the tutorial describes: one `room_` patch per room, `glazing_` to match, walls with the openings cut out, a `ceiling`.
 - Enough context to cast the shadows that actually fall on it. Everything you can see out of the windows, at minimum, plus a ground plane. Massing only - a box per building is fine, and a setback is two stacked boxes.
 - If your space is one floor of a taller building, the rest of that building above and below it, tagged `context_above` and `context`.
-- Meters, one `.glb`, under 15MB.
+- Meters, one `.glb`, under 50MB.
 - Load it into the sandbox yourself before you hand it in, using the `load a .glb from your machine` input, and check the report the sandbox prints. `untagged` should be zero and the room count should be the number of rooms you drew. If it is not, the sandbox has read your model differently from how you meant it.
 - In the description: where the space is and what it is, where your context geometry came from (measured, traced off a map, guessed from photographs, all three), which parts of the model are surveyed and which are yours, and one thing the simulation gets wrong that you know from having been there.
 

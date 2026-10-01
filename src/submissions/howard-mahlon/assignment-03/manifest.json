@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "howard-mahlon",
+  "title": "Fixed Landmarks, Moving City Fabric",
+  "gallery_text": "Buildings older than a specified lifespan have a probability of being replaced. Replacement buildings receive a new height based on the height distribution of recently constructed buildings in their surrounding area. Individual landmark buildings remain unchanged.",
+  "description": "",
+  "params": {},
+  "primary": "assets/A_Forecast__Sketched_-_Assignment_3.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-10-01T01:36:51.597Z",
+  "assets": [
+    {
+      "path": "assets/A_Forecast__Sketched_-_Assignment_3.pdf",
+      "type": "application/pdf",
+      "bytes": 146730
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

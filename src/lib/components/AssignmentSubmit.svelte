@@ -10,7 +10,14 @@
   // server has no image library and the Playwright cover pipeline would only
   // give us a screenshot of the same picture. PDFs get no cover from here; the
   // server renders their first page (src/lib/server/repo.js). HTML files get
-  // theirs from `npm run covers -- --submissions`.
+  // theirs from `npm run covers -- --submissions`, unless the assignment's
+  // `form:` asks for a screenshot, which is then drawn the same way and sent as
+  // the cover.
+  //
+  // A `link` box, where `form:` asks for one, takes an https:// address (a
+  // GitHub Pages site) in place of the work. With a link and no file, the
+  // screenshot is uploaded as the primary as well as the cover, and the gallery
+  // page frames the link below it.
   //
   // A `model` assignment is the exception to "the gallery shows the file": the
   // gallery RUNS it, in the sandbox named by the assignment's `sandbox_ref`. The
@@ -57,26 +64,54 @@
   let galleryText = $state('');
   let description = $state('');
   let primary = $state(null);
+  let screenshot = $state(null);
+  let link = $state('');
   let extras = $state([]);
   let result = $state(null);
   let busy = $state(false);
 
   const isImage = (f) => /\.(png|jpe?g|webp)$/i.test(f?.name ?? '');
 
+  const askScreenshot = form.includes('screenshot');
+  const askLink = form.includes('link');
+  const linkGiven = $derived(askLink && link.trim() !== '');
+  const linkOk = $derived.by(() => {
+    try {
+      return new URL(link.trim()).protocol === 'https:';
+    } catch {
+      return false;
+    }
+  });
+  // The screenshot is the cover whenever the work can't be drawn from: a link,
+  // or a file that isn't an image. A PDF still gets its first page from the
+  // server if no screenshot is given.
+  const needScreenshot = $derived(
+    askScreenshot && (linkGiven || (primary && !isImage(primary) && !/\.pdf$/i.test(primary.name)))
+  );
+  const ready = $derived(
+    (primary || (linkGiven && screenshot)) &&
+      (!linkGiven || linkOk) &&
+      (!needScreenshot || screenshot)
+  );
+
   // The upload cap, checked here as soon as a file is chosen so nobody finds out
   // after pressing submit. Keep in step with maxSubmissionBytes in
   // src/lib/server/config.js, which is what the server enforces. It covers the
   // work and the extras together; the cover drawn below is not counted.
-  const MAX_BYTES = 15 * 1024 * 1024;
-  const LIMIT = '15MB';
+  const MAX_BYTES = 50 * 1024 * 1024;
+  const LIMIT = '50MB';
   const mb = (bytes) => `${(bytes / 1048576).toFixed(1)}MB`;
-  const total = $derived((primary?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0));
+  const total = $derived(
+    (primary?.size ?? 0) + (linkGiven && !primary ? (screenshot?.size ?? 0) : 0) + extras.reduce((n, f) => n + f.size, 0)
+  );
   const tooBig = $derived(total > MAX_BYTES);
 
   async function submit() {
     busy = true;
     result = null;
     const fd = new FormData();
+    // With a link and no file, the screenshot is the work the gallery shows.
+    const work = primary ?? (linkGiven ? screenshot : null);
     fd.set(
       'manifest',
       JSON.stringify({
@@ -94,15 +129,23 @@
               north_deg: Number(site.north_deg)
             }
           : {},
-        primary: `assets/${primary.name}`,
+        primary: `assets/${work.name}`,
+        link: linkGiven ? link.trim() : undefined,
         answers: questions.length ? $state.snapshot(answers) : undefined,
         app_version: '0.1.0'
       })
     );
-    fd.append('asset', primary, primary.name);
+    fd.append('asset', work, work.name);
     for (const f of extras) fd.append('asset', f, f.name);
-    // A 2000px-wide JPEG of the uploaded image, for the Student Work card.
-    const cover = isImage(primary) ? await drawCopy(primary, { width: 2000 }) : null;
+    // A 2000px-wide JPEG of the uploaded image, or of the screenshot when the
+    // work isn't an image, for the Student Work card and the board.
+    const from = isImage(primary) ? primary : screenshot;
+    const cover = from ? await drawCopy(from, { width: 2000 }) : null;
+    if (from && !cover && from === screenshot) {
+      result = { ok: false, error: 'The screenshot could not be read. Save it as a PNG or JPG and choose it again.' };
+      busy = false;
+      return;
+    }
     if (cover) fd.append('cover', cover, 'cover.jpg');
     try {
       const res = await fetch('/api/submit', {
@@ -159,14 +202,17 @@
         The work ({accepts.join(', ')})
         <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
       </label>
+      {#if linkGiven && !primary}
+        <p class="hint">Optional, because you gave a link.</p>
+      {/if}
       {#if primary && primary.size > MAX_BYTES}
         <p class="err size">This file is {mb(primary.size)}. The limit is {LIMIT}. Export a smaller
           version and choose it again.</p>
       {/if}
       <p class="hint">
-        {#if isModel}This is the model the gallery runs. One <code>.glb</code>, in meters, under 15MB,
+        {#if isModel}This is the model the gallery runs. One <code>.glb</code>, in meters, under 50MB,
         with the objects named the way the tutorial describes.{:else}This is the file the gallery
-        shows. It has to be under 15MB.{/if}
+        shows. It has to be under 50MB.{/if}
         {#if accepts.includes('html')}An HTML file must be one self-contained file - styles, scripts
         and data inline - because the gallery runs it in a sandboxed frame that can't fetch anything
         else.{/if}
@@ -194,13 +240,32 @@
       {/if}
     {:else if f === 'extras'}
       <label>
-        Anything else (optional, 15MB total)
+        Anything else (optional, 50MB total)
         <input type="file" multiple onchange={(e) => (extras = [...e.currentTarget.files])} />
       </label>
       {#if tooBig && !(primary && primary.size > MAX_BYTES)}
         <p class="err size">These files come to {mb(total)} with the work. The limit is {LIMIT}
           for everything together. Leave some out or export smaller versions.</p>
       {/if}
+    {:else if f === 'screenshot'}
+      <label>
+        Screenshot{needScreenshot ? '' : ' (optional)'}
+        <input type="file" accept=".png,.jpg,.jpeg,.webp" onchange={(e) => (screenshot = e.currentTarget.files[0] ?? null)} />
+      </label>
+      <p class="hint">
+        The image Student Work and the board show for your submission.{#if !needScreenshot}
+        Needed if the work is an HTML file or a link.{/if}
+      </p>
+    {:else if f === 'link'}
+      <label>
+        Link (optional)
+        <input type="url" bind:value={link} placeholder="https://" />
+      </label>
+      {#if linkGiven && !linkOk}
+        <p class="err size">The link has to be a full address starting with https://.</p>
+      {/if}
+      <p class="hint">A GitHub Pages address, in place of the file. With a link, the file is
+        optional and the screenshot is required.</p>
     {/if}
   {/each}
 
@@ -234,7 +299,7 @@
 
   <div class="actions">
     <button type="button" onclick={onclose}>close</button>
-    <button type="button" class="go" disabled={busy || !title || !galleryText || !primary || !answered || tooBig} onclick={submit}>
+    <button type="button" class="go" disabled={busy || !title || !galleryText || !ready || !answered || tooBig} onclick={submit}>
       {busy ? 'sending…' : 'submit'}
     </button>
   </div>

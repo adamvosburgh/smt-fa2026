@@ -7,11 +7,12 @@
   "scripts": {
     "predev": "node scripts/sync-assets.js",
     "dev": "vite dev",
-    "prebuild": "node scripts/sync-assets.js",
+    "prebuild": "node scripts/sync-assets.js && node scripts/build-kit.js",
     "build": "vite build",
     "preview": "vite preview",
     "start": "node build/index.js",
     "sync": "node scripts/sync-assets.js",
+    "kit": "node scripts/build-kit.js",
     "covers": "node scripts/cover.js",
     "audit:freeze": "node scripts/prerender-audit.js",
     "tokens": "node scripts/issue-tokens.js",

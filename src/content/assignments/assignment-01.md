@@ -41,7 +41,7 @@ On the submission form, please provide:
 
 - Your token
 - A Title (this can just be your name for this exercise)
-- One image, PNG or JPG, under 15MB. We will use these to introduce ourselves in class, so make it whatever you would like to talk about.
+- One image, PNG or JPG, under 50MB. We will use these to introduce ourselves in class, so make it whatever you would like to talk about.
 - Two sentences of gallery text, written as if they were on the wall next to the work.
 
 And then, a few more things for my benefit:

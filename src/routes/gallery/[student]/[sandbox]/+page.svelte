@@ -5,6 +5,8 @@
   import { load as loadSandbox, defaults } from '$lib/sandboxes/index.js';
   import SandboxFrame from '$lib/components/SandboxFrame.svelte';
   import { studentMarkdown } from '$lib/student-markdown.js';
+  import { FRAME_CSP } from '$lib/frame-policy.js';
+  import { MODE } from '$lib/data.js';
   //
   // Assignment uploads are the other case: no sandbox, just the file the
   // student handed in - an image, a PDF, or one self-contained HTML page run in
@@ -16,6 +18,10 @@
   // show, it is something to RUN. The sunlight sandbox is mounted on it in edit
   // mode, so the visitor can move the clock through the student's own model.
   // The Submit button comes off, because the file already is the submission.
+  //
+  // A link submission (manifest.link, a GitHub Pages address) shows the
+  // screenshot, the link, and in live mode the live page framed below it. The
+  // archive drops the frame, since the page it points at may not outlast it.
   let { data } = $props();
 
   const isAssignment = $derived(data.sub.kind === 'assignment');
@@ -30,6 +36,10 @@
 
   const MODEL_SANDBOX = 'sunlight';
   const isModel = $derived(isAssignment && primaryKind === 'model');
+  const link = $derived(isAssignment ? (data.sub.link ?? null) : null);
+  // With a link, the screenshot is what is shown: the primary when no file came
+  // with it, the cover otherwise. Any file that did come is listed below.
+  const shot = $derived(link ? (primaryKind === 'image' ? primary : data.sub.coverUrl) : null);
   // Real state rather than a derived object, because the frame's transport
   // writes into it while the clock plays.
   let modelParams = $state({});
@@ -78,6 +88,16 @@
     />
   {/if}
   <p class="download"><a href={primary}>Download the model ({data.sub.primary?.replace(/^assets\//, '')})</a></p>
+{:else if link}
+  <div class="work" data-cover-target data-cover-ready="true" data-timeline-paused="true">
+    <img src={shot} alt={data.sub.title} />
+    <p class="open"><a href={link} target="_blank" rel="noopener">{link}</a></p>
+  </div>
+  {#if MODE !== 'archive'}
+    <div class="work live">
+      <iframe src={link} title={data.sub.title} sandbox="allow-scripts" loading="lazy"></iframe>
+    </div>
+  {/if}
 {:else if isAssignment}
   <div class="work" data-cover-target data-cover-ready="true" data-timeline-paused="true">
     {#if primaryKind === 'image'}
@@ -96,7 +116,7 @@
         <p><a href={primary}>Open the PDF</a>.</p>
       </object>
     {:else if primaryKind === 'html'}
-      <iframe src={primary} title={data.sub.title} sandbox="allow-scripts" loading="lazy"></iframe>
+      <iframe src={primary} title={data.sub.title} sandbox="allow-scripts" csp={MODE === 'archive' ? undefined : FRAME_CSP} loading="lazy"></iframe>
       <p class="open"><a href={primary} target="_blank" rel="noopener">Open full screen</a></p>
     {:else if primary}
       <p><a href={primary}>Download {data.sub.primary}</a></p>
@@ -105,9 +125,10 @@
 {/if}
 
 {#if isAssignment}
-  {#if (data.sub.assets ?? []).filter((a) => a.path !== data.sub.primary).length}
+  {@const listed = (data.sub.assets ?? []).filter((a) => a.path !== data.sub.primary || (link && primaryKind !== 'image'))}
+  {#if listed.length}
     <ul class="extras">
-      {#each data.sub.assets.filter((a) => a.path !== data.sub.primary) as a (a.path)}
+      {#each listed as a (a.path)}
         <li><a href="{data.sub.assetBase}{a.path}">{a.path.replace(/^assets\//, '')}</a> <span>{(a.bytes / 1e6).toFixed(1)}MB</span></li>
       {/each}
     </ul>
@@ -161,6 +182,7 @@
   .params-dump pre { background: var(--code-bg); padding: 0.75rem; overflow-x: auto; margin-top: 0.5rem; }
   .work { border: 1px solid var(--rule); background: var(--code-bg); }
   .work img { display: block; width: 100%; height: auto; }
+  .work.live { margin-top: 1rem; }
   .work img.page + img.page { border-top: 1px solid var(--rule); }
   .work object, .work iframe { display: block; width: 100%; height: min(80vh, 900px); border: 0; background: #fff; }
   /* the embedded file is the student's own page; it keeps a white ground */

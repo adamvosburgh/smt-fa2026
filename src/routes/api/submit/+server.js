@@ -91,13 +91,16 @@ export async function POST({ request }) {
     const name = String(manifest.primary).split(/[\\/]/).pop().replace(/[^A-Za-z0-9._-]/g, '_');
     manifest.primary = `assets/${name}`;
   }
+  // An empty link is no link. A link on anything but an assignment is dropped.
+  if (manifest.kind !== 'assignment' || manifest.link === '' || manifest.link === null) delete manifest.link;
   manifest.assets = files.map(({ path, type, bytes }) => ({ path, type, bytes }));
 
   const result = validate({
     manifest,
     files,
     sandbox,
-    maxBytes: config.maxSubmissionBytes
+    maxBytes: config.maxSubmissionBytes,
+    hasCover: cover !== null
   });
   if (!result.ok) {
     return json({ ok: false, stage: 1, errors: result.errors }, { status: 422 });

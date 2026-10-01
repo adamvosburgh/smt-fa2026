@@ -124,7 +124,7 @@ Two things to check before you export.
 
 **NURBS surfaces become meshes on the way out.** Rhino meshes them with whatever your document's render mesh settings are, and the default settings on a large flat surface can give you a mesh with an unhelpful number of triangles. `Mesh` your geometry yourself first if you want to know what you are getting.
 
-**The file has to be under 15MB**, which is the submission cap. If you are over it, the context is almost always the reason. Cut the number of neighbors, or simplify them to boxes, before you touch the space.
+**The file has to be under 50MB**, which is the submission cap. If you are over it, the context is almost always the reason. Cut the number of neighbors, or simplify them to boxes, before you touch the space.
 
 > **For Adam to confirm before this is final:** this section tells students to name the objects. If the Rhino exporter turns out to drop object names into the mesh or material slot instead, the instruction changes to "name the materials" and nothing else in the tutorial or the sandbox changes, because the classifier accepts all three. Load `example-f08.3dm`, export it with the options above, and read the input report.
 

@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "chen-qizhen",
+  "title": "Simulating Flood Exposure Through Population Allocation",
+  "gallery_text": "Using the same census population and projected 2050s floodplain, this study compares two rules for estimating flood exposure: areal weighting and residential-unit-based dasymetric allocation. By changing only how population is spatially allocated, the simulation shows how a methodological assumption can produce different estimates of who is exposed to flooding.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Flood_Population.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-09-30T19:25:41.573Z",
+  "assets": [
+    {
+      "path": "assets/Flood_Population.png",
+      "type": "image/png",
+      "bytes": 360310
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

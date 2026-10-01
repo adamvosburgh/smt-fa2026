@@ -6,7 +6,7 @@ export const config = {
   stateDir: env.SMT_STATE_DIR || 'var',
 
   // Hard cap, enforced server-side before anything is written.
-  maxSubmissionBytes: Number(env.SMT_MAX_SUBMISSION_BYTES || 15 * 1024 * 1024),
+  maxSubmissionBytes: Number(env.SMT_MAX_SUBMISSION_BYTES || 50 * 1024 * 1024),
 
   // Committing to git is OFF by default. Turn it on deliberately once the
   // deploy user has a key and you have watched a few submissions land as plain

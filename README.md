@@ -20,6 +20,9 @@ the submission API or the assistant. `npm run data` regenerates the packed grids
 under `static/data/`; they are committed, so you only need it if you change
 `scripts/build-data.js`.
 
+Deploying: `scripts/deploy.sh`. The upload size limits that live outside the
+repo (`BODY_SIZE_LIMIT`, the Cloudflare tunnel) are in `DEPLOY.md`.
+
 See `CLAUDE.md` for the architecture, the sandbox contract, and the freeze path.
 
 ## License

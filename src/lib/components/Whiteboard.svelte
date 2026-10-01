@@ -34,7 +34,7 @@
   } = $props();
 
   const editable = mode === 'edit';
-  const MAX_BYTES = 15 * 1024 * 1024;
+  const MAX_BYTES = 50 * 1024 * 1024;
   const ZOOM = [0.1, 4];
   const GRID = 32;
   const TOAST_MS = 6000;
@@ -338,7 +338,7 @@
       return;
     }
     if (file.size > MAX_BYTES) {
-      say(`That file is ${(file.size / 1048576).toFixed(1)}MB. The limit is 15MB.`);
+      say(`That file is ${(file.size / 1048576).toFixed(1)}MB. The limit is 50MB.`);
       return;
     }
     markHintSeen();

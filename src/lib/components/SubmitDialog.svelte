@@ -66,7 +66,7 @@
       placeholder="Longer text, annotations. What you changed and what it did."></textarea>
   </label>
   <label>
-    Assets (15MB total)
+    Assets (50MB total)
     <input type="file" multiple onchange={(e) => (files = [...e.currentTarget.files])} />
   </label>
 

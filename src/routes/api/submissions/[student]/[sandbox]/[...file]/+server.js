@@ -7,6 +7,7 @@ import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { submissionDir } from '$lib/server/repo.js';
+import { FRAME_CSP } from '$lib/frame-policy.js';
 
 const TYPES = {
   '.png': 'image/png',
@@ -16,7 +17,9 @@ const TYPES = {
   '.pdf': 'application/pdf',
   '.html': 'text/html; charset=utf-8',
   '.glb': 'model/gltf-binary',
-  '.json': 'application/json'
+  '.json': 'application/json',
+  // Shown in the browser rather than downloaded: an assignment's prompt.md.
+  '.md': 'text/plain; charset=utf-8'
 };
 
 // Only the cover, a PDF's rendered pages, and what is under assets/. The
@@ -61,8 +64,10 @@ export async function GET({ params, request }) {
   const type = TYPES[path.extname(target).toLowerCase()] ?? 'application/octet-stream';
   // A student's HTML runs in a sandboxed frame on the gallery page. Opened
   // directly ("Open full screen"), this header gives it the same sandbox, so it
-  // can't read the submission token out of this origin's localStorage.
-  if (type.startsWith('text/html')) headers['content-security-policy'] = 'sandbox allow-scripts';
+  // can't read the submission token out of this origin's localStorage. The
+  // rest of the policy blocks the network, so a page that only works online
+  // fails here the same way it will in the gallery (see $lib/frame-policy.js).
+  if (type.startsWith('text/html')) headers['content-security-policy'] = `sandbox allow-scripts; ${FRAME_CSP}`;
 
   return new Response(Readable.toWeb(createReadStream(target)), {
     headers: { ...headers, 'content-type': type, 'content-length': String(s.size) }

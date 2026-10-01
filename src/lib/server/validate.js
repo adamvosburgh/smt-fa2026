@@ -28,6 +28,8 @@ export const FAILURE_MAP = {
   'assignment/no-file': '#submission',
   'assignment/bad-type': '#submission',
   'assignment/missing-answer': '#requirements',
+  'assignment/bad-link': '#submit',
+  'assignment/no-screenshot': '#submit',
   // A model upload is the one assignment kind whose pointer goes to a SANDBOX
   // dev note rather than to the assignment page, because what went wrong is in
   // the file, not in the hand-in. The assignment's `sandbox_ref` frontmatter
@@ -93,7 +95,7 @@ function pointer(code, sandbox, kind) {
 // state. The assignment's markdown frontmatter says whether it takes uploads
 // (`submit: true`) and what kinds (`accepts: [image, pdf, html]`). Nothing here
 // is about quality - only whether the gallery will be able to show it.
-function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
+function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, errors }) {
   const add = (code, message) => errors.push({ code, message, see: pointer(code, sandbox, 'assignment') });
 
   const a = doc('assignments', sandbox);
@@ -139,6 +141,31 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   const kinds = Array.isArray(a.accepts) && a.accepts.length ? a.accepts : ['image', 'pdf'];
   const allowed = kinds.flatMap((k) => ACCEPTS[k] ?? []);
   const ext = (p) => p.toLowerCase().replace(/^.*(\.[a-z0-9]+)$/, '$1');
+  const formBoxes = Array.isArray(a.form) ? a.form : [];
+
+  // A link, where the assignment's `form:` has a `link` box. It must be https;
+  // the gallery frames it. With a link and no file, the screenshot is uploaded
+  // as the primary, so an image is allowed as the primary whatever `accepts` says.
+  if (manifest.link !== undefined) {
+    let ok = false;
+    try {
+      ok = new URL(String(manifest.link)).protocol === 'https:';
+    } catch {}
+    if (!formBoxes.includes('link')) {
+      add('assignment/bad-link', `"${a.title}" does not take a link.`);
+    } else if (!ok) {
+      add('assignment/bad-link', 'The link has to be a full address starting with https://.');
+    }
+  }
+  if (manifest.link) allowed.push(...ACCEPTS.image);
+
+  // Where the form asks for a screenshot, a link or an HTML file needs one: it
+  // is the only cover those submissions get. A PDF's cover is drawn from its
+  // first page, and an image is its own.
+  const primaryPath = manifest.primary ?? files[0]?.path ?? '';
+  if (formBoxes.includes('screenshot') && !hasCover && (manifest.link || /\.html?$/i.test(primaryPath))) {
+    add('assignment/no-screenshot', 'A screenshot is required with an HTML file or a link. It is what Student Work shows.');
+  }
 
   if (!files.length) {
     add('assignment/no-file', `Nothing was attached. This assignment takes ${kinds.join(' or ')} files.`);
@@ -203,10 +230,10 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, errors }) {
   }
 }
 
-export function validate({ manifest, files, sandbox, maxBytes }) {
+export function validate({ manifest, files, sandbox, maxBytes, hasCover = false }) {
   const errors = [];
   if (manifest.kind === 'assignment') {
-    validateAssignment({ manifest, files, sandbox, maxBytes, errors });
+    validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, errors });
     return { ok: errors.length === 0, errors };
   }
 

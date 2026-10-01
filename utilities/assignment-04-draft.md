@@ -33,7 +33,7 @@ Take your sketch from Assignment 3 and revise it into a prompt: one markdown fil
 ### How
 
 - Write `prompt.md`. The parts in Tutorial 4 can be your headings: what it shows, the data, the rule, the sliders in order with their starting values, what you should see, what it can't see. Try to put a source next to every number, and where there isn't one, just say it's a placeholder or an assumption. Give the rule units.
-- Put the course kit and `prompt.md` in one folder, with your data as you downloaded it in `data` > `Original`, open the folder in VS Code, and start your agent. You can give it your sketch from Assignment 3 too, and any images or reference projects you have in mind: save them in the folder and mention them by name in the prompt, or, in Claude Code, hold `shift` and drag them into the prompt box.
+- Put the course kit, your data and `prompt.md` in one folder, open it in VS Code, and start your agent. You can give it your sketch from Assignment 3 too, and any images or reference projects you have in mind: save them in the folder and mention them by name in the prompt, or, in Claude Code, hold `shift` and drag them into the prompt box.
 - Answer the agent's questions from the prompt. Where the prompt doesn't have the answer, decide, tell the agent, and add the line to the prompt.
 - Check it. At its starting values, it should reproduce a number you can check against something outside itself: your notebook, a published figure, a count you made.
 - Upload it.
