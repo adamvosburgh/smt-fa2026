@@ -211,11 +211,11 @@ You should end up with something that looks like this:
 
 So what do we have? I immediately notice a couple of things:
 - I didn't specify the design of the sandbox too much in my prompt... and paid dearly for it. To my eye, this looks quite boring and mediocre.
-- the description panel on the left is incredibly verbose, and writes way more than I gave it. In my experience this is always a struggle with ai models - even if you tell them exactly what to say, their training is to elaborate. 
+- the description panel on the left is incredibly verbose, and writes way more than I gave it. In my experience this is always a struggle with ai models - ideally you should always give them 100% of your copy text, otherwise they will elaborate extensively on what you provide.
 
 When you are finished, you can end the server with `ctrl+c`.
 
-For the assignment, the `index.html` for your own personal sandbox is what you'll upload to the [Assignment 4](/assignments/assignment-04/) submission, along with your `prompt.md`.
+For the assignment, the `index.html` for your own personal sandbox is what you'll upload to the [Assignment 4](/assignments/assignment-04/) submission, along with your `prompt.md`. Just turn in whatever you get after this stage. The submission will come with a reflection of what worked well, and what didn't. 
 
 ## What you did
 
