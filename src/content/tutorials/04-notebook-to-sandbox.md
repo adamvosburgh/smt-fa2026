@@ -8,12 +8,12 @@ published: true
 publish: "2026-10-01"
 ---
 
-In this module we're going to take what we made in Tutorial 3, our small model of the street trees of upper Manhattan, and turn it into a sandbox like the [expamples on this site](/sandboxes/): a page with a map, a clock, and some sliders. The numbers we typed into the notebook last week become sliders, and the clock lets you scrub the run from 2015 to 2045 and watch the totals change.
+In this module we're going to take what we made in Tutorial 3, our small model of the street trees of upper Manhattan, and turn it into a sandbox like the [examples on this site](/sandboxes/): a page with a map, a clock, and some sliders. The numbers we typed into the notebook last week become sliders, and the clock lets you scrub the run from 2015 to 2045 and watch the totals change.
 
-A page like this is a fairly complex piece of JavaScript; making it from scratch would be a significant endeavor. This tutorial will use an AI coding agent to build the app, from our natural language instructions. A coding agent is similar to a chatbot like claude or chatgpt, but with access to a folder on your computer where it can read / write files, and run scripts.
+A page like this is a fairly complex piece of JavaScript; making it from scratch would be a significant endeavor. This tutorial will use an AI coding agent to build the app, from our natural language instructions. A coding agent is similar to a chatbot like Claude or ChatGPT, but with access to a folder on your computer where it can read / write files, and run scripts.
 
-Working this way has come to be called vibe coding, or writing code using natural language, a term coined by the computer scientist Andrej Karpath in early 2025. I know the term connotes a kind of relaxed image, but used correctly, it can be just as intellectually engaging as writing code. In this tutorial, we will stay at a high-level, and think about what we want to make more than how to make it.
-I often like to make the argument that because ai models can write code for you, that shifts greater importance to the ideas and intentions behind the work. Used without rigor, AI tools produce mediocre work - they literally reproduce an average of the internet. 
+Working this way has come to be called vibe coding, or writing code using natural language, a term coined by the computer scientist Andrej Karpathy in early 2025. I know the term connotes a kind of relaxed image, but used correctly, it can be just as intellectually engaging as writing code. In this tutorial, we will stay at a high-level, and think about what we want to make more than how to make it.
+I often like to make the argument that because AI models can write code for you, that shifts greater importance to the ideas and intentions behind the work. Used without rigor, AI tools produce mediocre work - they literally reproduce an average of the internet. 
 
 A note before we start: this is going to be a little different for everyone, since we won't all be using the same agent, and these tools change every few weeks. If something doesn't match what you see on your screen, that's fine, ask, and we'll figure it out.
 
@@ -23,7 +23,7 @@ A note before we start: this is going to be a little different for everyone, sin
 
 Claude Code, Codex and Gemini CLI are AI development environments. Claude, GPT and Gemini are the models inside them. The environment is the part that reads your files and runs commands; the model is the part that decides what to do. Most environments can be pointed at more than one model, and most models show up in more than one environment, so you'll see the same names in different combinations.
 
-Here are a few of each. Some of these run as an extension in a text editor, in the command line interace of your terminal, or as a standalone app. I've kept the notes short, since all of this changes every few months and I'm sure I'll be out of date by the time you read this.
+Here are a few of each. Some of these run as an extension in a text editor, in the command line interface of your terminal, or as a standalone app. I've kept the notes short, since all of this changes every few months and I'm sure I'll be out of date by the time you read this.
 
 Environments (coding agents):
 
@@ -47,13 +47,13 @@ For this tutorial I'm going to run a coding agent inside a text editor, VS Code,
 
 I'll be using Claude Code via the VS Code extension, but Codex and Gemini Code Assist both have VS Code extensions too, and Cursor and Antigravity are editors of their own that you'd use instead of VS Code. Any of these should work for this tutorial; the changes between each should be quite minimal.
 
-Unfortunately, each needs an account with the company that makes the model. I believe that Cursor has a free tier - which may be just enough for this tutorial. But likely you will need a paid plan that is typically $20/mo. Last I checked I believe Open AI may have a free trial. 
+Unfortunately, each needs an account with the company that makes the model. I believe that Cursor has a free tier - which may be just enough for this tutorial. But likely you will need a paid plan that is typically $20/mo. Last I checked I believe OpenAI may have a free trial. 
 
 If this isn't an option for you, just schedule an office hour, prep your files for assignment 4, and we can run them together using my account.
 
 ### Download VS Code
 
-Let's download VS Code from [code.visualstudio.com](https://code.visualstudio.com/) and install it. It's free. If you've never used a text editor before, don't worry; it's really not much different than your notes app, or the class text edit application on windows.
+Let's download VS Code from [code.visualstudio.com](https://code.visualstudio.com/) and install it. It's free. If you've never used a text editor before, don't worry; it's really not much different than your notes app, or Notepad on Windows.
 
 Then let's install the agent. For Claude Code, open VS Code, click `Extensions` in the left bar, search for `Claude Code`, and click `Install`. It'll ask you to sign in. For the others it's the same, with their name.
 
@@ -79,15 +79,21 @@ Now download [smt-kit.zip](/kit/smt-kit.zip) and unzip it. Inside is a folder ca
 
 ### Open the folder in VS Code
 
-In VS Code, `File` > `Open Folder` and choose `tutorial-4`. Your workspace should look like the below:.
-
-image
+In VS Code, `File` > `Open Folder` and choose `tutorial-4`. 
 
 ### Start the agent
 
-Open your agent's panel in VS Code. For Claude Code, click its icon (the orange spark) in the top right of the editor, or in the left bar, and a chat panel opens where you can type. The other extensions work the same way, with their own icon. If you haven't signed-in yet, it will prompt you to now. 
+Open your agent's panel in VS Code. For Claude Code, click its icon (the orange spark) in the top right of the editor, or in the left bar, and a chat panel opens where you can type. The other extensions work the same way, with their own icon. If you haven't signed in yet, it will prompt you to now. 
 
-Go ahead , it'll read `AGENTS.md` and introduce itself, and it'll tell you it's going to ask you more questions than it usually would. That's on purpose.
+Go ahead and say hi, it'll read `AGENTS.md` and introduce itself, and it'll tell you it's going to ask you more questions than it usually would, something like this:
+
+```
+Hello! The guidance I give in this project comes from the AGENTS.md that Adam set up for the course. I'm going to ask you more follow-up questions than a coding agent usually does, to make sure you're thinking through what you're trying to make. Consider me a version of Claude Code guided by the ghost of Adam.
+```
+
+At the end of all of this, your workspace should look like the below:
+
+![The tutorial-4 folder open in VS Code, with AGENTS.md in the editor and Claude Code's first reply in the panel on the right][WORKSPACE]
 
 ## The prompt
 
@@ -161,7 +167,7 @@ Here is an unordered list of what the interactive should have:
 Okay, that is all, please let me know if you have any questions or if anything is not clear.
 ```
 
-Save this as `prompt.md` in the root of your `tutorial-4` folder, next to `AGENTS.md` and the `data` folder.
+Save this as `prompt.md` in the root of your `tutorial-4` folder, meaning the top level, next to `AGENTS.md` and `data` rather than inside a folder. In VS Code, right-click in the empty space below your files in the Explorer, choose `New File...`, name it `prompt.md`, paste your prompt in, and save. The `.md` makes it a markdown file, which is plain text.
 
 ## Refinements
 
@@ -169,31 +175,25 @@ Now let's give the agent the prompt. I typed something like:
 
 > Read prompt.md and the files in data/Original, and build what prompt.md describes. Before you write any code, tell me your plan and ask me whatever you need to.
 
-<!-- IMAGE: the agent's first reply, showing the "ghost of Adam" intro and the first couple of questions. -->
+Claude also has a "plan" mode that I like to use in times like this - you can toggle which mode next to the send button as of October 2026. If you don't have it, don't stress, whichever model will pick up on your intent.
 
 It's going to ask you questions, probably more than you expect. That's because of `AGENTS.md`. In it I've asked the agent to do a few things a coding agent doesn't usually do: to get your idea clearer than it normally would before writing anything, to read your data with you so you both know what's in it, to ask you how you want things drawn (and whether you have a reference project in mind), and to explain what it's doing at every step.
 
-It will probably start with the data. It should show you a few rows of each file in `data` > `Original`, then clean and join them, and tell you the count after each step. Check those counts against your Tutorial 3 notebook before you let it go on to the page. If they don't match, that's the place to fix it, because everything after is built on that data.
+Below is a screenshot from my run of the above prompt - I got about 15 questions in total.
 
-For the street trees, expect questions like:
+![prompt.md open in VS Code, with Claude Code's first questions about the street tree prompt in the panel on the right][QUESTIONS]
 
-- Which trees count? (The ones whose `status` is `Alive`, the same as Tutorial 3.)
-- What happens to the 258 trees that aren't inside any block?
-- What happens to a tree that dies? Does it disappear from the map, or fade?
-- Should the empty planting sites show on the map before anything is planted there?
-- What does the clock step in, and what happens at 2045: does it stop or loop?
-- What tints the blocks when the page opens, and does a darker color mean more?
-- What should happen when there are no free sites left?
-
-Answer from your prompt. If the answer's in there, point the agent to it. If it isn't, that's a gap in the prompt, and it's worth noticing, because otherwise the agent would have filled it in with something plausible and not mentioned it. Decide, tell the agent, and add a line to `prompt.md` so that the prompt stays the record of what you asked for.
-
-Once it has what it needs it'll work for a few minutes and then tell you it's done. It'll also tell you what to check. Something will probably be off the first time, and you're in a good position to see what, because you built the same model by hand last week. Tell it in plain language: "the 2015 total is 40% higher than my notebook's, check the crown step" is more useful than "it's broken." If it starts adding things you didn't ask for, say so.
+Answer as many of these questions, in as much detail, as you can.
 
 ## Running it
 
 When it's finished there'll be a file called `index.html` in your folder. That's the whole sandbox: the page, the code and the data from `data` > `Processed`, all in one file. You can double-click it and it'll open in your browser.
 
-The better way to look at it is through a local server, which is closer to how the course site will run it. In the VS Code terminal, type:
+The better way to look at it is through a local server, which is closer to how the course site will run it. Open the terminal in VS Code with `Terminal` > `New Terminal` in the menu bar at the top. It opens in a panel along the bottom of the window, already in your `tutorial-4` folder. With that open, your workspace should now look like this:
+
+![index.html open in VS Code, with the terminal open in a panel along the bottom of the window][TERMINAL]
+
+Type:
 
 ```
 python3 -m http.server
@@ -201,19 +201,21 @@ python3 -m http.server
 
 and open [http://localhost:8000](http://localhost:8000) in your browser. `localhost` is your own computer, acting as a web server for itself; the address only works on your machine and nobody else can reach it. If the command doesn't work (Windows sometimes doesn't have `python3` set up), just ask the agent to start a local server for you and tell you the address.
 
-<!-- IMAGE: the terminal with http.server running, and the sandbox open in a browser tab at localhost:8000. "You should end up with something that looks like the below." -->
+You should end up with something that looks like this:
 
-Now turn off your wifi and reload the page. It should still work. If it doesn't, the page is fetching something from the internet, and it won't work on the course site either. Tell the agent.
+![The street tree sandbox open in a browser at localhost][LOCALHOST]
 
-Then check it the way you'd check anything: at the starting values, in 2015, does the total match your notebook? Move a slider and see if the number moves the way you'd expect. It's fine if it's a little off; you'll write about that.
+So what do we have? I immediately notice a couple of things:
+- I didn't specify the design of the sandbox too much in my prompt... and paid dearly for it. To my eye, this looks quite boring and mediocre.
+- the description panel on the left is incredibly verbose, and writes way more than I gave it. In my experience this is always a struggle with ai models - even if you tell them exactly what to say, their training is to elaborate. 
 
-<!-- IMAGE: the finished street tree sandbox at 2045 with planting turned up, for comparison. -->
+When you are finished, you can end the server with `ctrl+c`.
 
-For the assignment, this `index.html` is what you'll upload to the [Assignment 4](/assignments/assignment-04/) submission, along with your `prompt.md`.
+For the assignment, the `index.html` for your own personal sandbox is what you'll upload to the [Assignment 4](/assignments/assignment-04/) submission, along with your `prompt.md`.
 
 ## What you did
 
-You wrote a rule down precisely enough that a machine could build it, and then you checked whether it did. You didn't write the code yourself. The risk of working this way is that the model will make a decision wherever the prompt didn't, and it won't tell you it has done so. The prompt is where you prevent that, and the notebook is how you check whether it happened.
+You wrote a rule down precisely enough that a machine could build it, and then you checked whether it did. Good job! But note that the risk of working this way is that the model will make a decision wherever the prompt didn't, and it won't tell you it has done so. The prompt is where you prevent that, and the notebook is how you check whether it happened.
 
 ## Assignment 4
 
@@ -223,3 +225,7 @@ Do the same for the forecast you sketched in Assignment 3. Details on the [assig
 Module by Adam Vosburgh, Fall 2026.
 
 [VSCODE]: /tutorials/images/w4/vscode-claude-code-extension.png
+[WORKSPACE]: /tutorials/images/w4/tutorial-4-workspace.png
+[QUESTIONS]: /tutorials/images/w4/agent-first-questions.png
+[TERMINAL]: /tutorials/images/w4/terminal-open.png
+[LOCALHOST]: /tutorials/images/w4/sandbox-localhost.png
