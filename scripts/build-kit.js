@@ -20,7 +20,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const src = path.join(root, 'kit');
 const dest = path.join(root, 'static/kit');
 
-const FILES = ['README.txt', 'AGENTS.md', 'CLAUDE.md', '.gitignore'];
+const FILES = ['AGENTS.md', 'CLAUDE.md', '.gitignore'];
 const COPIES = ['AGENTS.md', 'CLAUDE.md'];
 const FOLDER = 'smt-kit/';
 
