@@ -101,7 +101,15 @@ At the end of all of this, your workspace should look like the below:
 
 ## The prompt
 
-```
+Below is the prompt - the natural language instruction that we are going to give to the AI model about what we would like to make. Once you give your completed prompt to an AI model, it will complete what is called "inference" - where it generates a prediction (a response) based off of new previously unseen data (your prompt.)
+
+Here I am trying to provide as much context as possible for what I am trying to make. I even included a chart of what the data should look like when joined and generated. It is always best to include as much information as possible in this stage - the more time you spend on this the better. This can include open questions -  if you have desires or objectives that aren't fully figured out, including them is helpful to narrow down the possible responses that the model could give you. Ideally if you spend a few hours working on your assignment, almost all of the time goes into writing the prompt and the research behind that.
+
+The approach to the prompt below is quite similar to how I personally go about writing software with natural lanugage. One thing you will see left out of this prompt is any note about the website infrastructure, or decisions purely related to programming (e.g. what javascript packages we are using, how this is being hosted, all of those things.) In this case that can be simplified because my website will be the deployment environment for all of your projects, and the `agents.md` will describe that to the model you are using.
+
+I recommend reading the below prompt line by line, and then save this as `prompt.md` in the root of your `tutorial-4` folder, meaning the top level, next to `AGENTS.md` and `data` rather than inside a folder. In VS Code, right-click in the empty space below your files in the Explorer, choose `New File...`, name it `prompt.md`, paste your prompt in, and save. The `.md` makes it a markdown file, which is plain text. 
+
+``` {.wrap}
 ### Overview
 
 I am making a sandbox in the style of the course simmodeltwin.net. There should be more information in the agents.md about what this specifically means, but in short it is a web-based simulation that contains some data, some rule for how to apply that data, a clock for running the rule forward in time, and some sliders that will let us change the variables and assumptions in the dataset. If an agents.md with more context is missing from this session, please do not complete this prompt, and direct the person running this to tutorial 4. 
@@ -170,8 +178,6 @@ Here is an unordered list of what the interactive should have:
 
 Okay, that is all, please let me know if you have any questions or if anything is not clear.
 ```
-
-Save this as `prompt.md` in the root of your `tutorial-4` folder, meaning the top level, next to `AGENTS.md` and `data` rather than inside a folder. In VS Code, right-click in the empty space below your files in the Explorer, choose `New File...`, name it `prompt.md`, paste your prompt in, and save. The `.md` makes it a markdown file, which is plain text.
 
 ## Refinements
 

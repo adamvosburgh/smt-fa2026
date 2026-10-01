@@ -1,0 +1,20 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "yang-qiaochu-poppy",
+  "title": "Dark Kitchens, Rising Rents?",
+  "gallery_text": "A speculative model exploring how dark kitchens may reshape commercial rent by creating platform value in low-cost urban spaces. It combines delivery demand, platform visibility, GMV, and local rent to estimate where rent pressure may emerge over the next year.",
+  "description": "",
+  "params": {},
+  "primary": "assets/003.png",
+  "app_version": "0.1.0",
+  "submitted": "2026-10-01T11:23:51.882Z",
+  "assets": [
+    {
+      "path": "assets/003.png",
+      "type": "image/png",
+      "bytes": 1060582
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

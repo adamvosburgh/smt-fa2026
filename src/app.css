@@ -229,6 +229,13 @@ pre code {
   padding: 0;
 }
 
+/* Prose in a code block (a prompt to paste), opted in per block with
+   ``` {.wrap} - other code keeps scrolling sideways. */
+pre code.wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Syntax highlighting (Prism-based) */
 .token.comment,
 .token.prolog,

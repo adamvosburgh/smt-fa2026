@@ -1,0 +1,25 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "liu-eric",
+  "title": "Sponge City",
+  "gallery_text": "An interactive map that simulates the volume of rainfall against the uneven surface, in elevation and permeability, of NYC.",
+  "description": "",
+  "params": {},
+  "primary": "assets/eric_liu_sponge_city.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-10-01T11:37:12.986Z",
+  "assets": [
+    {
+      "path": "assets/eric_liu_sponge_city.pdf",
+      "type": "application/pdf",
+      "bytes": 182186
+    }
+  ],
+  "pages": [
+    "pages/1.jpg",
+    "pages/2.jpg"
+  ],
+  "page_count": 2,
+  "cover_file": "cover.jpg"
+}
