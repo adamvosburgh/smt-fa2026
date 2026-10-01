@@ -77,6 +77,10 @@ Put these datasets in your `Original` folder. You can find them in the course fo
 
 Now download [smt-kit.zip](/kit/smt-kit.zip) and unzip it. Inside is a folder called `smt-kit`, with a file called `AGENTS.md` and a couple of others. Move everything inside `smt-kit` into your `tutorial-4` folder, next to `data`. `AGENTS.md` is a set of instructions I've written for your agent: what a sandbox is in this class, what the file it makes has to look like, and how I'd like it to work with you. Every coding agent reads a file with this name when it starts up in a folder, so you don't have to do anything with it except leave it where it is. Feel free to read it, though.
 
+After that setup, your folder should look like the below:
+
+![The tutorial-4 folder in Finder, with AGENTS.md and CLAUDE.md next to the data folder, and the three datasets inside data > Original][FOLDER]
+
 ### Open the folder in VS Code
 
 In VS Code, `File` > `Open Folder` and choose `tutorial-4`. 
@@ -225,6 +229,7 @@ Do the same for the forecast you sketched in Assignment 3. Details on the [assig
 Module by Adam Vosburgh, Fall 2026.
 
 [VSCODE]: /tutorials/images/w4/vscode-claude-code-extension.png
+[FOLDER]: /tutorials/images/w4/tutorial-4-folder.png
 [WORKSPACE]: /tutorials/images/w4/tutorial-4-workspace.png
 [QUESTIONS]: /tutorials/images/w4/agent-first-questions.png
 [TERMINAL]: /tutorials/images/w4/terminal-open.png
