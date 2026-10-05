@@ -1,0 +1,25 @@
+{
+  "sandbox": "assignment-03",
+  "kind": "assignment",
+  "student": "agrawal-ishika",
+  "title": "Benches- too hot/too wet?",
+  "gallery_text": "A sketch of a model that estimates how many hours each bench in Central Park is too hot or too wet to sit on, from June to November. It uses hourly weather, sunlight and tree cover, then repeats the season with the warmer summers expected in the 2050s.",
+  "description": "",
+  "params": {},
+  "primary": "assets/Assignment3_Ishika_Agrawal.pdf",
+  "app_version": "0.1.0",
+  "submitted": "2026-10-01T13:35:53.024Z",
+  "assets": [
+    {
+      "path": "assets/Assignment3_Ishika_Agrawal.pdf",
+      "type": "application/pdf",
+      "bytes": 6526
+    }
+  ],
+  "pages": [
+    "pages/1.jpg",
+    "pages/2.jpg"
+  ],
+  "page_count": 2,
+  "cover_file": "cover.jpg"
+}

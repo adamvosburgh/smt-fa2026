@@ -15,9 +15,7 @@ which is the open-source release of the original SimCity engine.
 | License | GNU GPL v3, with additional terms. See `vendor/LICENSE` and `vendor/COPYING`. |
 | Name license | Micropolis Public Name License. See `vendor/MicropolisPublicNameLicense.md`. |
 
-"MICROPOLIS" is a registered trademark of Micropolis GmbH, licensed to the
-authors of the Micropolis city simulation and its source code as a courtesy of
-the owner.
+Micropolis is a registered trademark of [Micropolis Corporation (Micropolis GmbH)](https://www.micropolis.com) and is licensed here as a courtesy of the owner under the Micropolis Public Name License.
 
 ## What was taken
 
@@ -54,11 +52,6 @@ This sandbox is called **A City Simulator, Opened Up**. It is not called
 Micropolis and it is not called SimCity. It is a modified version of micropolisJS and it does not
 imply endorsement by Micropolis GmbH, by Graeme McCutcheon, or by anyone
 associated with the original Micropolis or SimCity.
-
-> **For Adam.** The exact attribution wording this page should carry is one of
-> the open questions in the build doc. What is written above is a placeholder
-> that states the facts; read `vendor/MicropolisPublicNameLicense.md` and settle
-> the wording before the site is public.
 
 ## Redistribution
 
