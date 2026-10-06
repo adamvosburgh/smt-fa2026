@@ -1,0 +1,31 @@
+{
+  "sandbox": "assignment-04",
+  "kind": "assignment",
+  "student": "cui-mere",
+  "title": "After the Call",
+  "gallery_text": "After the Call is an interactive sensitivity study of Greenpoint’s 2015 noise-related 311 archive.  It resamples real historical weekdays and lets visitors change nighttime reporting assumptions to see how reported complaint patterns and service workload might change, while distinguishing reports from actual sound.",
+  "description": "",
+  "params": {},
+  "primary": "assets/screenshot.png",
+  "link": "https://mere0125.github.io/assignment-4-greenpoint/",
+  "answers": {
+    "process": "The hardest part was translating a visual idea into a precise rule. I had to decide what one record meant, what could honestly be simulated, and which assumptions should remain adjustable.",
+    "result": "The result is an interactive map and hourly chart that makes the difference between the 2015 record and a modeled reporting scenario visible. I like the visual language and the controls, although the map can still feel sparse because it shows a short time window.",
+    "unexpected": "I did not expect categories with hundreds of annual records to appear so infrequently when shown hour by hour. That led me to keep the previous six hours as a faint trail and to clarify that the model represents 311 reporting not actual sound."
+  },
+  "app_version": "0.1.0",
+  "submitted": "2026-10-06T17:49:01.845Z",
+  "assets": [
+    {
+      "path": "assets/screenshot.png",
+      "type": "image/png",
+      "bytes": 848749
+    },
+    {
+      "path": "assets/prompt.md",
+      "type": "text/markdown",
+      "bytes": 5933
+    }
+  ],
+  "cover_file": "cover.jpg"
+}

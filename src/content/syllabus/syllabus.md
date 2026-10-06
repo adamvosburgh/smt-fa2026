@@ -179,11 +179,12 @@ consider adding red plenty excerpt?
 -->
 
 #### Readings due
-House, Brian. "Stalking the Smart City." *Urban Omnibus*, 2019.
+[House, Brian. "Stalking the Smart City." *Urban Omnibus*, 2019.](https://urbanomnibus.net/2019/05/stalking-smart-city/)
 
 Halpern, Orit, Robert Mitchell, and Bernard Dionysius Geoghegan. "The Smartness Mandate: Notes toward a Critique." *Grey Room* 68 (2017).
 
-Weckert, Simon. "Google Maps Hacks." 2020. [Five minutes; browse the project.]
+[Weckert, Simon. "Google Maps Hacks." 2020.](https://www.simonweckert.com/googlemapshacks.html)
+*Five minutes; browse the project.*
 
 Optional: Mattern, Shannon. *A City Is Not a Computer: Other Urban Intelligences*. Princeton University Press, 2021. [Selections]
 
