@@ -151,7 +151,7 @@ KPF 42nd street
 look for others
 -->
 
-#### Readings due
+#### Readings due (in course folder or linked)
 Turkle, Sherry. *Simulation and Its Discontents*. MIT Press, 2009. [What Does Simulation Want (Introduction), New Ways of Knowing / New Ways of Forgetting]
 
 Corner, James. "The Agency of Mapping." 2014.
@@ -178,7 +178,7 @@ consider adding red plenty excerpt?
 
 -->
 
-#### Readings due
+#### Readings due (in course folder or linked)
 [House, Brian. "Stalking the Smart City." *Urban Omnibus*, 2019.](https://urbanomnibus.net/2019/05/stalking-smart-city/)
 
 Halpern, Orit, Robert Mitchell, and Bernard Dionysius Geoghegan. "The Smartness Mandate: Notes toward a Critique." *Grey Room* 68 (2017).
@@ -205,7 +205,7 @@ The same three documents for your own Assignment 3 sketch, plus the sandbox the 
 
 From Forrester's *Urban Dynamics* through SimCity to the present: the city simulated as a system of coefficients. The rules of a game are arguments about how a city works, and playing is one way of reading those arguments. 
 
-#### Readings due
+#### Readings due (in course folder or linked)
 [Baker, Kevin T. "Model Metropolis." *Logic Magazine*, 2019.](https://logicmag.io/play/model-metropolis/)
 
 Vettese, Troy and Drew Pendergrass. *Half-Earth Socialism*. Verso, 2022. [Selections, and play the game.]
@@ -233,7 +233,7 @@ One page: the group, a title, 100 words, which sandbox or brief it extends, the 
 
 Generative models that claim to simulate the world, and the claim that "spatial intelligence" is the next stage of AI development. The curse of dimensionality, and what the world looks like from inside a model with a very large number of dimensions. In class: an activity with embeddings, and possibly a sandbox built on AlphaEarth, if it comes together.
 
-#### Readings due
+#### Readings due (in course folder or linked)
 Crawford, Kate. *Atlas of AI*. Yale University Press, 2021. [pp. 1–21 and selections]
 
 *Please watch:* Kurgan, Laura, Adeline Chum, Michael Krisch, Adam Vosburgh, and Jia Zhang. "The Curse of Dimensionality." Venice Architecture Biennale, 2025.
