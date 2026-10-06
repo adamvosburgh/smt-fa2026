@@ -186,7 +186,10 @@ Halpern, Orit, Robert Mitchell, and Bernard Dionysius Geoghegan. "The Smartness 
 [Weckert, Simon. "Google Maps Hacks." 2020.](https://www.simonweckert.com/googlemapshacks.html)
 *Five minutes; browse the project.*
 
+<!-- can't find my copy!
 Optional: Mattern, Shannon. *A City Is Not a Computer: Other Urban Intelligences*. Princeton University Press, 2021. [Selections]
+
+-->
 
 #### Tutorial 4 due – From a Notebook to a Sandbox
 The three documents (brief, build doc, code) worked through on the street tree sandbox.
@@ -200,10 +203,10 @@ The same three documents for your own Assignment 3 sketch, plus the sandbox the 
 
 ### 10/15 | Week 6 | Games, and Simulation as Play {#week-6}
 
-From Forrester's *Urban Dynamics* through SimCity to the present: the city simulated as a system of coefficients. The rules of a game are arguments about how a city works, and playing is one way of reading those arguments. In class we play [A City Simulator, Opened Up](/sandboxes/coefficients/), describe its behavior, and find the coefficient that changes what kind of city it makes.
+From Forrester's *Urban Dynamics* through SimCity to the present: the city simulated as a system of coefficients. The rules of a game are arguments about how a city works, and playing is one way of reading those arguments. 
 
 #### Readings due
-Baker, Kevin T. "Model Metropolis." *Logic Magazine*, 2019.
+[Baker, Kevin T. "Model Metropolis." *Logic Magazine*, 2019.](https://logicmag.io/play/model-metropolis/)
 
 Vettese, Troy and Drew Pendergrass. *Half-Earth Socialism*. Verso, 2022. [Selections, and play the game.]
 
