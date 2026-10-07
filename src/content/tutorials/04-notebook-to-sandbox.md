@@ -107,7 +107,7 @@ Here I am trying to provide as much context as possible for what I am trying to 
 
 The approach to the prompt below is quite similar to how I personally go about writing software with natural lanugage. One thing you will see left out of this prompt is any note about the website infrastructure, or decisions purely related to programming (e.g. what javascript packages we are using, how this is being hosted, all of those things.) In this case that can be simplified because my website will be the deployment environment for all of your projects, and the `agents.md` will describe that to the model you are using.
 
-I recommend reading the below prompt line by line, and then save this as `prompt.md` in the root of your `tutorial-4` folder, meaning the top level, next to `AGENTS.md` and `data` rather than inside a folder. In VS Code, right-click in the empty space below your files in the Explorer, choose `New File...`, name it `prompt.md`, paste your prompt in, and save. The `.md` makes it a markdown file, which is plain text. 
+I recommend reading the below prompt line by line, and then save this as `prompt.md` in the root of your `tutorial-4` folder, meaning the top level, next to `AGENTS.md` and `data` rather than inside a folder. In VS Code, right-click in the empty space below your files in the Explorer, choose `New File...`, name it `prompt.md`, paste the prompt below in, and save. The `.md` makes it a markdown file, which is plain text. 
 
 ``` {.wrap}
 ### Overview

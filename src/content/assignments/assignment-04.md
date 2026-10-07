@@ -24,7 +24,7 @@ questions:
     label: "What was unexpected, or different from what you wanted?"
 ---
 
-### Due: 10/8, for the pin-up
+### Due: 10/8
 
 ### What
 

@@ -186,6 +186,7 @@
   }
   .prompt { margin-top: 2.5rem; max-width: 80ch; }
   .prompt h2 { font-size: 0.95rem; margin: 0 0 0.75rem; }
+  .prompt pre { margin: 0; max-height: 24rem; overflow-y: auto; }
   .prompt .open { font-size: 0.72rem; margin: 1rem 0 0; }
   .desc { margin-top: 2rem; max-width: 60ch; }
   .answers { margin-top: 2rem; max-width: 60ch; font-size: 0.9rem; }
