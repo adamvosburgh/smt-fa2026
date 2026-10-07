@@ -8,6 +8,8 @@ devnotes: true
 published: false
 ---
 
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
+
 Notes from building the [ADU Forecast for Queens](/sandboxes/pencil/) sandbox. Pipeline: `data/scripts/pencil.py`. Component: `src/lib/sandboxes/pencil/`.
 
 ![the sandbox at its defaults](/covers/pencil.png#img-full)

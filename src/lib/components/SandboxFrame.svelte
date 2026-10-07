@@ -197,10 +197,9 @@
       const h2 = panelSize.assumptions?.h ?? 0;
       return { x: w - MARGIN - size.w, y: above.y + h2 + GAP };
     }
-    // Metrics: a strip under the map, aligned with it. The build doc said
-    // "centered, max-width 70% of the viewport", which was written before the
-    // map was inset - at 70% of the stage it ran under the right-hand panels.
-    // The map's own width is what "under the map" means now.
+    // Metrics: a strip under the map, aligned with it. Not "centered, max-width
+    // 70% of the viewport": once the map was inset, 70% of the stage ran under
+    // the right-hand panels. The map's own width is what "under the map" means.
     const left = (panelSize.description?.w ?? 0) + MARGIN * 2;
     return { x: left, y: h - MARGIN - size.h };
   }

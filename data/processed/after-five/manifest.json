@@ -298,7 +298,7 @@
     "dataset_not_used": {
       "id": "w9ak-ipjd",
       "name": "DOB NOW: Build - Job Application Filings",
-      "why": "The build doc named this as the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every job filing number prefixed B, no Manhattan at all (checked 2026-08-31). It cannot repair the legacy dataset's Manhattan coverage, so it is not used."
+      "why": "This looks like the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every job filing number prefixed B, no Manhattan at all (checked 2026-08-31). It cannot repair the legacy dataset's Manhattan coverage, so it is not used."
     },
     "counts": {
       "legacy_rows": 44754,
@@ -333,7 +333,7 @@
   },
   "district_outlines": {
     "file": "districts.json",
-    "source": "NYC Community Districts, NYC Open Data 5crt-au7u, BoroCD 101 and 105. The build doc named yfnk-k7r4, which does not exist on the portal."
+    "source": "NYC Community Districts, NYC Open Data 5crt-au7u, BoroCD 101 and 105. yfnk-k7r4 does not exist on the portal; 5crt-au7u is used instead."
   },
   "agents_removed": "The agent layer is gone as of 2026-09-08. agents.json, gateways.json, graph.bin, routes.bin and occupancy.json are still on disk and are no longer read by anything; the sidewalk heat map replaced them. flow.json IS still read - the MTA arrivals and departures are the office channel's curve. There are no gateways in the model any more, so nothing concentrates at a station exit except insofar as buildings stand near one. As of 2026-09-10 the CSCL street centerline export is read again, by afterfive_day.build_grid, for the sidewalk mask - the walkable filter is the same one the agent layer used.",
   "back_test": "CUT. The spec proposed validating against 421-g from 1995. The legacy dataset's earliest pre-filing date is 2000-01-01, so it cannot reach. The model is not validated against history and the card says so.",

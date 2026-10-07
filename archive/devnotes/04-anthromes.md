@@ -8,6 +8,8 @@ devnotes: true
 published: false
 ---
 
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
+
 Notes from building the [Anthromes](/sandboxes/anthromes/) sandbox. Pipeline: `data/scripts/anthromes.py`. Component: `src/lib/sandboxes/anthromes/`.
 
 ![the sandbox at 2000 AD](/covers/anthromes.png#img-full)

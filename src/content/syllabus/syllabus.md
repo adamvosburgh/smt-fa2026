@@ -217,12 +217,6 @@ Gerber, Andri. "When Theory Falters and Simulations Seduce: Environmental Games 
 
 Chang, Alenda Y. *Playing Nature: Ecology in Video Games.* University of Minnesota Press, 2019. [Selections]
 
-#### Tutorial 5, 6 or 7 due
-[TBD. Three short tutorials, of which you pick one. Likely candidates: preparing a Rhino model for the sunlight sandbox, reading data from a sensor into a space, and making spatial data out of plain text.]
-
-#### Assignment 5 due
-[TBD. Pick one of Tutorials 5, 6 or 7; submit the result]
-
 #### [Projects to review](/resources/references/#week-6)
 
 ### 10/22 | Week 7 | Proposal Workshop {#week-7}
@@ -260,7 +254,11 @@ Wiener, Anna. "How Perfectly Can Reality Be Simulated?" *The New Yorker*, April 
 
 Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course folder](https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=pmst9bsd&dl=0)
 
-#### Assignment 6 due – extra credit, optional
+#### Tutorial 5, 6 or 7 due
+[TBD. Three short tutorials, of which you pick one. Likely candidates: preparing a Rhino model for the sunlight sandbox, reading data from a sensor into a space, and making spatial data out of plain text.]
+
+#### Assignment 5 due - extra credit, optional
+[TBD. Pick one of Tutorials 5, 6 or 7; submit the result]
 
 #### [Projects to review](/resources/references/#week-9)
 

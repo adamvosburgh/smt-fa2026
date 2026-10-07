@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 # What was taken, and what was changed
 
 ## The work

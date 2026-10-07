@@ -1,22 +1,15 @@
 #!/usr/bin/env bash
 # Fetch the sources identified on 2026-09-04 for the agent layer and Anthromes.
 #
-# Written by a Cowork session that CANNOT DOWNLOAD ANYTHING. Both shells
-# available to it - the cloud container and the one on Adam's machine - sit
-# behind an egress proxy that refuses every host with
-# "403 CONNECT tunnel failed". Verified 2026-09-04 against bls.gov,
-# api.census.gov and a control host. So every URL here was confirmed by reading
-# the publisher's page or its Socrata metadata through a fetch tool; none of
-# these files has been downloaded, and the first run of this script is also the
-# first real test of it.
+# Every URL here was confirmed on 2026-09-04 by reading the publisher's page or
+# its Socrata metadata; none of these files was downloaded at the time, so the
+# first run of this script is also the first real test of it.
 #
 # Run from the repo root:   bash data/scripts/fetch-sources-0904.sh
 # Nothing overwrites an existing file. Delete a file to refetch it.
 #
 # NOT HERE, ON PURPOSE:
-#   Anthromes inputs - see data/scripts/fetch-anthromes-inputs.sh. And see
-#   section 0 of
-#   "2026-09-04 Build Doc — Finishing The Sandboxes.md".
+#   Anthromes inputs - see data/scripts/fetch-anthromes-inputs.sh.
 #
 # Socrata throttles unauthenticated requests hard. Get an app token at
 # https://data.ny.gov/profile/edit/developer_settings and export it:

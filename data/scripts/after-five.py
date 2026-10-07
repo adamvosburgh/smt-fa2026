@@ -634,8 +634,8 @@ def measure_sf_per_unit(raw):
 DOB_LEGACY = "ic3t-wcy2"     # DOB Job Application Filings (legacy BIS)
 DOB_CO = "pkdm-hqz6"         # DOB NOW: Certificate of Occupancy
 
-# The build doc named w9ak-ipjd, "DOB NOW: Build - Job Application Filings", as
-# the modern half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every
+# w9ak-ipjd, "DOB NOW: Build - Job Application Filings", looks like the modern
+# half of the record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every
 # job filing number prefixed B, no Manhattan at all. Checked 2026-08-31. So it
 # cannot repair the legacy dataset's Manhattan coverage and it is not used.
 #
@@ -1290,7 +1290,7 @@ def main():
             "dataset_not_used": {
                 "id": "w9ak-ipjd",
                 "name": "DOB NOW: Build - Job Application Filings",
-                "why": "The build doc named this as the modern half of the "
+                "why": "This looks like the modern half of the "
                        "record. IT CONTAINS ONLY BROOKLYN - 86,130 rows, every "
                        "job filing number prefixed B, no Manhattan at all "
                        "(checked 2026-08-31). It cannot repair the legacy "

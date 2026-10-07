@@ -8,6 +8,8 @@ devnotes: true
 published: false
 ---
 
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
+
 Notes from building the [Sea Level Flood Map](/sandboxes/bathtub/) sandbox, the first one built and the reference implementation for the others. Pipeline: `data/scripts/bathtub.py`. Component: `src/lib/sandboxes/bathtub/`.
 
 ![the sandbox at its defaults](/covers/bathtub.png#img-full)

@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 # Fetch the sources identified on 2026-09-01 that were not already in data/original/.
 #
-# Written by a session with no network access, from URLs verified by reading the
-# pages through a browser on the same day. Every URL here was seen to resolve;
-# none of these files were downloaded, so the first run is also the first check.
+# Every URL here was verified by reading the page on 2026-09-01 and was seen to
+# resolve; none of these files was downloaded at the time, so the first run is
+# also the first check.
 #
 # Run from the repo root:   bash data/scripts/fetch-sources.sh
 # Nothing here overwrites an existing file. Delete a file to refetch it.
-#
-# See utilities/2026-09-01 Sources — The Unfetched Datasets.md for what each one
-# is for and what is known about it.
 
 set -u
 cd "$(dirname "$0")/../.." || exit 1

@@ -19,8 +19,8 @@ export async function load({ params, fetch }) {
   const meta = bySlug[params.slug];
   if (!meta) error(404, 'no such sandbox');
 
-  // A sandbox held back keeps its URL - old build docs name these slugs, so
-  // they must not 404 - but does not mount. The page says so and shows the
+  // A sandbox held back keeps its URL - links elsewhere may name these slugs,
+  // so they must not 404 - but does not mount. The page says so and shows the
   // status note, which is where the reason is written.
   if (!isPublished(meta)) {
     return {

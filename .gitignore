@@ -48,3 +48,6 @@ Thumbs.db
 /demos/
 
 /temp/
+
+# Working notes and agent instructions, kept off the public repo.
+/utilities/

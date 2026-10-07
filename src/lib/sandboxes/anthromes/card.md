@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 ## Description
 
 A map of the world's land from 10,000 BC to 2017, colored by how people were using it. The colors are the Anthromes classification (anthropogenic biomes): urban, village, cropland, rangeland, seminatural, wild, and their subclasses.[^anthromes] The classification is about a dozen thresholds applied to six input grids from HYDE, a historical land-use database.[^hyde] None of the inputs are observations. HYDE is itself a model that spreads national and regional estimates across cells, and the further back the timeline runs, the more of the map is reconstruction, though it looks equally confident at every date.

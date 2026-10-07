@@ -1,6 +1,4 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
-## What this is
+# What this is
 
 A simulation of where direct sunlight falls inside one floor of a building in a city. The example is the eighth floor of 25 Water Street in Lower Manhattan, as the city's 2014 aerial survey recorded the building, with the 552 surveyed buildings within 3,000 feet standing around it.[^survey] The building was a 22-story office block then; from 2023 it was converted to about 1,300 apartments, with ten stories added and two courtyards cut into the floor plate.[^building] The sandbox shows the plate before that.
 

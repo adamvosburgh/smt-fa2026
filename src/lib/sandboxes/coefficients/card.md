@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 ## Description
 
 A city simulator from 1989 running in the browser with its internal layers showing. On one side the city plays as a game: houses appear, shops follow, traffic thickens, a population number climbs. Beside it, each layer the simulation keeps about the city (land value, crime, pollution, population density, traffic, police coverage, distance from the center) is drawn as it updates, and about twenty constants that the rules are built from are sliders.

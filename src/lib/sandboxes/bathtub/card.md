@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 ## Description
 
 The city publishes its sea level projections as a range, not a single figure. For each future date, the New York City Panel on Climate Change gives four values, the 10th, 25th, 75th and 90th percentiles of its projections, and no middle value.[^npcc] A percentile describes where a value sits in the spread of the panel's projections: the 90th percentile is a rise that 90 percent of the projections fall below. Most published flood maps pick one of the four on the reader's behalf, and most do not say which. This map draws all four.

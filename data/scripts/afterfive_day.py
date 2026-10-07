@@ -92,9 +92,9 @@ def _minutes(t):
 def resident_curve(original):
     """The share of ALL respondents at home in each hour, and the flow it implies.
 
-    §5.3 of the build doc, as written: the ATUS activity file, weights TUFNWGTP,
-    TUYEAR 2020 dropped, weekdays only by TUDIARYDAY 2-6, the weighted share at
-    home (TEWHERE = 1) in each hour of the diary day.
+    The ATUS activity file, weights TUFNWGTP, TUYEAR 2020 dropped, weekdays
+    only by TUDIARYDAY 2-6, the weighted share at home (TEWHERE = 1) in each
+    hour of the diary day.
 
     Three things about the file decide the shape of this code.
 
@@ -767,6 +767,6 @@ def write_district_outlines(out, original, districts):
     return {
         "file": "districts.json",
         "source": "NYC Community Districts, NYC Open Data 5crt-au7u, "
-                  "BoroCD 101 and 105. The build doc named yfnk-k7r4, which "
-                  "does not exist on the portal.",
+                  "BoroCD 101 and 105. yfnk-k7r4 does not exist on the portal; "
+                  "5crt-au7u is used instead.",
     }

@@ -7,7 +7,7 @@
 // writes params through the two closures the frame hands it, so it never holds
 // a stale reference.
 //
-// Two rules from the build doc, enforced here and nowhere else:
+// Two rules, enforced here and nowhere else:
 //
 //   - tick() discards elapsed time while the sandbox has reported
 //     onready(false). Skip, never buffer: Pencil recomputes 246,921 lots on a

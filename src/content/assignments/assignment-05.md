@@ -4,14 +4,14 @@ date: "2026-09-07"
 author: Adam Vosburgh
 sequence: 5
 cat: assignment
-published: true
-publish: "2026-10-08"
+published: false
+publish: "2026-11-05"
 submit: true
 accepts: [model]
 sandbox_ref: sunlight
 ---
 
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+<!-- DRAFT: not ready to publish -->
 
 ### What
 

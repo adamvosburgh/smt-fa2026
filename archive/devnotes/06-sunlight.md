@@ -8,7 +8,7 @@ devnotes: true
 published: false
 ---
 
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
 
 Notes from building the [Direct Sunlight in a Space](/sandboxes/sunlight/) sandbox, the sixth one, and the only one whose input is a file you hand it. Pipeline: `data/scripts/sunlight.py` and `data/scripts/sunlight_3dm.py`. Component: `src/lib/sandboxes/sunlight/`. The convention a model has to follow, and how to prepare one, is [the tutorial](/tutorials/05-a-model-for-the-sun/).
 

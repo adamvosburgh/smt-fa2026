@@ -1,7 +1,6 @@
 // The eleven class dates, Fall 2026. Every Thursday from 10 September to 19
-// November. Transcribed from utilities/memory/course_schedule.md in the vault,
-// and they agree with the Course Overview table at the top of the syllabus -
-// if one of them moves, both have to move.
+// November. They agree with the Course Overview table at the top of the
+// syllabus - if one of them moves, both have to move.
 //
 // Kept here rather than parsed out of the syllabus markdown because the home
 // page's navigation aids need them before the markdown is in the DOM, and

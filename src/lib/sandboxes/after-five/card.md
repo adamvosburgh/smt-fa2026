@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 ## Description
 
 Discussions around converting a glut of commercial real estate space to housing usually focus on what makes those conversions difficult - deep floor plates, construction and labor costs, projections of a commercial rent renaissance, etc. Left out of these discussions is how the urban fabric of central business districts (CBDs) would change if many of these conversions went through. This sandbox is an attempt to visualize street-level activity under different scenarios of conversion.

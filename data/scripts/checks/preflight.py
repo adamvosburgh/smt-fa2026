@@ -1,8 +1,8 @@
 """Preflight: is every dataset the pipelines need actually on disk?
 
-Run this BEFORE handing the repo to Claude Code, and again after any fetch
-script. Every path here is the path the pipeline really constructs - copied from
-the source, not from a build doc - so a PASS means the pipeline will find its
+Run this before running the pipelines, and again after any fetch script.
+Every path here is the path the pipeline really constructs - copied from the
+source, not from documentation - so a PASS means the pipeline will find its
 input, and a FAIL is a real blocker rather than a documentation drift.
 
     python3 data/scripts/checks/preflight.py
@@ -70,8 +70,8 @@ CHECKS = [
   ("ATUS respondent 2003-2025", ORIG/"atusresp-0325.zip", 10**7, True, "fetch-sources-0904.sh #5 - TUDIARYDAY/TUFNWGTP/TUYEAR"),
 
   ("--- the 09-08 reframe (NEW)", None, 0, None, None),
-  ("NYC borough boundaries", ORIG/"borough_boundaries.geojson", 10**6, True, "fetch-sources-0908.sh - pencil.py write_queens_polygon. The build doc's tqmj-j8zm does not exist; the script fetches gthc-hcne and says so."),
-  ("NYC community districts", ORIG/"community_districts.geojson", 10**6, True, "fetch-sources-0908.sh - afterfive_day.district_outlines. The build doc's yfnk-k7r4 does not exist; the script fetches 5crt-au7u and says so."),
+  ("NYC borough boundaries", ORIG/"borough_boundaries.geojson", 10**6, True, "fetch-sources-0908.sh - pencil.py write_queens_polygon. tqmj-j8zm does not exist on the portal; the script fetches gthc-hcne and says so."),
+  ("NYC community districts", ORIG/"community_districts.geojson", 10**6, True, "fetch-sources-0908.sh - afterfive_day.district_outlines. yfnk-k7r4 does not exist on the portal; the script fetches 5crt-au7u and says so."),
   ("bathtub tract outlines (derived)", REPO/"data/processed/bathtub/tracts.json", 10**5, True, "pencil.py reuses these for its own tract choropleth rather than refetching. Run bathtub.py first."),
 
   ("--- 04 Anthromes", None, 0, None, None),
@@ -207,7 +207,7 @@ if z.exists():
 
 print(f"\n{fails} blocking, {warns} advisory")
 if fails:
-    print("\nBlocking items must be on disk before Claude Code starts. Run:")
+    print("\nBlocking items must be on disk before the pipelines run. Run:")
     print("  bash data/scripts/fetch-sources-0904.sh")
     print("  bash data/scripts/fetch-anthromes-inputs.sh")
 sys.exit(fails)

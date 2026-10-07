@@ -29,7 +29,7 @@ is source code - a vendored simulation engine under
 `src/lib/sandboxes/coefficients/vendor/` - so there is nothing here for it and
 nothing in `processed/`.
 
-`checks/` holds preflight.py - run it before believing a handoff has its data -
+`checks/` holds preflight.py - run it before running the pipelines -
 and the measurement scripts behind the pencil frontage method.
 
 Two shared modules sit beside the pipelines:

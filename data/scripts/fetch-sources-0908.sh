@@ -7,9 +7,8 @@
 # representation decision, so the geometry is shipped in the sandbox's data and
 # not baked into the basemap style.
 #
-# THE DATASET IDS IN THE BUILD DOC DO NOT EXIST.
-# "2026-09-08 Build Doc — Sandbox Reframe.md" §8 names `tqmj-j8zm` for the
-# borough boundaries and `yfnk-k7r4` for the community districts. Both return
+# `tqmj-j8zm` (borough boundaries) and `yfnk-k7r4` (community districts) do
+# not exist on the portal. Both return
 # `{"code":"dataset.missing"}` from data.cityofnewyork.us, on the resource
 # endpoint and on the geospatial export endpoint alike - checked 2026-09-08.
 # The ids below were found in the Socrata catalog by NAME and each was verified
@@ -20,7 +19,7 @@
 #   5crt-au7u  Community Districts  71 features, boro_cd as a string
 #                                   ("101" and "105" are both present)
 #
-# Per utilities/memory/fetch_traps.md: Socrata answers `permission_denied` with
+# Socrata answers `permission_denied` with
 # HTTP 200, so this script checks that a JSON body with features came back
 # rather than checking the size or the status code.
 #

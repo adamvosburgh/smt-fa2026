@@ -8,6 +8,8 @@ devnotes: true
 published: false
 ---
 
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
+
 Notes from building [A City Simulator, Opened Up](/sandboxes/coefficients/). No data pipeline. Component and vendored engine: `src/lib/sandboxes/coefficients/`; `NOTICE.md` there records every change to the engine.
 
 ![the sandbox](/covers/coefficients.png#img-full)

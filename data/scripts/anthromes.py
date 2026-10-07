@@ -95,8 +95,8 @@ FACTOR = N_COLS / G_COLS     # 3.6 native cells per 33km cell, NOT an integer:
 # Read off the data, not off documentation: summing the popc bands gives
 # 6.110B at band 57 and 7.407B at band 74, which are the year-2000 and
 # year-2017 world populations - so the decades run to 2000 inclusive and the
-# annual steps start at 2001. (The 09-04 build doc said "every year
-# 2000-2017", which mislabels the modern bands by one slot.)
+# annual steps start at 2001. ("Every year 2000-2017" would mislabel the
+# modern bands by one slot.)
 YEARS = ([f"{y}BC" for y in range(10000, 0, -1000)]
          + ["0AD"] + [f"{y}AD" for y in range(100, 1700, 100)]
          + [f"{y}AD" for y in range(1700, 2001, 10)]

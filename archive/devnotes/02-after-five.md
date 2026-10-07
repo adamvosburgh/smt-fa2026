@@ -8,7 +8,7 @@ devnotes: true
 published: false
 ---
 
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+<!-- THIS IS A DRAFT FROM AN EARLIER ITERATION. NOT VERIFIED TO BE DESCRIPTIVE OF THE CURRENT STATE OF ANY SANDBOX -->
 
 Notes from building the [Office to Residential Conversion](/sandboxes/after-five/) sandbox. Pipeline: `data/scripts/after-five.py`, with `afterfive_massing.py` for the CityGML and `afterfive_day.py` for the day and the sidewalk grid. Component: `src/lib/sandboxes/after-five/`.
 

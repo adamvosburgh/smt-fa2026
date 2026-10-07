@@ -59,8 +59,7 @@ worse than none. Add one only once you have re-downloaded from it and the
 pipeline has run clean.
 
 **One exception, added 2026-09-01.** `data/scripts/fetch-sources.sh` carries URLs
-for the sources identified in `utilities/2026-09-01 Sources — The Unfetched
-Datasets.md`. Those URLs were verified by reading the pages, not by downloading
+for the sources identified on 2026-09-01. Those URLs were verified by reading the pages, not by downloading
 the files, so the first run of that script is also the first test of them. If one
 fails, fix it there rather than adding it to this table.
 

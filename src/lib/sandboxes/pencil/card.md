@@ -1,5 +1,3 @@
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
-
 ## Description
 
 A forecast of how many homes could be added to Queens by one city program for backyard units, Plus One ADU, run by HPD and HCR. An ADU is an accessory dwelling unit, a small self-contained home on a lot that already has a house. The program lends up to $220,000 and grants up to $175,000 per homeowner, on the condition that the unit rents at or below a cap tied to area incomes.[^termsheet]

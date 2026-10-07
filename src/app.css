@@ -2,7 +2,7 @@
 /* Color scheme. Defined once here; nothing else in the site carries a  */
 /* literal color. The two exceptions are deliberate: the inside of a    */
 /* sandbox's floating panels and the maps themselves stay neutral, so   */
-/* that map colors read cleanly (see the sandbox build doc).            */
+/* that map colors read cleanly.                                       */
 /* ------------------------------------------------------------------ */
 :root {
   --bg:      #2424e0;                  /* blue */

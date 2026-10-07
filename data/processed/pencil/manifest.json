@@ -133,7 +133,7 @@
       "method": "LotFront - BldgFront, cutoffs at 2ft and 10ft. OURS.",
       "agrees_with_proxcode": 189606,
       "of_lots_with_both": 246432,
-      "note": "Two independent tests of the same thing, totalled against each other the way BldgClass A*/B* and LandUse 01 are. They disagree a great deal, and that disagreement is the reason to prefer the field DOF recorded over two cutoffs we chose. The build doc that specified this rebuild believed MapPLUTO had no building-type field; it has one."
+      "note": "Two independent tests of the same thing, totalled against each other the way BldgClass A*/B* and LandUse 01 are. They disagree a great deal, and that disagreement is the reason to prefer the field DOF recorded over two cutoffs we chose. MapPLUTO has a building-type field, so the gap proxy is not needed to classify type."
     },
     "interpretation": "DOF says 'semi-attached' and the Zoning Resolution says 'semi-detached'. They are treated here as the same category. That is a reading, not a fact."
   },

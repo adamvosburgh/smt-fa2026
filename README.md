@@ -16,16 +16,16 @@ SMT_SHOW_UNPUBLISHED=1 npm run dev
 ```
 
 No `.env` is needed to run it - copy `.env.example` to `.env` only when you want
-the submission API or the assistant. `npm run data` regenerates the packed grids
-under `static/data/`; they are committed, so you only need it if you change
-`scripts/build-data.js`.
+the submission API or the assistant. The packed grids the sandboxes read are
+generated into `data/processed/` by the Python pipelines in `data/scripts/`;
+`npm run sync` (run automatically by `npm run dev` and `npm run build`) mirrors
+them into `static/data/`, which is not committed.
 
 Deploying: `scripts/deploy.sh`. The upload size limits that live outside the
-repo (`BODY_SIZE_LIMIT`, the Cloudflare tunnel) are in `DEPLOY.md`.
-
-See `CLAUDE.md` for the architecture, the sandbox contract, and the freeze path.
+repo are described beside `BODY_SIZE_LIMIT` in `.env.example`.
 
 ## License
 
-GPLv3. Sandbox 3 (A City Simulator, Opened Up) derives from micropolisJS and additionally
-carries the Micropolis Public Name License - see that sandbox's model card.
+AGPLv3 - see `LICENSE`. Sandbox 3 (A City Simulator, Opened Up) derives from
+micropolisJS, which is GPLv3 and additionally carries the Micropolis Public Name
+License - see that sandbox's model card.

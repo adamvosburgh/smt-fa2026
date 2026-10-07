@@ -1,9 +1,8 @@
 """Check: does the unshared lot edge identify the street frontage in Queens?
 
 Run BEFORE and AFTER rewriting the siting step in pencil.py. This is the
-evidence behind section 5 of
-"2026-09-04 Build Doc — Finishing The Sandboxes.md", and re-running it is how a
-new implementation gets checked against a known answer.
+evidence behind the siting step, and re-running it is how a new implementation
+gets checked against a known answer.
 
 The structural fact it exploits: a NYC tax BLOCK is bounded by streets, so every
 shared lot line lies inside a block. Sharing can be computed block by block and

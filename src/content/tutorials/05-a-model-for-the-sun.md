@@ -4,11 +4,11 @@ date: "2026-09-07"
 author: Adam Vosburgh
 sequence: 5
 cat: tutorial
-published: true
-publish: "2026-10-08"
+published: false
+publish: "2026-11-05"
 ---
 
-<!-- PROSE DRAFT: written for accuracy, not voice. Rewrite against the style guide. -->
+<!-- DRAFT: not ready to publish -->
 
 This module covers preparing a 3D model so that the [sunlight sandbox](/sandboxes/sunlight/) can run a sun study on it. We will not write any code. We will build geometry in Rhino, name the objects, export one file, load it into the sandbox, and read what the sandbox says it found. After this you will be able to take any space you can model and find out where the sun actually reaches inside it.
 

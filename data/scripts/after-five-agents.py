@@ -411,7 +411,7 @@ def occupancy(original):
     """Weighted share of office-occupation workers AT their workplace, by
     15-minute bin - plus the residents' curves, from the same two files.
 
-    Filters per the build doc: TELFS in (1,2) (employed), TUDIARYDAY 2-6
+    Filters: TELFS in (1,2) (employed), TUDIARYDAY 2-6
     (a weekday diary), TEIO1OCD 0010-3550 (the 2018 Census classification's
     management, business, financial and professional block). The multi-year
     weight is TUFNWGTP - TUFINLWGT is the single-year weight and is absent

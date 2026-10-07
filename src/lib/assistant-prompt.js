@@ -41,9 +41,9 @@ const CATALOG = sandboxes
 // of guessing at what a section contains.
 //
 // Measured 2026-09-10: 5,315 chars with all eleven tutorials live, which is
-// roughly 1,300 tokens at four characters per token. The build doc estimated
-// 600 from the bare heading text; the urls, the anchor ids and the indentation
-// are the difference. Live today it is one tutorial and a few hundred bytes.
+// roughly 1,300 tokens at four characters per token. The bare heading text
+// alone would be about 600; the urls, the anchor ids and the indentation are
+// the difference. Live today it is one tutorial and a few hundred bytes.
 //
 // Built per call rather than once at import, because collection() applies
 // isLive(), and isLive() reads the clock. A long-running server would otherwise

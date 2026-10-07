@@ -226,9 +226,8 @@ MIN_ADU_SF = 300
 #   1 detached   2 semi-attached   3 attached   0 not available
 # It is populated on 246,640 of the 246,921 Queens one-to-two-family lots.
 #
-# The build doc classified type from the LotFront - BldgFront gap with cutoffs
-# at 2 and 10 feet, on the belief that MapPLUTO had no building-type field. It
-# does. The gap proxy is still computed, but only as a CROSS-CHECK reported in
+# Type could be classified from the LotFront - BldgFront gap with cutoffs at
+# 2 and 10 feet, if MapPLUTO had no building-type field. It has one. The gap proxy is still computed, but only as a CROSS-CHECK reported in
 # the manifest - the same way BldgClass A*/B* and LandUse 01 are two independent
 # tests of the same thing, reported separately so a disagreement is visible
 # rather than averaged away.
@@ -1792,9 +1791,9 @@ def main():
                         "against each other the way BldgClass A*/B* and LandUse "
                         "01 are. They disagree a great deal, and that "
                         "disagreement is the reason to prefer the field DOF "
-                        "recorded over two cutoffs we chose. The build doc that "
-                        "specified this rebuild believed MapPLUTO had no "
-                        "building-type field; it has one.",
+                        "recorded over two cutoffs we chose. MapPLUTO has a "
+                        "building-type field, so the gap proxy is not needed "
+                        "to classify type.",
             },
             "interpretation": "DOF says 'semi-attached' and the Zoning "
                               "Resolution says 'semi-detached'. They are treated "
