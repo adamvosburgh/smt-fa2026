@@ -202,6 +202,13 @@ body {
   max-width: 100%;
 }
 
+/* Links. Without this the browser's blue shows on the dark ground wherever a
+   component hasn't styled its own; any rule with a class still wins. */
+a {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
 /* Code blocks */
 pre {
   background-color: var(--code-bg);

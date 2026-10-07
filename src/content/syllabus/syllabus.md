@@ -39,10 +39,10 @@ This course sees the critical use of AI tools as a method of expanding the *tech
 | 9/24  | 3    | Agents and Action                         | Tutorial 2           | Assignment 2                 |
 | 10/1  | 4    | Design Practice; Software as Medium       | Tutorial 3           | Assignment 3                 |
 | 10/8  | 5    | Pin-up; Sensing and Measuring             | Tutorial 4           | Assignment 4                 |
-| 10/15 | 6    | Games, and Simulation as Play             | Tutorial 5 or 6 or 7 | Assignment 5                 |
+| 10/15 | 6    | Games, and Simulation as Play             |                      |                              |
 | 10/22 | 7    | Proposal Workshop                         |                      | Draft Proposal               |
 | 10/29 | 8    | "Spatial Intelligence" and "World Models" |                      |                              |
-| 11/5  | 9    | Living in the Model                       |                      | (Assignment 6, extra credit) |
+| 11/5  | 9    | Living in the Model                       | Tutorial 5, 6 or 7   | (Assignment 5, extra credit) |
 | 11/12 | 10   | Show and Tell Day 1                       |                      | Group 1 Final Presentation   |
 | 11/19 | 11   | Show and Tell Day 2                       |                      | Group 2 Final Presentation   |
 | TBD   |      | Website Due                               |                      | Final Project Page           |
@@ -175,7 +175,10 @@ Pin-up of the Assignment 4 sandboxes. Second half: data layers on physical space
 Key word: FEEDBACK
 Cybernetics, this is the cybernetics day
 consider adding red plenty excerpt?
-
+follow the "living in the map" reading discussion from last semester. 
+two sides lecture.
+introduce final project. 
+postpone assignment 5 to later.
 -->
 
 #### Readings due (in course folder or linked)

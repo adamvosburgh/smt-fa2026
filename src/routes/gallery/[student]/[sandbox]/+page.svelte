@@ -150,6 +150,14 @@
   <div class="content-article desc">{@html studentMarkdown(data.sub.description)}</div>
 {/if}
 
+{#if data.promptText}
+  <section class="prompt">
+    <h2>Prompt</h2>
+    <pre><code class="wrap">{data.promptText}</code></pre>
+    <p class="open"><a href="{data.sub.assetBase}{data.promptPath}" target="_blank" rel="noopener">{data.promptPath.replace(/^assets\//, '')}</a></p>
+  </section>
+{/if}
+
 {#if isAssignment && data.sub.answers && (data.assignment?.questions ?? []).length}
   <dl class="answers">
     {#each data.assignment.questions as q (q.key)}
@@ -173,6 +181,12 @@
   h1 { font-size: 1.4rem; margin: 0 0 0.3rem; }
   .who { font-size: 0.75rem; color: var(--fg-dim); margin: 0 0 1rem; }
   .gallery-text { font-size: 0.95rem; line-height: 1.7; max-width: 60ch; margin: 0; }
+  .who a:hover, .extras a:hover, .download a:hover, .work .open a:hover, .prompt .open a:hover {
+    background: var(--hi); color: var(--hi-fg); text-decoration: none;
+  }
+  .prompt { margin-top: 2.5rem; max-width: 80ch; }
+  .prompt h2 { font-size: 0.95rem; margin: 0 0 0.75rem; }
+  .prompt .open { font-size: 0.72rem; margin: 1rem 0 0; }
   .desc { margin-top: 2rem; max-width: 60ch; }
   .answers { margin-top: 2rem; max-width: 60ch; font-size: 0.9rem; }
   .answers dt { font-size: 0.72rem; font-weight: 700; margin-top: 1.1rem; }

@@ -29,6 +29,8 @@ export const FAILURE_MAP = {
   'assignment/bad-type': '#submission',
   'assignment/missing-answer': '#requirements',
   'assignment/bad-link': '#submit',
+  'assignment/no-prompt': '#submission',
+  'assignment/bad-prompt': '#submission',
   'assignment/no-screenshot': '#submit',
   // A model upload is the one assignment kind whose pointer goes to a SANDBOX
   // dev note rather than to the assignment page, because what went wrong is in
@@ -151,8 +153,15 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
     try {
       ok = new URL(String(manifest.link)).protocol === 'https:';
     } catch {}
+    let repo = false;
+    try {
+      repo = new URL(String(manifest.link)).hostname.toLowerCase().replace(/^www\./, '') === 'github.com';
+    } catch {}
     if (!formBoxes.includes('link')) {
       add('assignment/bad-link', `"${a.title}" does not take a link.`);
+    } else if (repo) {
+      // github.com/name/repo is the code; a Pages site is name.github.io/repo.
+      add('assignment/bad-link', 'That is the address of the code on GitHub. Submit the address of the live site, the one that opens your sandbox when you visit it (for GitHub Pages, https://yourname.github.io/project/).');
     } else if (!ok) {
       add('assignment/bad-link', 'The link has to be a full address starting with https://.');
     }
@@ -163,8 +172,21 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
   // is the only cover those submissions get. A PDF's cover is drawn from its
   // first page, and an image is its own.
   const primaryPath = manifest.primary ?? files[0]?.path ?? '';
+  // Nothing on the server draws a cover from an HTML file, so it needs the
+  // screenshot as much as a link does.
   if (formBoxes.includes('screenshot') && !hasCover && (manifest.link || /\.html?$/i.test(primaryPath))) {
     add('assignment/no-screenshot', 'A screenshot is required with an HTML file or a link. It is what Student Work shows.');
+  }
+
+  // A `prompt` box: prompt.md is required and has to be among the files.
+  if (formBoxes.includes('prompt')) {
+    const named = manifest.prompt && files.find((f) => f.path === manifest.prompt);
+    if (!named) add('assignment/no-prompt', 'Your prompt (prompt.md) is required.');
+    else if (!/\.(md|markdown|txt)$/i.test(named.path)) add('assignment/bad-prompt', 'The prompt has to be a .md or .txt file.');
+  }
+  // A `mode` box with a link means the work is the site; without one, an HTML file.
+  if (formBoxes.includes('mode') && !manifest.link && !/\.(html?|pdf)$/i.test(primaryPath)) {
+    add('assignment/no-file', 'Submit either an index.html or a link to your hosted site.');
   }
 
   if (!files.length) {

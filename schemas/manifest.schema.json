@@ -36,6 +36,11 @@
       "maxLength": 2000,
       "description": "Assignment submissions only, where the assignment's `form:` has a `link` box: an https:// address (a GitHub Pages site) handed in in place of, or beside, the file. The gallery page frames it in live mode; the archive keeps the link and the screenshot."
     },
+    "prompt": {
+      "type": "string",
+      "pattern": "^assets/[A-Za-z0-9._-]+$",
+      "description": "Assignment submissions only, where the assignment's `form:` has a `prompt` box: the asset that holds the student's prompt (prompt.md). The gallery page renders it."
+    },
     "student": {
       "type": "string",
       "pattern": "^[a-z0-9-]+$",

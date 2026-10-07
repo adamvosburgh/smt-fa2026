@@ -66,6 +66,7 @@
   let primary = $state(null);
   let screenshot = $state(null);
   let link = $state('');
+  let prompt = $state(null);
   let extras = $state([]);
   let result = $state(null);
   let busy = $state(false);
@@ -74,10 +75,26 @@
 
   const askScreenshot = form.includes('screenshot');
   const askLink = form.includes('link');
-  const linkGiven = $derived(askLink && link.trim() !== '');
+  const askPrompt = form.includes('prompt');
+  // A `mode` box asks which of the two ways the work is handed in: one HTML file
+  // or a hosted site. It decides which boxes below show and which are required.
+  // Without it, the link box is just optional, as it was.
+  const askMode = form.includes('mode');
+  let mode = $state('file');
+  const linkMode = $derived(askMode ? mode === 'link' : askLink);
+  const linkGiven = $derived(linkMode && link.trim() !== '');
+  // A GitHub repository address (github.com/name/repo) is the code, not the
+  // site; the site is name.github.io/repo. Keep in step with validate.js.
+  const repoLink = $derived.by(() => {
+    try {
+      return new URL(link.trim()).hostname.toLowerCase().replace(/^www\./, '') === 'github.com';
+    } catch {
+      return false;
+    }
+  });
   const linkOk = $derived.by(() => {
     try {
-      return new URL(link.trim()).protocol === 'https:';
+      return new URL(link.trim()).protocol === 'https:' && !repoLink;
     } catch {
       return false;
     }
@@ -89,9 +106,10 @@
     askScreenshot && (linkGiven || (primary && !isImage(primary) && !/\.pdf$/i.test(primary.name)))
   );
   const ready = $derived(
-    (primary || (linkGiven && screenshot)) &&
+    (askMode && linkMode ? linkGiven && screenshot : primary || (linkGiven && screenshot)) &&
       (!linkGiven || linkOk) &&
-      (!needScreenshot || screenshot)
+      (!needScreenshot || screenshot) &&
+      (!askPrompt || prompt)
   );
 
   // The upload cap, checked here as soon as a file is chosen so nobody finds out
@@ -102,7 +120,8 @@
   const LIMIT = '50MB';
   const mb = (bytes) => `${(bytes / 1048576).toFixed(1)}MB`;
   const total = $derived(
-    (primary?.size ?? 0) + (linkGiven && !primary ? (screenshot?.size ?? 0) : 0) + extras.reduce((n, f) => n + f.size, 0)
+    (linkMode && askMode ? 0 : (primary?.size ?? 0)) + (linkGiven && (!primary || askMode) ? (screenshot?.size ?? 0) : 0) +
+      (prompt?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0)
   );
   const tooBig = $derived(total > MAX_BYTES);
 
@@ -111,7 +130,7 @@
     result = null;
     const fd = new FormData();
     // With a link and no file, the screenshot is the work the gallery shows.
-    const work = primary ?? (linkGiven ? screenshot : null);
+    const work = askMode && linkMode ? screenshot : (primary ?? (linkGiven ? screenshot : null));
     fd.set(
       'manifest',
       JSON.stringify({
@@ -131,15 +150,17 @@
           : {},
         primary: `assets/${work.name}`,
         link: linkGiven ? link.trim() : undefined,
+        prompt: prompt ? `assets/${prompt.name}` : undefined,
         answers: questions.length ? $state.snapshot(answers) : undefined,
         app_version: '0.1.0'
       })
     );
     fd.append('asset', work, work.name);
+    if (prompt) fd.append('asset', prompt, prompt.name);
     for (const f of extras) fd.append('asset', f, f.name);
     // A 2000px-wide JPEG of the uploaded image, or of the screenshot when the
     // work isn't an image, for the Student Work card and the board.
-    const from = isImage(primary) ? primary : screenshot;
+    const from = isImage(work) ? work : screenshot;
     const cover = from ? await drawCopy(from, { width: 2000 }) : null;
     if (from && !cover && from === screenshot) {
       result = { ok: false, error: 'The screenshot could not be read. Save it as a PNG or JPG and choose it again.' };
@@ -197,7 +218,15 @@
         <textarea bind:value={description} rows="5"
           placeholder="Longer text. Sources, what you did, what it can't see."></textarea>
       </label>
-    {:else if f === 'work'}
+    {:else if f === 'mode'}
+      <fieldset class="mode">
+        <legend>What are you submitting?</legend>
+        <label class="radio"><input type="radio" name="mode" value="file" bind:group={mode} />
+          One <code>index.html</code> (default)</label>
+        <label class="radio"><input type="radio" name="mode" value="link" bind:group={mode} />
+          A website you hosted (GitHub Pages or other)</label>
+      </fieldset>
+    {:else if f === 'work' && !(askMode && linkMode)}
       <label>
         The work ({accepts.join(', ')})
         <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
@@ -256,16 +285,27 @@
         The image Student Work and the board show for your submission.{#if !needScreenshot}
         Needed if the work is an HTML file or a link.{/if}
       </p>
-    {:else if f === 'link'}
+    {:else if f === 'link' && (!askMode || linkMode)}
       <label>
-        Link (optional)
-        <input type="url" bind:value={link} placeholder="https://" />
+        Link{askMode ? '' : ' (optional)'}
+        <input type="url" bind:value={link} placeholder="https://yourname.github.io/project/" />
       </label>
-      {#if linkGiven && !linkOk}
+      {#if linkGiven && repoLink}
+        <p class="err size">That is the address of the code on GitHub. Paste the address of the live
+          site instead, the one that opens your sandbox when you visit it. For GitHub Pages it looks
+          like https://yourname.github.io/project/.</p>
+      {:else if linkGiven && !linkOk}
         <p class="err size">The link has to be a full address starting with https://.</p>
       {/if}
-      <p class="hint">A GitHub Pages address, in place of the file. With a link, the file is
-        optional and the screenshot is required.</p>
+      <p class="hint">The address of the live site, not of the repository. Open it in a private
+        window first to check that it loads.{#if !askMode} A link replaces the file; the screenshot
+        is then required.{/if}</p>
+    {:else if f === 'prompt'}
+      <label>
+        Your prompt (<code>prompt.md</code>)
+        <input type="file" accept=".md,.markdown,.txt" onchange={(e) => (prompt = e.currentTarget.files[0] ?? null)} />
+      </label>
+      <p class="hint">Required. It is shown on your page beside the work.</p>
     {/if}
   {/each}
 
@@ -318,6 +358,10 @@
     margin-top: 0.3rem; padding: 0.4rem; border: 1px solid var(--rule);
     background: var(--code-bg); color: var(--fg); }
   .hint { font-size: 0.66rem; color: var(--fg-dim); margin: -0.5rem 0 1rem; }
+  .mode { border: 0; padding: 0; margin: 0 0 0.9rem; }
+  .mode legend { font-size: 0.72rem; font-weight: 700; padding: 0; margin-bottom: 0.4rem; }
+  .mode .radio { font-weight: 400; margin-bottom: 0.35rem; font-size: 0.78rem; }
+  .mode .radio input { display: inline-block; width: auto; margin: 0 0.4rem 0 0; vertical-align: middle; }
   .site { border: 1px solid var(--rule); padding: 0.6rem 0.8rem 0.2rem; margin: 0 0 0.9rem; }
   .site legend { font-size: 0.7rem; font-weight: 700; padding: 0 0.3rem; }
   .site .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 0.6rem; }

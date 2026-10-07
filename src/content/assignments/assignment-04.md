@@ -9,8 +9,9 @@ publish: "2026-10-01"
 submit: true
 accepts: [html, pdf]
 due: "10/8"
-# The screenshot and link boxes are new; see the build doc, site changes.
-form: [title, gallery_text, work, extras, screenshot, link]
+# `mode` asks index.html or hosted site and decides which of work / link /
+# screenshot show; `prompt` is the required prompt.md.
+form: [title, gallery_text, mode, work, link, screenshot, prompt, extras]
 questions:
   - key: process
     label: "What was this process like?"
@@ -38,7 +39,7 @@ Take your sketch from Assignment 3 and revise it into a prompt: one markdown fil
 
 ### Requirements
 
-- One self-contained `index.html`: styles, script and data inline, no network requests, under 50MB. It has to open from disk with the wifi off. That means no map tiles; draw your own context from data, or design it so that a basemap isn't necessary. If the file can't be made to fit, or you'd rather work this way, put the sandbox on GitHub Pages and submit the link instead, with a screenshot. (and don't worry if you don't know what that means)
+- One self-contained `index.html`: styles, script and data inline, no network requests, under 50MB. It has to open from disk with the wifi off. That means no map tiles; draw your own context from data, or design it so that a basemap isn't necessary. If the file can't be made to fit, or you'd rather work this way, host the sandbox as a website (GitHub Pages works) and submit the address of the live site instead, with a screenshot. Use the address of the site (`yourname.github.io/project`), not the address of the repository on github.com. (and don't worry if you don't know what that means)
 - Real data only. Prompting an LLM for a dataset will ALWAYS produce fabricated data. If the data you wanted doesn't exist, scale the sandbox to the data that does.
 - The sliders follow the order in `AGENTS.md`: clock, then how it's drawn, then the main levers, then the finer assumptions.
 - Like the street trees sandbox, it has a title, a description of what it's trying to show, its limitations, and citations for the data it uses.
@@ -47,10 +48,14 @@ Take your sketch from Assignment 3 and revise it into a prompt: one markdown fil
 
 ### Submit
 
-- `index.html` as the work, with `prompt.md` as an extra file (or the GitHub Pages link, as above)
-- a screenshot of the sandbox, for the gallery
+The form first asks what you are submitting: one `index.html` (the default), or a website you hosted.
+
+- one `index.html`, a screenshot of the sandbox for the gallery, and your `prompt.md`; or
+- the link to your hosted site, a screenshot of the sandbox for the gallery, and your `prompt.md`
 - a two-sentence gallery text
 - three short reflections, on the form: what was this process like? how is the result? what was unexpected, or different from what you wanted?
+
+Your `prompt.md` is shown on your page beside the work.
 
 If the sandbox doesn't come together, that's ok. Upload the prompt, a PDF of screenshots showing how far it got, and the reflections, and that counts as a complete submission.
 

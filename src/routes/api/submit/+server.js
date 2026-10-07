@@ -91,6 +91,10 @@ export async function POST({ request }) {
     const name = String(manifest.primary).split(/[\\/]/).pop().replace(/[^A-Za-z0-9._-]/g, '_');
     manifest.primary = `assets/${name}`;
   }
+  if (manifest.kind === 'assignment' && manifest.prompt) {
+    const name = String(manifest.prompt).split(/[\\/]/).pop().replace(/[^A-Za-z0-9._-]/g, '_');
+    manifest.prompt = `assets/${name}`;
+  } else delete manifest.prompt;
   // An empty link is no link. A link on anything but an assignment is dropped.
   if (manifest.kind !== 'assignment' || manifest.link === '' || manifest.link === null) delete manifest.link;
   manifest.assets = files.map(({ path, type, bytes }) => ({ path, type, bytes }));

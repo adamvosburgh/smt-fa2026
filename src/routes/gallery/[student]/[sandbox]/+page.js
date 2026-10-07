@@ -19,8 +19,21 @@ export async function load({ params, fetch }) {
   const sub = await one(fetch, params.student, params.sandbox);
   if (!sub) error(404, 'not found');
   const isAssignment = sub.kind === 'assignment';
+  // The student's prompt, where the assignment asked for one. Submissions made
+  // before the form had a prompt box may still carry a prompt.md as an extra.
+  let promptText = null;
+  const promptPath =
+    sub.prompt ?? (sub.assets ?? []).find((a) => /^assets\/prompt\.(md|markdown|txt)$/i.test(a.path))?.path;
+  if (isAssignment && promptPath) {
+    try {
+      const res = await fetch(`${sub.assetBase}${promptPath}`);
+      if (res.ok) promptText = await res.text();
+    } catch {}
+  }
   return {
     sub,
+    promptText,
+    promptPath,
     meta: isAssignment ? null : bySlug[params.sandbox],
     assignment: isAssignment ? doc('assignments', params.sandbox) : null,
     // An assignment that takes a .glb is run rather than shown: the page mounts
