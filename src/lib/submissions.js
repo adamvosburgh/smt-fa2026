@@ -22,6 +22,7 @@
 import { error } from '@sveltejs/kit';
 import { MODE } from './data.js';
 import { SHOW_UNPUBLISHED } from './visibility.js';
+import { doc } from './content.js';
 
 // The mode is a build-time constant, so in the live build these globs fold away
 // and no manifest is baked into the bundle.
@@ -30,7 +31,22 @@ const manifests =
 const reviews =
   MODE === 'archive' ? import.meta.glob('/src/submissions/*/*/review.json', { eager: true }) : {};
 
-function parse({ student, sandbox, manifest: m, review }) {
+// Answers to a question marked `private: true` in the assignment's frontmatter
+// are for Adam, not the gallery. They stay in the manifest on disk; this drops
+// them before a submission is sent to the browser or rendered.
+export function withoutPrivateAnswers(m, sandbox) {
+  if (!m?.answers) return m;
+  const hidden = (doc('assignments', sandbox)?.questions ?? [])
+    .filter((q) => q?.private)
+    .map((q) => q.key);
+  if (!hidden.length) return m;
+  const answers = { ...m.answers };
+  for (const key of hidden) delete answers[key];
+  return { ...m, answers };
+}
+
+function parse({ student, sandbox, manifest: raw, review }) {
+  const m = withoutPrivateAnswers(raw, sandbox);
   const assetBase =
     MODE === 'archive' ? `/submissions/${student}/${sandbox}/` : `/api/submissions/${student}/${sandbox}/`;
   return {

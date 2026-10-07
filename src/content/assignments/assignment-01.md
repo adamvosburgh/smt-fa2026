@@ -13,16 +13,20 @@ due: "9/17"
 # title, gallery_text, description, work, extras.
 form: [title, work, gallery_text]
 # Short-answer questions, asked on the form after the boxes above. The answers
-# travel with the submission and show on the student's gallery page.
+# travel with the submission and show on the student's gallery page, except
+# those marked `private: true`, which stay in the manifest on disk and are never
+# sent to the browser (see withoutPrivateAnswers in src/lib/submissions.js).
 questions:
   - key: program
     label: The program you are enrolled in
   - key: registration
     label: What is your registration status?
     options: ["I'm registered", "Waitlisted", "Neither"]
+    private: true
   - key: staying
     label: Do you think you'll stay in this class?
     options: ["Definitely", "Still shopping"]
+    private: true
   - key: interest
     label: Why you are interested in this class
   - key: suggestions

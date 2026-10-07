@@ -11,6 +11,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 import { config } from './config.js';
 import { SHOW_UNPUBLISHED } from '$lib/visibility.js';
+import { withoutPrivateAnswers } from '$lib/submissions.js';
 
 const run = promisify(execFile);
 const SLUG = /^[a-z0-9-]+$/;
@@ -112,7 +113,12 @@ export async function listSubmissions() {
       // Held-back submissions are dropped here, not in the browser, so they are
       // never sent at all.
       if (!SHOW_UNPUBLISHED && manifest.published === false) continue;
-      rows.push({ student, sandbox, manifest, review: await readJson(path.join(dir, 'review.json')) });
+      rows.push({
+        student,
+        sandbox,
+        manifest: withoutPrivateAnswers(manifest, sandbox),
+        review: await readJson(path.join(dir, 'review.json'))
+      });
     }
   }
   return rows;

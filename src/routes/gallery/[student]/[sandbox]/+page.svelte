@@ -161,7 +161,7 @@
 {#if isAssignment && data.sub.answers && (data.assignment?.questions ?? []).length}
   <dl class="answers">
     {#each data.assignment.questions as q (q.key)}
-      {#if data.sub.answers[q.key]}
+      {#if !q.private && data.sub.answers[q.key]}
         <dt>{q.label}</dt>
         <dd>{data.sub.answers[q.key]}</dd>
       {/if}

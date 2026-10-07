@@ -1,0 +1,14 @@
+# simmodeltwin.net
+#
+# Student work on this site belongs to the students who made it. It is shown
+# here for the course and is not licensed for scraping, indexing, or use as
+# training data for any machine learning model. The course materials are open;
+# the paths below are not.
+
+User-agent: *
+Disallow: /gallery/
+Disallow: /api/
+Disallow: /submissions/
+Disallow: /boards/
+Disallow: /whiteboard
+Disallow: /enroll

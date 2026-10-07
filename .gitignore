@@ -51,3 +51,11 @@ Thumbs.db
 
 # Working notes and agent instructions, kept off the public repo.
 /utilities/
+
+# Student work stays on this machine and off the public repo. The live site
+# reads src/submissions/ from disk at request time; the archive build needs it
+# on disk wherever the freeze is run. src/boards/ is filled from var/ by
+# scripts/export-boards.js at the freeze, and is student work too.
+/src/submissions/*
+!/src/submissions/.gitkeep
+/src/boards/
