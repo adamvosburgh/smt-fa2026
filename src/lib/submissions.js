@@ -79,6 +79,13 @@ export async function submissions(fetch) {
     .sort((a, b) => (b.submitted ?? '').localeCompare(a.submitted ?? ''));
 }
 
+// The student's prompt file, where the assignment asked for one: the form's
+// prompt box, or for submissions made before the form had one, a prompt.md
+// handed in as an extra. Takes a manifest or a parsed submission.
+export function promptPathOf(m) {
+  return m.prompt ?? (m.assets ?? []).find((a) => /^assets\/prompt\.(md|markdown|txt)$/i.test(a.path))?.path ?? null;
+}
+
 export async function bySandbox(fetch, slug) {
   return (await submissions(fetch)).filter((s) => s.sandbox === slug);
 }

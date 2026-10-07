@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { submissions, one } from '$lib/submissions.js';
+import { submissions, one, promptPathOf } from '$lib/submissions.js';
 import { MODE } from '$lib/data.js';
 import { bySlug } from '$lib/sandboxes/index.js';
 import { doc } from '$lib/content.js';
@@ -19,11 +19,8 @@ export async function load({ params, fetch }) {
   const sub = await one(fetch, params.student, params.sandbox);
   if (!sub) error(404, 'not found');
   const isAssignment = sub.kind === 'assignment';
-  // The student's prompt, where the assignment asked for one. Submissions made
-  // before the form had a prompt box may still carry a prompt.md as an extra.
   let promptText = null;
-  const promptPath =
-    sub.prompt ?? (sub.assets ?? []).find((a) => /^assets\/prompt\.(md|markdown|txt)$/i.test(a.path))?.path;
+  const promptPath = promptPathOf(sub);
   if (isAssignment && promptPath) {
     try {
       const res = await fetch(`${sub.assetBase}${promptPath}`);

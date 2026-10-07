@@ -117,8 +117,11 @@ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const size = (v) => clamp(v, LIMITS.minSize, LIMITS.maxSize);
 const coord = (v) => clamp(v, -1e6, 1e6);
 const str = (v, max) => String(v ?? '').slice(0, max);
-// A tile's links point at Student Work and nowhere else.
+// A tile's links point at Student Work and nowhere else, except an interactive
+// tile's hosted site.
 const localUrl = (v, prefix) => (typeof v === 'string' && v.startsWith(prefix) && !/[\s"'<>]/.test(v) ? v : null);
+const submissionUrl = (v) => localUrl(v, '/api/submissions/') ?? localUrl(v, '/submissions/');
+const httpsUrl = (v) => (typeof v === 'string' && v.length <= 500 && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : null);
 
 // Build a clean element from whatever the client sent: known fields only, the
 // author and time from the token, sizes clamped. Null if it cannot be one.
@@ -168,6 +171,13 @@ function cleanElement(raw, who, elements) {
       ? raw.pages.slice(0, MAX_PAGES).map((v) => localUrl(v, '/api/submissions/') ?? localUrl(v, '/submissions/'))
       : [];
     el.pages = pages.length > 1 && pages.every(Boolean) ? pages : [];
+    // `board_tile: interactive`: the work to run in a frame (a submission file,
+    // or the student's hosted https site) and the prompt file to show under it.
+    if (raw.variant === 'interactive') {
+      el.variant = 'interactive';
+      el.live = submissionUrl(raw.live) ?? httpsUrl(raw.live);
+      el.prompt = submissionUrl(raw.prompt);
+    }
   }
   return el;
 }

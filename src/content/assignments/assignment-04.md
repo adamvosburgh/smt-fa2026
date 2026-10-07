@@ -12,6 +12,9 @@ due: "10/8"
 # `mode` asks index.html or hosted site and decides which of work / link /
 # screenshot show; `prompt` is the required prompt.md.
 form: [title, gallery_text, mode, work, link, screenshot, prompt, extras]
+# The whiteboard tile: the live interactive (click to run) and the prompt
+# under it. Absent means the usual cover tile.
+board_tile: interactive
 questions:
   - key: process
     label: "What was this process like?"

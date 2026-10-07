@@ -10,6 +10,7 @@ import { stat, open } from 'node:fs/promises';
 import path from 'node:path';
 import { doc } from '$lib/content.js';
 import { newId } from '$lib/board/model.js';
+import { promptPathOf } from '$lib/submissions.js';
 import { listSubmissions, submissionDir } from './repo.js';
 import { get, create, apply, SITE } from './boards.js';
 
@@ -21,6 +22,18 @@ const TILE = { w: 480, h: 600 };
 const TEXT_H = 240;
 // The page-turning buttons under a multi-page PDF's cover.
 const PAGER_H = 48;
+// An assignment with `board_tile: interactive` puts the student's prompt under
+// the text, in a scrolling box as tall as the text block.
+const PROMPT_H = 240;
+//
+// TODO: the draft proposal (late October) is a third tile format: a multi-page
+// PDF, a set of images, links to data and reference projects. Before building
+// it, settle that assignment's form, then move the tile formats into one list
+// (src/lib/board/tiles.js: layout, fields, validation per format) with one
+// component per format in Whiteboard.svelte, picked by `variant`, instead of
+// adding a third set of branches here, in cleanElement (boards.js) and in the
+// canvas. The board is built at the due moment, so this has to ship before it.
+
 const PITCH = { x: 720, y: 840 };
 const GAP = PITCH.y - TILE.h;
 
@@ -132,6 +145,7 @@ async function build(slug) {
     if (c >= 0 && c < COLUMNS) bottoms[c] = Math.max(bottoms[c], t.y + t.h);
   }
 
+  const interactive = a.board_tile === 'interactive';
   const ops = [];
   let z = Object.values(board.elements).reduce((m, e) => Math.max(m, e.z ?? 0), 0);
   for (const s of rows) {
@@ -144,7 +158,17 @@ async function build(slug) {
     if (file) cover = base + file;
     const ratio = file ? await coverRatio(path.join(dir, file)) : null;
     const pages = (s.manifest.pages ?? []).map((p) => base + p);
-    const h = (ratio ? Math.round(TILE.w * ratio) + TEXT_H : TILE.h) + (pages.length > 1 ? PAGER_H : 0);
+    // The interactive is the hosted site, or else an uploaded HTML file. A
+    // submission with neither (the PDF fallback) shows its cover or pages.
+    const live = !interactive ? null
+      : s.manifest.link ? s.manifest.link
+      : /\.html?$/i.test(s.manifest.primary ?? '') ? base + s.manifest.primary
+      : null;
+    const promptPath = interactive ? promptPathOf(s.manifest) : null;
+    const h =
+      (ratio ? Math.round(TILE.w * ratio) + TEXT_H : TILE.h) +
+      (pages.length > 1 ? PAGER_H : 0) +
+      (promptPath ? PROMPT_H : 0);
 
     const c = bottoms.indexOf(Math.min(...bottoms));
     const y = bottoms[c] + GAP;
@@ -166,7 +190,8 @@ async function build(slug) {
         cover,
         ratio,
         pages,
-        href: `/gallery/${s.student}/${slug}/`
+        href: `/gallery/${s.student}/${slug}/`,
+        ...(interactive ? { variant: 'interactive', live, prompt: promptPath ? base + promptPath : null } : {})
       }
     });
   }
