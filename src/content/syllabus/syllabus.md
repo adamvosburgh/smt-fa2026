@@ -38,7 +38,7 @@ This course sees the critical use of AI tools as a method of expanding the *tech
 | 9/17  | 2    | Data and Representation                   | Tutorial 1           | Assignment 1                 |
 | 9/24  | 3    | Agents and Action                         | Tutorial 2           | Assignment 2                 |
 | 10/1  | 4    | Design Practice; Software as Medium       | Tutorial 3           | Assignment 3                 |
-| 10/8  | 5    | Pin-up; Sensing and Measuring             | Tutorial 4           | Assignment 4                 |
+| 10/8  | 5    | Feedback, Sensing and Measuring             | Tutorial 4           | Assignment 4                 |
 | 10/15 | 6    | Games, and Simulation as Play             |                      |                              |
 | 10/22 | 7    | Proposal Workshop                         |                      | Draft Proposal               |
 | 10/29 | 8    | "Spatial Intelligence" and "World Models" |                      |                              |
