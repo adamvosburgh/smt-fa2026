@@ -102,8 +102,14 @@
   // The screenshot is the cover whenever the work can't be drawn from: a link,
   // or a file that isn't an image. A PDF still gets its first page from the
   // server if no screenshot is given.
+  // With a `mode` box it is asked for from the start, in both modes; only a PDF
+  // or an image as the work lets it go (those draw their own cover).
+  const selfCover = $derived(primary && (isImage(primary) || /\.pdf$/i.test(primary.name)));
   const needScreenshot = $derived(
-    askScreenshot && (linkGiven || (primary && !isImage(primary) && !/\.pdf$/i.test(primary.name)))
+    askScreenshot &&
+      (askMode
+        ? linkMode || !selfCover
+        : linkGiven || (primary && !selfCover))
   );
   const ready = $derived(
     (askMode && linkMode ? linkGiven && screenshot : primary || (linkGiven && screenshot)) &&
