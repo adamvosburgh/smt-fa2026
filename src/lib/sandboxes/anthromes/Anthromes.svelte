@@ -34,7 +34,7 @@
   let stageEl = $state(null);
   let displayCanvas = $state(null);
   let error = $state(null);
-  let loading = $state('reading ten thousand years…');
+  let loading = $state('loading…');
   let manifest = $state(null);
   let hover = $state(null);
   let ledger = $state(null);
@@ -86,7 +86,7 @@
       dense_settlement_density: params.dense_settlement_density ?? 100,
       residential_density: params.residential_density ?? 10,
       populated_density: params.populated_density ?? 1,
-      wild_density: 0.0001,
+      wild_density: params.wild_density ?? 0.0001,
       crops_threshold: params.crops_threshold ?? 0.2,
       grazing_threshold: params.grazing_threshold ?? 0.2,
       rice_threshold: params.rice_threshold ?? 0.2,
@@ -204,20 +204,28 @@
     decodeSparse(D.rice, D.riceOff, y, denseRice);
     decodeSparse(D.irr, D.irrOff, y, denseIrr);
     decodeSparse(D.urb, D.urbOff, y, denseUrb);
+    const th = thresholds();
     classifyYear(yearCodes, popd, crop, graz, denseRice, denseIrr, denseUrb,
-                 D.potveg, D.potvill, thresholds(), D.fracLand);
+                 D.potveg, D.potvill, th, D.fracLand);
 
     const px = img.data;
     const mode_ = params.color_by ?? 'anthrome';
     const m32 = D.method32.subarray(y * nLand, (y + 1) * nLand);
-    let usedArea = 0, wildArea = 0, totalArea = 0, agreeArea = 0;
+    let usedArea = 0, wildArea = 0, totalArea = 0, agreeArea = 0, inhabitedArea = 0;
     for (let i = 0; i < nLand; i++) {
       const o = landIdx[i] * 4;
       const c = yearCodes[i];
+      // Inhabited: people at or above the wild cutoff. Population alone, the
+      // same test the cascade uses for its wild band, so no land-use
+      // threshold changes it.
+      const inhabited = c !== 70 && DENS_LUT[popd[i]] >= th.wild_density;
       let r, g, b;
       if (mode_ === 'used') {
         const t = Math.min(1, (crop[i] + graz[i] + denseUrb[i]) / 255);
         r = 245 - 160 * t; g = 240 - 195 * t; b = 232 - 200 * t;
+      } else if (mode_ === 'inhabited') {
+        const p = c === 70 ? PALETTE[70] : inhabited ? [122, 98, 72] : [236, 234, 228];
+        r = p[0]; g = p[1]; b = p[2];
       } else if (mode_ === 'density') {
         const t = popd[i] / 255;
         r = 245 - 190 * t; g = 243 - 165 * t; b = 235 - 90 * t;
@@ -234,19 +242,21 @@
       if (USED_CODES.has(c)) usedArea += a;
       else if (c >= 61 && c <= 63) wildArea += a;
       if (c === m32[i]) agreeArea += a;
+      if (inhabited) inhabitedArea += a;
     }
     bufCtx.putImageData(img, 0, 0);
     blit();
 
     const fmtPct = (v) => `${(100 * v).toFixed(1)}%`;
     onmetrics?.({
-      'the crossover, when used land first exceeds wild':
+      'first year used land exceeds wild land':
         ledger && !ledgerStale
-          ? (ledger.crossoverYear ?? 'never, under these thresholds')
-          : (ledger ? `${ledger.crossoverYear ?? 'never'} (recomputing…)` : '…'),
+          ? (ledger.crossoverYear ?? 'not by 2017')
+          : (ledger ? `${ledger.crossoverYear ?? 'not by 2017'} (recomputing…)` : '…'),
       [`used land, ${params.year}`]: fmtPct(usedArea / totalArea),
       [`wild land, ${params.year}`]: fmtPct(wildArea / totalArea),
-      'agreement with the published method run at native resolution':
+      [`inhabited land, ${params.year}`]: fmtPct(inhabitedArea / totalArea),
+      'agreement with the same method at native resolution':
         fmtPct(agreeArea / totalArea),
       'land cells classified': nLand.toLocaleString()
     });
@@ -336,7 +346,7 @@
           params.rice_threshold, params.irrigation_threshold,
           params.urban_fraction_threshold, params.urban_density,
           params.dense_settlement_density, params.residential_density,
-          params.populated_density, params.tree_biomes];
+          params.populated_density, params.wild_density, params.tree_biomes];
     if (D) {
       render();
       requestLedger();
@@ -373,7 +383,7 @@
           {#if hover.urb > 0}&nbsp;· urban {hover.urb}%{/if}</i>
         <i>potential vegetation: {hover.potveg}</i>
         {#if hover.firstUsed}
-          <i>first used, under your thresholds: {hover.firstUsed}</i>
+          <i>first classified as used: {hover.firstUsed}</i>
         {/if}
       </div>
     {/if}
@@ -397,21 +407,20 @@
             {/each}
           </div>
         {/each}
+      {:else if params.color_by === 'inhabited'}
+        <span class="note"><i class="sw one" style="background:rgb(122,98,72)"></i>
+          at least one person per {Math.round(1 / (params.wild_density ?? 0.0001)).toLocaleString()} km²
+          of land - HYDE's population estimate, not land use</span>
       {:else if params.color_by === 'disagreement'}
         <span class="note"><i class="sw one" style="background:#aa2d20"></i>
-          classified differently by the same cascade at native resolution -
-          at the default thresholds this is purely what aggregation does to a
-          threshold rule</span>
+          classified differently when the same method runs at native
+          resolution, before aggregation</span>
       {/if}
-      <span class="note">Your cascade, over {manifest.grid.nLand.toLocaleString()}
-        cells of 33km. The drawing is equirectangular and exaggerates the high
-        latitudes; every number is computed with real cell areas instead.</span>
       {#if params.year === '2017AD'}
-        <span class="note">The timeline ends here: 2018–2025 have no input
-          grids in any HYDE release we could obtain.</span>
+        <span class="note">HYDE 3.2's input grids end at 2017.</span>
       {/if}
       {#if ledgerStale && ledger}
-        <span class="note stale">recomputing the ledger…</span>
+        <span class="note stale">recomputing…</span>
       {/if}
     </div>
   {/if}

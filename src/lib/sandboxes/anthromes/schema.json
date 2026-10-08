@@ -91,7 +91,7 @@
         "2017AD"
       ],
       "default": "2000AD",
-      "description": "The 75 HYDE 3.2 time steps: every thousand years, then every century, then every decade, then every year. The timeline ends at 2017 because no HYDE release we could obtain carries input grids for 2018 to 2025.",
+      "description": "The 75 HYDE 3.2 time steps: every thousand years to 0 AD, then every century, then every decade, then every year from 2000. HYDE 3.2's input grids end at 2017.",
       "x-control": "slider"
     },
     "color_by": {
@@ -102,17 +102,19 @@
       "enum": [
         "anthrome",
         "used",
+        "inhabited",
         "density",
         "disagreement"
       ],
       "x-enum-labels": [
         "anthrome",
         "used land",
+        "inhabited land",
         "population",
         "vs published"
       ],
       "default": "anthrome",
-      "description": "The anthrome class; the used fraction of each cell; population density; or where your classification disagrees with the published method run at native resolution before aggregating."
+      "description": "The anthrome class; the used fraction of each cell; whether each cell has people at or above the wild cutoff; population density; or where this classification differs from the same method run at native resolution before aggregation."
     },
     "used_threshold": {
       "type": "number",
@@ -124,7 +126,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "The share of a cell's land that must be cropped, grazed or built before the cell counts as used at all. Published value 20%. This threshold decides the crossover year, and moving it shifts that year by millennia."
+      "description": "The share of a cell's land that must be cropped, grazed or built before a remote or uninhabited cell counts as used. Published value 20%. It applies only in the two lowest population bands. In denser cells, the cropland and grazing thresholds decide on their own."
     },
     "crops_threshold": {
       "type": "number",
@@ -135,7 +137,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "How much of a cell must be cropland before the cell is a cropland anthrome. Published value 20%."
+      "description": "The share of a cell that must be cropland before the cell is a cropland anthrome. Published value 20%."
     },
     "grazing_threshold": {
       "type": "number",
@@ -146,7 +148,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "How much of a cell must be pasture or rangeland before the cell is a grazing anthrome. Published value 20%. The reference code keeps this separate from the crops threshold, so the sandbox does too."
+      "description": "The share of a cell that must be pasture or rangeland before the cell is a grazing anthrome. Published value 20%. The reference code keeps it separate from the cropland threshold."
     },
     "rice_threshold": {
       "type": "number",
@@ -157,7 +159,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "In cells above the dense-settlement population density, the share of irrigated rice that makes the cell a rice village. Published value 20%."
+      "description": "In cells above the dense settlement density, the share of irrigated rice that makes the cell a rice village. Published value 20%."
     },
     "irrigation_threshold": {
       "type": "number",
@@ -168,7 +170,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "The irrigated share that distinguishes irrigated villages and residential irrigated croplands from their unirrigated counterparts. Published value 20%."
+      "description": "The irrigated share that separates irrigated villages and residential irrigated croplands from their rainfed versions. Published value 20%."
     },
     "urban_fraction_threshold": {
       "type": "number",
@@ -179,7 +181,7 @@
       "maximum": 0.6,
       "x-step": 0.01,
       "default": 0.2,
-      "description": "The built-up share that makes a cell urban outright, whatever its population. Published value 20%."
+      "description": "The built-up share that makes a cell urban, whatever its population. Published value 20%."
     },
     "urban_density": {
       "type": "number",
@@ -191,7 +193,7 @@
       "x-step": 100,
       "default": 2500,
       "x-unit": "/km²",
-      "description": "People per square kilometer of land above which a cell is urban regardless of built-up area. Published value 2,500."
+      "description": "People per km² of land above which a cell is urban, whatever its built-up area. Published value 2,500."
     },
     "dense_settlement_density": {
       "type": "number",
@@ -203,7 +205,7 @@
       "x-step": 10,
       "default": 100,
       "x-unit": "/km²",
-      "description": "The lower edge of the dense-settlement and village band. Below it a cell cannot be a village however much rice it grows. Published value 100."
+      "description": "The lower edge of the dense settlement and village band. Below it, a cell cannot be a village. Published value 100."
     },
     "residential_density": {
       "type": "number",
@@ -227,7 +229,28 @@
       "x-step": 0.1,
       "default": 1,
       "x-unit": "/km²",
-      "description": "The line between populated and remote. Below it a cropland is remote cropland however it is farmed. Published value 1."
+      "description": "The line between populated and remote. Below it, a cropland is a remote cropland. Published value 1."
+    },
+    "wild_density": {
+      "type": "number",
+      "title": "Wild cutoff",
+      "x-group": "the population densities",
+      "x-panel": "assumptions",
+      "x-control": "slider",
+      "enum": [
+        0.0001,
+        0.001,
+        0.01,
+        0.1
+      ],
+      "x-enum-labels": [
+        "1 per 10,000 km²",
+        "1 per 1,000 km²",
+        "1 per 100 km²",
+        "1 per 10 km²"
+      ],
+      "default": 0.0001,
+      "description": "The population density below which a cell counts as uninhabited, and so wild. Published value 0.0001 people per km², one person per 10,000 km², a rule in the reference code rather than the paper. The inhabited land view draws this line. If it reaches the populated density, the remote classes are empty."
     },
     "tree_biomes": {
       "type": "integer",
@@ -238,7 +261,7 @@
       "maximum": 12,
       "x-step": 1,
       "default": 8,
-      "description": "How many of the fifteen potential-vegetation classes count as potentially forested. The classes are ordered from tropical evergreen forest down to polar ice, and the published cascade draws the line after class 8. Moving it redraws the woodland-dryland boundary of every seminatural and wild cell."
+      "description": "How many of the fifteen potential vegetation classes count as forested. The classes run from tropical evergreen forest to polar ice, and the published cascade draws the line after class 8. It decides whether seminatural and wild cells are woodland or dryland."
     }
   },
   "required": [
@@ -251,6 +274,6 @@
     "residential_density",
     "populated_density"
   ],
-  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. The year is an enum of 75 HYDE time steps drawn as a slider over the stop index (x-control: slider); the value stays the enum member so validation is unchanged. Property order is the panel's reading order: the clock and the view, then the six land-use thresholds with the used-land one first, then the four density cutoffs, then the one vegetation control.",
+  "$comment": "Slider granularity is x-step, never multipleOf - see bathtub's schema for why. The year is an enum of 75 HYDE time steps drawn as a slider over the stop index (x-control: slider); the value stays the enum member so validation is unchanged. Property order is the panel's reading order: the clock and the view, then the six land-use thresholds with the used-land one first, then the five density cutoffs with the wild cutoff last, then the one vegetation control. The wild cutoff is a numeric enum drawn as a slider (x-control: slider), so it moves in four fixed steps.",
   "$id": "https://simmodeltwin.net/schemas/sandbox/anthromes.json"
 }
