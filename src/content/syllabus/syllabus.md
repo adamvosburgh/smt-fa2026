@@ -211,11 +211,12 @@ From Forrester's *Urban Dynamics* through SimCity to the present: the city simul
 #### Readings due (in course folder or linked)
 [Baker, Kevin T. "Model Metropolis." *Logic Magazine*, 2019.](https://logicmag.io/play/model-metropolis/)
 
-Vettese, Troy and Drew Pendergrass. *Half-Earth Socialism*. Verso, 2022. [Selections, and play the game.]
+Vettese, Troy and Drew Pendergrass. *Half-Earth Socialism*. Verso, 2022. [Introduction]
+*[Half-Earth Socialism is paired with a simulation / deck-builder video game. In addition to the introduction, please read the overview on this page, and play the video game.](https://www.half.earth/about)*
 
-Gerber, Andri. "When Theory Falters and Simulations Seduce: Environmental Games as Counter-Models." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783055/](https://www.e-flux.com/architecture/simulation/6783055/when-theory-falters-and-simulations-seduce-environmental-games-as-counter-models)
+[Gerber, Andri. "When Theory Falters and Simulations Seduce: Environmental Games as Counter-Models." *e-flux Architecture*, Simulation, 2026.](https://www.e-flux.com/architecture/simulation/6783055/when-theory-falters-and-simulations-seduce-environmental-games-as-counter-models)
 
-Chang, Alenda Y. *Playing Nature: Ecology in Video Games.* University of Minnesota Press, 2019. [Selections]
+Optional: Chang, Alenda Y. *Playing Nature: Ecology in Video Games.* University of Minnesota Press, 2019. [Introduction]
 
 #### [Projects to review](/resources/references/#week-6)
 
