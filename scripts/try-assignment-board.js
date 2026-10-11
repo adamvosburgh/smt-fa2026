@@ -20,7 +20,9 @@
 // var/boards is touched.
 //
 // The test submissions say they are test submissions, in the title and the
-// gallery text. Their covers are flat colored PNGs.
+// gallery text. Their covers are flat colored PNGs. For a `board_tile: spread`
+// assignment each one also gets between 1 and 12 pages and their sizes, as a
+// PDF upload would, and a group.
 //
 // Once it is up, submitting through the assignment page on this server (as
 // yourself) lands in var/try-board/submissions and shows the late-tile path:
@@ -86,7 +88,23 @@ if (from) {
     const student = `test-student-${String(i).padStart(2, '0')}`;
     const sub = path.join(dir, 'submissions', student, slug);
     await mkdir(path.join(sub, 'assets'), { recursive: true });
-    await writeFile(path.join(sub, 'cover.png'), flatPng(800, 600, (i * 137) % 360));
+    // A spread's test pages come in three paper sizes, in points: letter,
+    // 11x17 landscape, and a 16:9 slide, drawn at one pixel per point.
+    const paper = [[612, 792], [1224, 792], [960, 540]][i % 3];
+    const spread = fm.board_tile === 'spread';
+    const [cw, ch] = spread ? paper : [800, 600];
+    await writeFile(path.join(sub, 'cover.png'), flatPng(cw, ch, (i * 137) % 360));
+    const pages = [];
+    if (spread) {
+      const n = 1 + ((i * 5) % 12);
+      await mkdir(path.join(sub, 'pages'), { recursive: true });
+      for (let p = 1; p <= n && n > 1; p++) {
+        // Named .jpg, as pdf-pages.js names them and as the file route serves
+        // them; the browser reads the PNG inside regardless.
+        await writeFile(path.join(sub, 'pages', `${p}.jpg`), flatPng(cw, ch, (i * 137 + p * 23) % 360));
+        pages.push(`pages/${p}.jpg`);
+      }
+    }
     await writeFile(
       path.join(sub, 'manifest.json'),
       JSON.stringify(
@@ -96,6 +114,9 @@ if (from) {
           student,
           title: `Test submission ${i}`,
           gallery_text: 'A test submission made by scripts/try-assignment-board.js. Not real work.',
+          ...(fm.board_tile === 'spread' ? { group: `Test student ${i}, another test student` } : {}),
+          ...(pages.length ? { pages } : {}),
+          ...(spread ? { page_sizes: Array.from({ length: Math.max(pages.length, 1) }, () => paper) } : {}),
           description: '',
           params: {},
           primary: 'assets/none',

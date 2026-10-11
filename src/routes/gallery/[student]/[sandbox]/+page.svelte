@@ -71,7 +71,8 @@
   {:else}
     <p class="who">{data.sub.student} · <a href="/sandboxes/{data.sub.sandbox}/">{data.meta?.title}</a></p>
   {/if}
-  <p class="gallery-text">{data.sub.gallery_text}</p>
+  {#if data.sub.group}<p class="who">Group: {data.sub.group}</p>{/if}
+  {#if data.sub.gallery_text}<p class="gallery-text">{data.sub.gallery_text}</p>{/if}
 </header>
 
 {#if isModel}

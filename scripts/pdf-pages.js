@@ -6,8 +6,8 @@
 //   node scripts/pdf-pages.js --dry    # list them, change nothing
 //
 // A one-page PDF gets nothing. For two or more pages it writes pages/1.jpg ...
-// into the submission folder and adds `pages` and `page_count` to the
-// manifest. The cover is left as it is. A whiteboard tile made before this
+// into the submission folder and adds `pages`, `page_count` and `page_sizes`
+// to the manifest. The cover is left as it is. A whiteboard tile made before this
 // still shows only the cover; a tile made after it can page through.
 import { readdir, readFile, writeFile, rename } from 'node:fs/promises';
 import path from 'node:path';
@@ -52,6 +52,7 @@ for (const student of await folders(dir)) {
     }
     manifest.pages = r.pages;
     manifest.page_count = r.count;
+    if (r.sizes.length) manifest.page_sizes = r.sizes;
     // By rename, as repo.js does: /api/submissions reads these folders live.
     const tmp = `${file}.tmp`;
     await writeFile(tmp, JSON.stringify(manifest, null, 2));

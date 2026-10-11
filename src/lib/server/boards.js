@@ -30,6 +30,7 @@ import {
   maxZ,
   summarize
 } from '$lib/board/model.js';
+import { FORMATS } from '$lib/board/tiles.js';
 
 export { SLUG, summarize };
 export { slugify } from '$lib/board/model.js';
@@ -118,7 +119,8 @@ const size = (v) => clamp(v, LIMITS.minSize, LIMITS.maxSize);
 const coord = (v) => clamp(v, -1e6, 1e6);
 const str = (v, max) => String(v ?? '').slice(0, max);
 // A tile's links point at Student Work and nowhere else, except an interactive
-// tile's hosted site.
+// tile's hosted site. The format-specific ones are checked with these by
+// src/lib/board/tiles.js.
 const localUrl = (v, prefix) => (typeof v === 'string' && v.startsWith(prefix) && !/[\s"'<>]/.test(v) ? v : null);
 const submissionUrl = (v) => localUrl(v, '/api/submissions/') ?? localUrl(v, '/submissions/');
 const httpsUrl = (v) => (typeof v === 'string' && v.length <= 500 && /^https:\/\/[^\s"'<>]+$/.test(v) ? v : null);
@@ -161,6 +163,7 @@ function cleanElement(raw, who, elements) {
     if (!el.student) return null;
     el.title = str(raw.title, LIMITS.title);
     el.gallery_text = str(raw.gallery_text, LIMITS.text);
+    el.group = str(raw.group, LIMITS.group);
     el.cover = localUrl(raw.cover, '/api/submissions/') ?? localUrl(raw.cover, '/submissions/');
     el.href = localUrl(raw.href, '/gallery/');
     // Height over width of the cover, so it shows uncropped. Tiles made before
@@ -171,12 +174,11 @@ function cleanElement(raw, who, elements) {
       ? raw.pages.slice(0, MAX_PAGES).map((v) => localUrl(v, '/api/submissions/') ?? localUrl(v, '/submissions/'))
       : [];
     el.pages = pages.length > 1 && pages.every(Boolean) ? pages : [];
-    // `board_tile: interactive`: the work to run in a frame (a submission file,
-    // or the student's hosted https site) and the prompt file to show under it.
-    if (raw.variant === 'interactive') {
-      el.variant = 'interactive';
-      el.live = submissionUrl(raw.live) ?? httpsUrl(raw.live);
-      el.prompt = submissionUrl(raw.prompt);
+    // Any format but the default cover: its own fields, cleaned by its entry in
+    // src/lib/board/tiles.js (the interactive's frame and prompt, for one).
+    if (raw.variant !== 'cover' && Object.hasOwn(FORMATS, raw.variant)) {
+      el.variant = raw.variant;
+      Object.assign(el, FORMATS[raw.variant].clean(raw, { submissionUrl, httpsUrl }));
     }
   }
   return el;

@@ -45,7 +45,7 @@ This course sees the critical use of AI tools as a method of expanding the *tech
 | 11/5  | 9    | Living in the Model                       | Tutorial 5, 6 or 7   | (Assignment 5, extra credit) |
 | 11/12 | 10   | Show and Tell Day 1                       |                      | Group 1 Final Presentation   |
 | 11/19 | 11   | Show and Tell Day 2                       |                      | Group 2 Final Presentation   |
-| TBD   |      | Website Due                               |                      | Final Project Page           |
+| 12/21 |      | Website Due                               |                      | Final Project Page           |
 
 ## Weekly Schedule, Readings, and Assignments
 
@@ -200,7 +200,7 @@ The three documents (brief, build doc, code) worked through on the street tree s
 #### Assignment 4 due – Sketch to Sandbox
 The same three documents for your own Assignment 3 sketch, plus the sandbox the agent builds from them.
 
-#### Final project assigned
+#### [Final project](/assignments/final-project/) assigned
 
 #### [Projects to review](/resources/references/#week-5)
 
@@ -222,10 +222,10 @@ Optional: Chang, Alenda Y. *Playing Nature: Ecology in Video Games.* University 
 
 ### 10/22 | Week 7 | Proposal Workshop {#week-7}
 
-I will meet with each group individually to go over draft proposals. Sign up for a time on the day of class.
+We will go over draft proposals in groups and in desk crits, and assign presentation days.
 
-#### Draft Proposal due
-One page: the group, a title, 100 words, which sandbox or brief it extends, the data and where it comes from, and three references.
+#### [Draft Proposal](/assignments/draft-proposal/) due
+Three ideas, each with a title and thesis statement, an expected outcome, datasets and references, as a multi-page PDF.
 
 ### 10/29 | Week 8 | "Spatial Intelligence" and "World Models" {#week-8}
 
@@ -269,8 +269,8 @@ Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course folder](https:
 ### 11/19 | Week 11 | Show and Tell Day 2 – Last Class {#week-11}
 #### Group 2 Presentations
 
-### TBD | Website Due {#website-due}
-#### Final project pages due on the course website
+### 12/21 | Website Due {#website-due}
+#### [Final project](/assignments/final-project/) pages due on the course website, 9am
 
 ## Class Requirements and Grading
 

@@ -11,31 +11,15 @@ import path from 'node:path';
 import { doc } from '$lib/content.js';
 import { newId } from '$lib/board/model.js';
 import { promptPathOf } from '$lib/submissions.js';
+import { FORMATS, formatOf } from '$lib/board/tiles.js';
 import { listSubmissions, submissionDir } from './repo.js';
 import { get, create, apply, SITE } from './boards.js';
 
-// A tile is as tall as its cover at full width, uncropped, plus room for the
-// title, name, gallery text and link below it. Tiles go into whichever column
-// is shortest, so the grid comes out irregular when the covers differ.
-const COLUMNS = 4;
-const TILE = { w: 480, h: 600 };
-const TEXT_H = 240;
-// The page-turning buttons under a multi-page PDF's cover.
-const PAGER_H = 48;
-// An assignment with `board_tile: interactive` puts the student's prompt under
-// the text, in a scrolling box as tall as the text block.
-const PROMPT_H = 240;
-//
-// TODO: the draft proposal (late October) is a third tile format: a multi-page
-// PDF, a set of images, links to data and reference projects. Before building
-// it, settle that assignment's form, then move the tile formats into one list
-// (src/lib/board/tiles.js: layout, fields, validation per format) with one
-// component per format in Whiteboard.svelte, picked by `variant`, instead of
-// adding a third set of branches here, in cleanElement (boards.js) and in the
-// canvas. The board is built at the due moment, so this has to ship before it.
-
-const PITCH = { x: 720, y: 840 };
-const GAP = PITCH.y - TILE.h;
+// How a tile is laid out and sized, and what it carries beyond the common
+// fields, is per format: see src/lib/board/tiles.js. Tiles go into whichever
+// column is shortest, so the grid comes out irregular when the covers differ.
+// The space between one tile and the next in a column.
+const GAP = 240;
 
 async function isFile(p) {
   try {
@@ -105,6 +89,8 @@ export function buildAssignmentBoard(slug) {
 async function build(slug) {
   const a = doc('assignments', slug);
   if (!a || a.submit !== true) throw new Error(`boards: ${slug} is not an assignment that takes uploads`);
+  const variant = formatOf(a);
+  const format = FORMATS[variant];
 
   let created = false;
   if (!(await get(slug))) {
@@ -118,7 +104,7 @@ async function build(slug) {
           type: 'text',
           x: 0,
           y: -160,
-          w: COLUMNS * PITCH.x - (PITCH.x - TILE.w),
+          w: format.columns * (format.pitch ?? 720) - GAP,
           h: 80,
           z: 1,
           locked: true,
@@ -138,16 +124,9 @@ async function build(slug) {
   );
   shuffle(rows);
 
-  // Where each column ends now. Tiles already on the board stay where they are.
-  const bottoms = Array(COLUMNS).fill(-GAP);
-  for (const t of tiles) {
-    const c = Math.round(t.x / PITCH.x);
-    if (c >= 0 && c < COLUMNS) bottoms[c] = Math.max(bottoms[c], t.y + t.h);
-  }
-
-  const interactive = a.board_tile === 'interactive';
-  const ops = [];
-  let z = Object.values(board.elements).reduce((m, e) => Math.max(m, e.z ?? 0), 0);
+  // Each new tile's fields and size first, since a format without a fixed
+  // pitch (the spread) spaces its columns by the widest tile.
+  const made = [];
   for (const s of rows) {
     const dir = submissionDir(s.student, slug);
     const base = `/api/submissions/${s.student}/${slug}/`;
@@ -158,18 +137,26 @@ async function build(slug) {
     if (file) cover = base + file;
     const ratio = file ? await coverRatio(path.join(dir, file)) : null;
     const pages = (s.manifest.pages ?? []).map((p) => base + p);
-    // The interactive is the hosted site, or else an uploaded HTML file. A
-    // submission with neither (the PDF fallback) shows its cover or pages.
-    const live = !interactive ? null
-      : s.manifest.link ? s.manifest.link
-      : /\.html?$/i.test(s.manifest.primary ?? '') ? base + s.manifest.primary
-      : null;
-    const promptPath = interactive ? promptPathOf(s.manifest) : null;
-    const h =
-      (ratio ? Math.round(TILE.w * ratio) + TEXT_H : TILE.h) +
-      (pages.length > 1 ? PAGER_H : 0) +
-      (promptPath ? PROMPT_H : 0);
+    const extra = format.fields({ manifest: s.manifest, base, promptPath: promptPathOf(s.manifest) });
+    made.push({ s, cover, ratio, pages, extra, ...format.size({ ratio, pages, ...extra }) });
+  }
+  // Once a board has a second column, its distance stays what it was, so a late
+  // tile lines up with the rest.
+  const placed = tiles.map((t) => t.x).filter((x) => x > 0);
+  const pitch =
+    format.pitch ??
+    (placed.length ? Math.min(...placed) : Math.max(0, ...tiles.map((t) => t.w), ...made.map((m) => m.w)) + GAP);
 
+  // Where each column ends now. Tiles already on the board stay where they are.
+  const bottoms = Array(format.columns).fill(-GAP);
+  for (const t of tiles) {
+    const c = Math.round(t.x / pitch);
+    if (c >= 0 && c < format.columns) bottoms[c] = Math.max(bottoms[c], t.y + t.h);
+  }
+
+  const ops = [];
+  let z = Object.values(board.elements).reduce((m, e) => Math.max(m, e.z ?? 0), 0);
+  for (const { s, cover, ratio, pages, extra, w, h } of made) {
     const c = bottoms.indexOf(Math.min(...bottoms));
     const y = bottoms[c] + GAP;
     bottoms[c] = y + h;
@@ -178,20 +165,21 @@ async function build(slug) {
       element: {
         id: newId(),
         type: 'tile',
-        x: c * PITCH.x,
+        x: c * pitch,
         y,
-        w: TILE.w,
+        w,
         h,
         z: ++z,
         locked: true,
         student: s.student,
         title: s.manifest.title ?? '',
         gallery_text: s.manifest.gallery_text ?? '',
+        group: s.manifest.group ?? '',
         cover,
         ratio,
         pages,
         href: `/gallery/${s.student}/${slug}/`,
-        ...(interactive ? { variant: 'interactive', live, prompt: promptPath ? base + promptPath : null } : {})
+        ...(variant === 'cover' ? {} : { variant, ...extra })
       }
     });
   }

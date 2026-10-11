@@ -8,7 +8,6 @@
     "sandbox",
     "student",
     "title",
-    "gallery_text",
     "params",
     "app_version"
   ],
@@ -53,9 +52,13 @@
     },
     "gallery_text": {
       "type": "string",
-      "minLength": 1,
       "maxLength": 600,
-      "description": "Two sentences. Text that might accompany a work of art."
+      "description": "Two sentences. Text that might accompany a work of art. Required by validate.js for every sandbox submission, and for an assignment unless its `form:` leaves the box out."
+    },
+    "group": {
+      "type": "string",
+      "maxLength": 400,
+      "description": "Assignment submissions only, where the assignment's `form:` has a `group` box: the people in the student's group, as they typed them. Shown on the gallery page and the whiteboard tile."
     },
     "description": {
       "type": "string",

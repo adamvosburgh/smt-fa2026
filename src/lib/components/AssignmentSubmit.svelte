@@ -32,11 +32,15 @@
   const accepts = Array.isArray(doc.accepts) && doc.accepts.length ? doc.accepts : ['image', 'pdf'];
 
   // Which boxes the form shows, and in what order, from the assignment's `form:`
-  // frontmatter. Title, gallery text and the work are always asked for, because
-  // the server requires them; an assignment can leave out description and extras.
+  // frontmatter. Title and the work are always asked for, because the server
+  // requires them. Gallery text is asked for unless `form:` leaves it out, and
+  // is then required; the same goes for a `group` box. Keep in step with
+  // validateAssignment in src/lib/server/validate.js.
   const FORM_DEFAULT = ['title', 'gallery_text', 'description', 'work', 'extras'];
   const form = [...(Array.isArray(doc.form) && doc.form.length ? doc.form : FORM_DEFAULT)];
-  for (const f of ['title', 'gallery_text', 'work']) if (!form.includes(f)) form.push(f);
+  for (const f of ['title', 'work']) if (!form.includes(f)) form.push(f);
+  const askGalleryText = form.includes('gallery_text');
+  const askGroup = form.includes('group');
 
   // Short-answer questions from the assignment's `questions:` frontmatter, a
   // list of { key, label }, with `options` for a dropdown. They come after the boxes. The answers go in the
@@ -62,6 +66,7 @@
 
   let title = $state('');
   let galleryText = $state('');
+  let group = $state('');
   let description = $state('');
   let primary = $state(null);
   let screenshot = $state(null);
@@ -145,6 +150,7 @@
         student: 'ignored-server-derives-this',
         title,
         gallery_text: galleryText,
+        group: askGroup ? group.trim() : undefined,
         description,
         params: isModel
           ? {
@@ -217,6 +223,11 @@
         Gallery text
         <textarea bind:value={galleryText} rows="3" maxlength="600"
           placeholder="Two sentences. Text that might accompany a work of art."></textarea>
+      </label>
+    {:else if f === 'group'}
+      <label>
+        Group members
+        <input bind:value={group} maxlength="400" placeholder="Everyone in your group, including you" />
       </label>
     {:else if f === 'description'}
       <label>
@@ -345,7 +356,7 @@
 
   <div class="actions">
     <button type="button" onclick={onclose}>close</button>
-    <button type="button" class="go" disabled={busy || !title || !galleryText || !ready || !answered || tooBig} onclick={submit}>
+    <button type="button" class="go" disabled={busy || !title || (askGalleryText && !galleryText) || (askGroup && !group.trim()) || !ready || !answered || tooBig} onclick={submit}>
       {busy ? 'sending…' : 'submit'}
     </button>
   </div>

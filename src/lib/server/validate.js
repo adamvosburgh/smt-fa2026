@@ -28,6 +28,7 @@ export const FAILURE_MAP = {
   'assignment/no-file': '#submission',
   'assignment/bad-type': '#submission',
   'assignment/missing-answer': '#requirements',
+  'assignment/missing-group': '#submit',
   'assignment/bad-link': '#submit',
   'assignment/no-prompt': '#submission',
   'assignment/bad-prompt': '#submission',
@@ -116,9 +117,17 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
       add('manifest/schema', `manifest.json${e.instancePath}: ${e.message}`);
     }
   }
-  if (!manifest.gallery_text?.trim()) {
+  // The boxes the form shows, the same list AssignmentSubmit.svelte draws.
+  // Gallery text is asked for unless `form:` leaves it out; a `group` box is
+  // required when it is there, and dropped when it isn't.
+  const formBoxes = Array.isArray(a.form) && a.form.length ? a.form : ['title', 'gallery_text', 'description', 'work', 'extras'];
+  if (formBoxes.includes('gallery_text') && !manifest.gallery_text?.trim()) {
     add('manifest/missing-gallery-text', 'The two-sentence gallery text is required.');
   }
+  if (formBoxes.includes('group')) {
+    manifest.group = String(manifest.group ?? '').trim();
+    if (!manifest.group) add('assignment/missing-group', 'Please list the people in your group.');
+  } else delete manifest.group;
 
   // Short-answer questions from the assignment's `questions:` frontmatter. Each
   // one needs an answer, a dropdown's must be one of its `options`, and only the
@@ -143,7 +152,6 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
   const kinds = Array.isArray(a.accepts) && a.accepts.length ? a.accepts : ['image', 'pdf'];
   const allowed = kinds.flatMap((k) => ACCEPTS[k] ?? []);
   const ext = (p) => p.toLowerCase().replace(/^.*(\.[a-z0-9]+)$/, '$1');
-  const formBoxes = Array.isArray(a.form) ? a.form : [];
 
   // A link, where the assignment's `form:` has a `link` box. It must be https;
   // the gallery frames it. With a link and no file, the screenshot is uploaded

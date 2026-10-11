@@ -46,6 +46,7 @@ export async function write({ student, sandbox, manifest, files, cover = null })
   // whose primary is an HTML file.
   delete manifest.pages;
   delete manifest.page_count;
+  delete manifest.page_sizes;
   if (manifest.kind === 'assignment' && /\.pdf$/i.test(manifest.primary ?? '')) {
     const r = await renderPdf(path.resolve(dir, manifest.primary), dir);
     cover ??= r.cover;
@@ -53,6 +54,7 @@ export async function write({ student, sandbox, manifest, files, cover = null })
       manifest.pages = r.pages;
       manifest.page_count = r.count;
     }
+    if (r.sizes.length) manifest.page_sizes = r.sizes;
   }
   if (cover) {
     await writeFile(path.join(dir, 'cover.jpg'), cover);

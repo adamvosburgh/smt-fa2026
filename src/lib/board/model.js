@@ -17,6 +17,7 @@ export const LIMITS = {
   text: 4000,
   note: 1000,
   title: 140,
+  group: 400,
   opsPerRequest: 50,
   elements: 2000,
   minSize: 24,

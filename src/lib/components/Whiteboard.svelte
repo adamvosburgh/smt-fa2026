@@ -20,8 +20,10 @@
   import { applyOp, assetBase, maxZ, newId, LIMITS, UPLOAD_EXT } from '$lib/board/model.js';
   import { connect, fetchBoard, clientId } from '$lib/board/transport.js';
   import { loadAsset, needsToken } from '$lib/board/assets.js';
-  import { MODE } from '$lib/data.js';
-  import { FRAME_CSP } from '$lib/frame-policy.js';
+  import { variantOf } from '$lib/board/tiles.js';
+  import CoverTile from './tiles/CoverTile.svelte';
+  import InteractiveTile from './tiles/InteractiveTile.svelte';
+  import SpreadTile from './tiles/SpreadTile.svelte';
 
   let {
     slug,
@@ -247,37 +249,8 @@
     : el.type === 'tile' ? el.cover
     : null;
   const src = (url) => (needsToken(url) ? srcs[url] : url);
-  // Which page a multi-page PDF tile is showing. Each viewer's own, not synced.
-  let pageAt = $state({});
-
-  // Interactive tiles (`board_tile: interactive`). Which ones are running is
-  // each viewer's own, like pageAt: never an op, never sent to the server. A
-  // frame swallows the pointer, so a tile runs only when asked and the board
-  // still pans everywhere else.
-  //
-  // The frame is laid out at FRAME_W and scaled down to the tile, so the
-  // student's page lays itself out for a laptop rather than a phone; zooming
-  // the board in makes it readable.
-  const FRAME_W = 1280;
-  let running = $state({});
-  // A hosted site is not framed in the archive, the same as on the gallery page.
-  const canRun = (el) => !!el.live && (MODE !== 'archive' || !/^https:/.test(el.live));
-
-  // Prompt files are public submission files, fetched once per tile.
-  let prompts = $state({});
-  const promptRequested = new Set();
-  $effect(() => {
-    for (const el of list) {
-      const url = el.type === 'tile' ? el.prompt : null;
-      if (!url || promptRequested.has(url)) continue;
-      promptRequested.add(url);
-      fetch(url)
-        .then((res) => (res.ok ? res.text() : null))
-        .then((text) => (prompts[url] = text))
-        .catch(() => (prompts[url] = null));
-    }
-  });
-
+  // One component per tile format; see src/lib/board/tiles.js.
+  const TILE_COMPONENTS = { cover: CoverTile, interactive: InteractiveTile, spread: SpreadTile };
   $effect(() => {
     if (!editable) return;
     for (const el of list) {
@@ -1064,11 +1037,10 @@
     <div class="stage" style="transform: translate({view.x}px, {view.y}px) scale({view.k}); --k: {view.k}">
       {#each list as el (el.id)}
         <div
-          class="el {el.type}"
+          class="el {el.type} {el.type === 'tile' ? variantOf(el) : ''}"
           class:selected={editable && selected.includes(el.id)}
           class:locked={el.locked}
           class:large={el.size === 'large'}
-          class:interactive={el.variant === 'interactive'}
           data-id={el.id}
           style="left: {el.x}px; top: {el.y}px; width: {el.w}px; {el.type === 'text' ? 'min-height' : 'height'}: {el.h}px; z-index: {el.z}{el.type === 'note' ? `; --s: ${noteScale(el)}` : ''}"
         >
@@ -1099,45 +1071,8 @@
               <div class="foot">{el.name}</div>
             {/if}
           {:else if el.type === 'tile'}
-            {@const n = el.pages?.length ?? 0}
-            {@const at = Math.min(pageAt[el.id] ?? 0, Math.max(n - 1, 0))}
-            {@const shown = n ? el.pages[at] : el.cover}
-            <div class="project-card-image" class:whole={el.ratio} class:runnable={canRun(el)} style={el.ratio ? `aspect-ratio: 1 / ${el.ratio}` : ''}>
-              {#if running[el.id]}
-                {@const fh = Math.round(FRAME_W * (el.ratio ?? 0.75))}
-                <iframe
-                  src={el.live}
-                  title={el.title}
-                  sandbox="allow-scripts"
-                  csp={MODE === 'archive' || /^https:/.test(el.live) ? undefined : FRAME_CSP}
-                  style="width: {FRAME_W}px; height: {fh}px; transform: scale({el.w / FRAME_W})"
-                ></iframe>
-                <button type="button" class="run" onclick={() => (running[el.id] = false)}>Stop</button>
-              {:else}
-                {#if shown && src(shown)}
-                  <img src={src(shown)} alt="" draggable="false" onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
-                {/if}
-                {#if canRun(el)}
-                  <button type="button" class="run" onclick={() => (running[el.id] = true)}>Run</button>
-                {/if}
-              {/if}
-            </div>
-            {#if n > 1}
-              <div class="pager">
-                <button type="button" aria-label="Previous page" disabled={at === 0} onclick={() => (pageAt[el.id] = at - 1)}>‹</button>
-                <span>{at + 1} / {n}</span>
-                <button type="button" aria-label="Next page" disabled={at === n - 1} onclick={() => (pageAt[el.id] = at + 1)}>›</button>
-              </div>
-            {/if}
-            <h3 class="project-card-title">{el.title}</h3>
-            <p class="project-card-author">{el.student}</p>
-            {#if el.gallery_text}<p class="gallery-text">{el.gallery_text}</p>{/if}
-            {#if el.href}
-              <a class="tile-link" href={el.href} target="_blank" rel="noopener" draggable="false">Open in Student Work</a>
-            {/if}
-            {#if el.prompt && prompts[el.prompt] !== null}
-              <pre class="prompt" data-scroll>{prompts[el.prompt] ?? 'Loading…'}</pre>
-            {/if}
+            {@const Tile = TILE_COMPONENTS[variantOf(el)]}
+            <Tile {el} {src} />
           {/if}
           {#if editable && el.locked}<span class="pill">locked</span>{/if}
           {#if editable && !el.locked && el.type !== 'tile' && selected.includes(el.id)}
@@ -1260,43 +1195,9 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  .tile .project-card-image { margin-bottom: 0.6rem; }
-  .tile .project-card-image img { object-fit: cover; }
-  .tile .project-card-image.whole img { object-fit: contain; }
-  .pager { display: flex; align-items: center; gap: 0.6rem; margin: 0 0 0.6rem; font-size: 0.8rem; color: var(--fg-dim); }
-  .pager button {
-    font: inherit; font-size: 1.1rem; line-height: 1; width: 2rem; height: 2rem; padding: 0;
-    background: none; color: var(--fg); border: 1px solid var(--rule); cursor: pointer;
-  }
-  .pager button:hover:not(:disabled) { background: var(--hi); color: var(--hi-fg); }
-  .pager button:disabled { opacity: 0.35; cursor: default; }
-  .tile .project-card-title { display: block; margin: 0 0 0.2rem; }
-  .tile .project-card-author { margin: 0 0 0.5rem; }
-  .tile .gallery-text { font-size: 0.8rem; line-height: 1.5; margin: 0 0 0.5rem; }
-  .tile-link { font-size: 0.8rem; color: var(--fg); }
-  .tile-link:hover { background: var(--hi); color: var(--hi-fg); }
-
-  /* board_tile: interactive. The prompt box sits at the foot of the tile, in
-     the PROMPT_H that board-generate.js reserves for it. */
+  /* The tiles draw themselves (src/lib/components/tiles/); an interactive
+     one is a column so its prompt box sits at the foot. */
   .tile.interactive { display: flex; flex-direction: column; }
-  .tile.interactive .project-card-image { flex: none; }
-  .project-card-image.runnable { position: relative; overflow: hidden; }
-  .project-card-image iframe {
-    position: absolute; left: 0; top: 0; border: 0; background: #fff; transform-origin: 0 0;
-  }
-  /* the frame is the student's own page; it keeps a white ground */
-  .run {
-    position: absolute; right: 0.5rem; bottom: 0.5rem;
-    font: inherit; font-size: 0.8rem; padding: 0.25rem 0.75rem; cursor: pointer;
-    background: var(--bg); color: var(--fg); border: 1px solid var(--rule);
-  }
-  .run:hover { background: var(--hi); color: var(--hi-fg); }
-  .prompt {
-    flex: none; box-sizing: border-box; height: 220px; margin: auto 0 0; padding: 0.5rem 0.6rem;
-    overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere;
-    font-size: 0.7rem; line-height: 1.5; background: var(--code-bg); color: var(--fg);
-    user-select: text; -webkit-user-select: text; cursor: text;
-  }
 
   .pill {
     display: none; position: absolute; right: 0; top: 0; transform: translateY(-100%);

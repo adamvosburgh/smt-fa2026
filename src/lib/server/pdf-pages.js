@@ -25,12 +25,32 @@ async function pageCount(pdf) {
   }
 }
 
+// Each page's size in points, [width, height] as it is shown (a page rotated a
+// quarter turn has its sides swapped), for pages 1 to `last`. Empty if
+// pdfinfo can't read it. The whiteboard's spread tile draws pages in
+// proportion to these, so an 11x17 sheet is larger than a letter one.
+async function pageSizes(pdf, last) {
+  try {
+    const { stdout } = await run('pdfinfo', ['-f', '1', '-l', String(last), pdf], { timeout: 30_000 });
+    const sizes = [];
+    for (const m of stdout.matchAll(/^Page\s+(\d+) size:\s+([\d.]+) x ([\d.]+) pts/gm)) {
+      const rot = Number(new RegExp(`^Page\\s+${m[1]} rot:\\s+(\\d+)`, 'm').exec(stdout)?.[1] ?? 0);
+      const w = Number(m[2]), h = Number(m[3]);
+      sizes[Number(m[1]) - 1] = rot % 180 === 90 ? [h, w] : [w, h];
+    }
+    return sizes.length === last && sizes.every(Boolean) ? sizes.map(([w, h]) => [Math.round(w), Math.round(h)]) : [];
+  } catch {
+    return [];
+  }
+}
+
 // Renders `pdf` and, for a PDF of two or more pages, writes <dir>/pages/1.jpg,
-// 2.jpg, ... Returns { cover, pages, count }: the first page as a buffer (null
-// if it could not be drawn or is over 2MB), the page paths relative to <dir>
-// (empty for a one-page PDF), and the PDF's own page count. A PDF poppler
-// can't read gives { cover: null, pages: [], count: 0 } rather than a failed
-// submission.
+// 2.jpg, ... Returns { cover, pages, count, sizes }: the first page as a
+// buffer (null if it could not be drawn or is over 2MB), the page paths
+// relative to <dir> (empty for a one-page PDF), the PDF's own page count, and
+// the size in points of each page drawn (page 1 alone for a one-page PDF). A
+// PDF poppler can't read gives { cover: null, pages: [], count: 0, sizes: [] }
+// rather than a failed submission.
 export async function renderPdf(pdf, dir) {
   const count = await pageCount(pdf);
   const last = Math.min(count, MAX_PAGES);
@@ -47,11 +67,12 @@ export async function renderPdf(pdf, dir) {
       .map((f) => ({ f, n: Number(/-(\d+)\.jpg$/.exec(f)?.[1]) }))
       .filter((x) => x.n)
       .sort((a, b) => a.n - b.n);
-    if (!files.length) return { cover: null, pages: [], count: 0 };
+    if (!files.length) return { cover: null, pages: [], count: 0, sizes: [] };
 
     const first = await readFile(path.join(tmp, files[0].f));
     const cover = first.length <= MAX_COVER_BYTES ? first : null;
-    if (count < 2) return { cover, pages: [], count };
+    const sizes = await pageSizes(pdf, files.length);
+    if (count < 2) return { cover, pages: [], count, sizes };
 
     await mkdir(path.join(dir, 'pages'), { recursive: true });
     const pages = [];
@@ -60,10 +81,10 @@ export async function renderPdf(pdf, dir) {
       await rename(path.join(tmp, f), path.join(dir, rel));
       pages.push(rel);
     }
-    return { cover, pages, count };
+    return { cover, pages, count, sizes };
   } catch (err) {
     console.error(`pdf pages: ${pdf}: ${err?.message ?? err}`);
-    return { cover: null, pages: [], count: 0 };
+    return { cover: null, pages: [], count: 0, sizes: [] };
   } finally {
     await rm(tmp, { recursive: true, force: true });
   }
