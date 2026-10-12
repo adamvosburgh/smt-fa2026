@@ -1,6 +1,10 @@
-// Builds static/kit/ from kit/: smt-kit.zip, which unpacks to a folder named
-// smt-kit/, plus browser-readable copies of AGENTS.md and CLAUDE.md beside it.
-// Tutorial 4 links the zip at /kit/smt-kit.zip.
+// Builds static/kit/ from the kit folders, one zip each, plus browser-readable
+// copies of AGENTS.md and CLAUDE.md:
+//
+//   kit/        -> static/kit/smt-kit.zip (unpacks to smt-kit/), copies in
+//                  static/kit/. Tutorial 4 and Assignment 4 link the zip.
+//   kit-final/  -> static/kit/smt-final-kit.zip (unpacks to smt-final-kit/),
+//                  copies in static/kit/final/. The final project page links it.
 //
 // static/kit/ is committed, not gitignored like the other mirrored folders, so
 // the freeze and a fresh clone have it without a build. That is why the zip is
@@ -17,12 +21,14 @@ import { fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const src = path.join(root, 'kit');
 const dest = path.join(root, 'static/kit');
 
+const KITS = [
+  { src: 'kit', zip: 'smt-kit.zip', folder: 'smt-kit/', copies: '' },
+  { src: 'kit-final', zip: 'smt-final-kit.zip', folder: 'smt-final-kit/', copies: 'final/' }
+];
 const FILES = ['AGENTS.md', 'CLAUDE.md', '.gitignore'];
 const COPIES = ['AGENTS.md', 'CLAUDE.md'];
-const FOLDER = 'smt-kit/';
 
 // 2026-09-01 00:00, in MS-DOS date/time form.
 const DOS_TIME = 0;
@@ -92,14 +98,17 @@ async function put(file, data) {
   return true;
 }
 
-await mkdir(dest, { recursive: true });
-const entries = [{ name: FOLDER, data: Buffer.alloc(0) }];
-for (const file of FILES) {
-  entries.push({ name: FOLDER + file, data: await readFile(path.join(src, file)) });
-}
 const changed = [];
-if (await put('smt-kit.zip', zip(entries))) changed.push('smt-kit.zip');
-for (const file of COPIES) {
-  if (await put(file, await readFile(path.join(src, file)))) changed.push(file);
+for (const kit of KITS) {
+  const src = path.join(root, kit.src);
+  await mkdir(path.join(dest, kit.copies), { recursive: true });
+  const entries = [{ name: kit.folder, data: Buffer.alloc(0) }];
+  for (const file of FILES) {
+    entries.push({ name: kit.folder + file, data: await readFile(path.join(src, file)) });
+  }
+  if (await put(kit.zip, zip(entries))) changed.push(kit.zip);
+  for (const file of COPIES) {
+    if (await put(kit.copies + file, await readFile(path.join(src, file)))) changed.push(kit.copies + file);
+  }
 }
 console.log(`build-kit: static/kit/ ${changed.length ? 'updated ' + changed.join(', ') : 'unchanged'}`);

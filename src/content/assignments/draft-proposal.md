@@ -19,6 +19,11 @@ board_tile: spread
 
 ### Due: 10/22
 
+This assignment is for the proposal workshop on October 22nd. Ahead of then, please:
+- Join or start a group (more on that below) and mark that [here](https://docs.google.com/spreadsheets/d/120JQ1aLznorGhje70nZ9YSW7fxSOYKM0Tq5znmA1b1E/edit?usp=sharing)
+- Develop a proposal (more on that below) 
+- Sign-up for an in-person workshop time [here](https://docs.google.com/spreadsheets/d/1LQygJabVE47Ucy3f2VRGsWNM5oMqln-5XNoRTOWQDHM/edit?usp=sharing)
+
 ### What
 
 Propose three ideas for your final project. If you have one general idea you want to work with, then three different approaches to it. If you have existing work, or research in another class etc, feel free to bring that into this class.
@@ -29,7 +34,8 @@ The final project for *Simulations, Models, Twins* should be three things:
 - A piece of *representation*, or any visual artifact that is crafting an argument, describing an observed process, building worlds, or testing how a proposal might perform in the "real" world.
 - Your piece of representation should not claim any kind of objectivity, and should acknowledge its limitations.
 
-This assignment is for the proposal workshop on October 22nd. [Final Project](/assignments/final-project/) page has the rest of the semester. 
+
+[Final Project](/assignments/final-project/) page has the rest of the semester. 
 
 ### Groups
 

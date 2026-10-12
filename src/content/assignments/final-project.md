@@ -27,11 +27,15 @@ The final project for *Simulations, Models, Twins* should be three things:
 - A piece of *representation*, or any visual artifact that is crafting an argument, describing an observed process, building worlds, or testing how a proposal might perform in the "real" world.
 - Your piece of representation should not claim any kind of objectivity, and should acknowledge its limitations.
 
-It starts with the [Draft Proposal](/assignments/draft-proposal/), due 10/22.
+This assignment is preceded by the [Draft Proposal](/assignments/draft-proposal/), due 10/22.
+
+### Agent kit
+
+If you are working with a coding agent, download [smt-final-kit.zip](/kit/smt-final-kit.zip) and unzip it into your project folder, the same way as the kit in [Tutorial 4](/tutorials/04-notebook-to-sandbox/). It is similar to the Assignment 4 kit, but it knows what the final project is and when things are due. It will suggest stages to break your project up into instead of a single-prmompt, and will keep track of them in a file called `PLAN.md`. You can [read it here](/kit/final/AGENTS.md).
 
 ### Schedule
 
-At the proposal workshop on 10/22, we will assign which day you will be presenting on. The schedule for the rest of the semester varies depending on that.
+At the proposal workshop on 10/22, we will assign which day you will be presenting on, and put that [here](https://docs.google.com/spreadsheets/d/1CBGz6QPqWLcNjIZDV3MHvUijQU6jfpfkgnLillwAClI/edit?usp=sharing). The schedule for the rest of the semester varies depending on that:
 
 **11/12: Show and Tell Day 1**
 
@@ -44,7 +48,7 @@ At the proposal workshop on 10/22, we will assign which day you will be presenti
 - Week of 11/12: Progress meeting, asynchronously from class. Final questions about process, data, etc. It's fine if you're still working through things. Schedule an office hour with me (feel free to make them back-to-back, so one hour total).
 - 11/19 presentation: The expectation is that the mechanics and data are completely figured out, and locked. From this point on, the work is representation.
 
-The show and tell presentations are for sharing your work with a supportive community of practitioners in the class, and it is okay to show things in progress (while paying attention to the above notes about expectation around mechanics). At the presentation, I will give feedback largely structured in terms of what I think should be in the final project. The expectations stated there vs. what is ultimately submitted will be the largest factor in the grade of the final project. That said, the objective of the course is to experiment and grow how we think and represent complex spatial topics, and any expectations for the final submission will be given with that in mind.
+The show and tell presentations are for sharing your work with a supportive community of practitioners in the class, and it is okay to show things in progress (while paying attention to the above notes about expectations). At the presentation, I will give feedback largely structured in terms of what I think should be in the final project. The expectations stated there vs. what is ultimately submitted will be the largest factor in the grade of the final project. That said, the objective of the course is to experiment and grow how we think and represent complex spatial topics, and any expectations for the final submission will be given with that in mind.
 
 **12/21 at 9am: Final project due**
 
