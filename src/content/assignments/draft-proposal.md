@@ -39,7 +39,11 @@ The final project for *Simulations, Models, Twins* should be three things:
 
 ### Groups
 
+Please use the sign-up page [here](https://docs.google.com/spreadsheets/d/120JQ1aLznorGhje70nZ9YSW7fxSOYKM0Tq5znmA1b1E/edit?usp=sharing) to list your project idea ahead of class on 10/15. I will make sure to save some time at the end of class for people to ask each other about projects in case you don't have a group yet, or are considering joining someone's project. Whoever is not in a group at that point, I will randomly assign to a group at the conclusion of class. 
 
+My preference is that work in this course is done in groups. That will allow you all to take the projects further and be more efficient with your time in what I am sure is a busy semester. Also, basically all work you'll do in the future is group work and it is nice to become comfortable with that. 
+
+That said, I completely understand that many of you are bringing work from your other courses into this class, and that is a good reason to work on your own if you prefer that. 
 
 ### Requirements
 
