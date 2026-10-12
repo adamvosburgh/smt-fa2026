@@ -23,6 +23,7 @@ See the header of each script for what that means in its case.
 | `after-five-agents.py` | 02 Office to Residential Conversion | MTA O-D ridership aggregates + entrances, NYC Street Centerline, ATUS 2003-2025 | `processed/after-five/` (the agent layer's five files + `agents.json`) |
 | `anthromes.py` | 04 Anthromes | HYDE 3.2 raw-data.zip (streamed, never extracted), the Anthromes 12K replication archive (the gate), the 3.5 classified series at 33km | `processed/anthromes/` |
 | `bathtub.py` | 05 Sea Level Flood Map | USGS 3DEP DEM, Building Footprints, MapPLUTO, ACS tracts, NOAA datums | `processed/bathtub/` |
+| `street-trees.py` | Street Tree Stormwater (Tutorial 4 demo) | 2015 Street Tree Census (upper Manhattan subset), 2010 census blocks, Urban Tree Database Queens equations | `processed/street-trees/` |
 
 Sandbox 03, A City Simulator, Opened Up, has **no pipeline and no processed data**. Its data
 is source code - a vendored simulation engine under

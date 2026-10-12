@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simmodeltwin.net/schemas/sandbox/street-trees.json",
+  "title": "Street Tree Stormwater parameters",
+  "$comment": "Percentages are stored as percent (15, not 0.15) so the readout and the stored value agree. Slider granularity is x-step, not multipleOf; see bathtub/schema.json for why.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["year", "view", "rain_in", "interception_pct", "death_young_pct", "death_old_pct", "plantings", "draw"],
+  "properties": {
+    "year": {
+      "type": "integer",
+      "title": "Year",
+      "x-group": "the clock",
+      "x-panel": "representation",
+      "x-timeline": "primary",
+      "x-play-rate": 2,
+      "x-play-loop": true,
+      "x-play-auto": true,
+      "minimum": 2015,
+      "maximum": 2045,
+      "x-step": 1,
+      "default": 2015,
+      "description": "The run starts from the 2015 census and goes one year at a time to 2045. Deaths and plantings happen at the end of each year, so 2015 is always the census as recorded."
+    },
+    "view": {
+      "type": "string",
+      "title": "Show",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "enum": ["trees", "blocks"],
+      "x-enum-labels": ["each tree", "by census block"],
+      "default": "trees",
+      "description": "Each tree is drawn as a circle the size of its crown, colored by the stormwater it catches in the year shown. The block view adds up the trees standing in each 2010 census block."
+    },
+    "show_sites": {
+      "type": "boolean",
+      "title": "Planting sites and losses",
+      "x-group": "how it's drawn",
+      "x-panel": "representation",
+      "x-disabled-when": { "view": "blocks" },
+      "x-disabled-note": "tree view only",
+      "default": true,
+      "description": "Draws the planting sites not yet planted as open circles, and the trees that have died during the run as gray dots."
+    },
+    "rain_in": {
+      "type": "number",
+      "title": "Rainfall",
+      "x-group": "the rain",
+      "x-panel": "assumptions",
+      "minimum": 20,
+      "maximum": 80,
+      "x-step": 1,
+      "default": 41,
+      "x-unit": "in/yr",
+      "x-emphasis": true,
+      "description": "Rain in a year. The default is the 41.0 inches recorded at JFK in 2000, the year i-Tree uses for the Northeast ([Northeast Community Tree Guide](https://research.fs.usda.gov/treesearch/28759), p. 100). The same rainfall is used for every year of the run. The range is ours."
+    },
+    "interception_pct": {
+      "type": "number",
+      "title": "Interception",
+      "x-group": "the rain",
+      "x-panel": "assumptions",
+      "minimum": 5,
+      "maximum": 40,
+      "x-step": 1,
+      "default": 15,
+      "x-unit": "%",
+      "x-emphasis": true,
+      "description": "The share of the rain over a crown that the crown catches. The default is the 15% measured on a Callery pear in Davis, California; a cork oak in the same study caught 27% ([Xiao et al. 2000](https://research.fs.usda.gov/treesearch/61750)). The same share is used for every tree. The range is ours."
+    },
+    "death_young_pct": {
+      "type": "number",
+      "title": "Deaths, trees under 5 years",
+      "x-group": "deaths",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 10,
+      "x-step": 0.1,
+      "default": 2.8,
+      "x-unit": "%/yr",
+      "description": "The share of young trees that die each year. The default is the Northeast guide's figure ([Northeast Community Tree Guide](https://research.fs.usda.gov/treesearch/28759), p. 94)."
+    },
+    "death_old_pct": {
+      "type": "number",
+      "title": "Deaths, trees 5 years and older",
+      "x-group": "deaths",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 5,
+      "x-step": 0.01,
+      "default": 0.57,
+      "x-unit": "%/yr",
+      "description": "The share of older trees that die each year. The default is the Northeast guide's figure (p. 94). A tree's age is estimated from its trunk diameter."
+    },
+    "plantings": {
+      "type": "integer",
+      "title": "New plantings",
+      "x-group": "plantings",
+      "x-panel": "assumptions",
+      "minimum": 0,
+      "maximum": 100,
+      "x-step": 1,
+      "default": 0,
+      "x-unit": "trees/yr",
+      "x-emphasis": true,
+      "description": "Trees planted each year on the 621 sites the census recorded as dead trees or stumps, chosen at random. Every new tree is a honeylocust with a 3-inch trunk. A site stays taken once planted, and a tree that dies during the run does not open a new site, so at 100 a year the sites run out after seven years."
+    },
+    "draw": {
+      "type": "integer",
+      "title": "Random draw",
+      "x-group": "chance",
+      "x-panel": "assumptions",
+      "minimum": 1,
+      "maximum": 50,
+      "x-step": 1,
+      "default": 1,
+      "description": "Which trees die and which sites are planted first are chosen at random. Each number is a different set of random choices. The same number always gives the same run."
+    }
+  }
+}

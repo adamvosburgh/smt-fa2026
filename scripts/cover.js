@@ -149,7 +149,7 @@ if (args.submissions) {
   const mod = await import('../src/lib/sandboxes/index.js').catch(() => null);
   const slugs = mod?.allSandboxes
     ? mod.allSandboxes.map((s) => s.slug)
-    : ['studio-twin', 'pencil', 'after-five', 'coefficients', 'sunlight', 'anthromes', 'bathtub'];
+    : ['studio-twin', 'pencil', 'after-five', 'coefficients', 'sunlight', 'anthromes', 'bathtub', 'street-trees'];
   for (const slug of slugs) {
     const r = await capture(browser, `${BASE}/sandboxes/${slug}/`, `static/covers/${slug}.png`);
     if (r.nothingToShoot) {

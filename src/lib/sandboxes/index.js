@@ -13,6 +13,7 @@ import pencilSchema from './pencil/schema.json';
 import afterFiveSchema from './after-five/schema.json';
 import anthromesSchema from './anthromes/schema.json';
 import sunlightSchema from './sunlight/schema.json';
+import streetTreesSchema from './street-trees/schema.json';
 
 // --- stubs. Each gets a meta.js + schema.json + component as it is built. ---
 import studioTwin from './studio-twin/meta.js';
@@ -21,6 +22,7 @@ import afterFive from './after-five/meta.js';
 import coefficients from './coefficients/meta.js';
 import sunlight from './sunlight/meta.js';
 import anthromes from './anthromes/meta.js';
+import streetTrees from './street-trees/meta.js';
 
 const loaders = {
   'studio-twin': () => import('./studio-twin/StudioTwin.svelte'),
@@ -29,7 +31,8 @@ const loaders = {
   coefficients: () => import('./coefficients/Coefficients.svelte'),
   sunlight: () => import('./sunlight/Sunlight.svelte'),
   anthromes: () => import('./anthromes/Anthromes.svelte'),
-  bathtub: () => import('./bathtub/Bathtub.svelte')
+  bathtub: () => import('./bathtub/Bathtub.svelte'),
+  'street-trees': () => import('./street-trees/StreetTrees.svelte')
 };
 
 const schemas = {
@@ -38,7 +41,8 @@ const schemas = {
   pencil: pencilSchema,
   'after-five': afterFiveSchema,
   anthromes: anthromesSchema,
-  sunlight: sunlightSchema
+  sunlight: sunlightSchema,
+  'street-trees': streetTreesSchema
   // ...one per sandbox as it is built.
 };
 
@@ -46,7 +50,8 @@ const schemas = {
 // The submission validator and the cover script use this so a hidden sandbox
 // keeps working at its URL rather than 404ing.
 // Sunlight sits at the END, after bathtub, so that unhiding it makes it 6 and
-// nothing already published renumbers.
+// nothing already published renumbers. Street trees comes after it for the
+// same reason.
 export const allSandboxes = [
   studioTwin,
   pencil,
@@ -54,7 +59,8 @@ export const allSandboxes = [
   coefficients,
   anthromes,
   bathtub,
-  sunlight
+  sunlight,
+  streetTrees
 ].map((m) => ({ ...m, schema: schemas[m.slug] ?? null }));
 
 // What the site shows. `number` is assigned from position here, not read from

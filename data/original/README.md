@@ -75,3 +75,12 @@ repo, hardcoded with their citations: the NPCC4 sea level rise projections
 - Never edited in place. If a source needs fixing, fix it in the script.
 - Keep the downloaded filename. The dates in these names are download dates and
   they are the only provenance some of these files carry.
+
+For `street-trees.py` (the Tutorial 4 demo). These are the three files handed out
+with Tutorial 4, copied from its data folder. The script needs no geo stack.
+
+| File | Dataset |
+| --- | --- |
+| `2015_Street_Tree_Census_subset_um.csv` | 2015 Street Tree Census, NYC Open Data `uvpi-gqnh`, clipped to upper Manhattan. |
+| `nycb2010_um/` | 2010 Census Blocks, NYC DCP, clipped to the same area. EPSG:2263. Only the .shp and .dbf are read. |
+| `queens_tree_equations.csv` | Urban Tree Database Table S6, Northeast (Queens, 2005), 21 species. |

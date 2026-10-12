@@ -63,6 +63,6 @@ if (process.env.SMT_MODE === 'archive') {
 // Processed sandbox data. data/original + data/scripts are the source of truth;
 // data/processed is what the pipeline writes; static/data is what ships.
 for (const sandbox of ['bathtub', 'anthromes', 'pencil', 'after-five',
-                       'coefficients', 'sunlight', 'studio-twin']) {
+                       'coefficients', 'sunlight', 'studio-twin', 'street-trees']) {
   await mirror(`data/processed/${sandbox}`, `static/data/${sandbox}`, `data/${sandbox}`);
 }

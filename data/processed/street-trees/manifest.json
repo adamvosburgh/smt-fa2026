@@ -1,0 +1,642 @@
+{
+  "sandbox": "street-trees",
+  "years": [
+    2015,
+    2045
+  ],
+  "species": [
+    {
+      "code": "ACPL",
+      "latin": "Acer platanoides",
+      "common": "Norway maple",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": 2.75443,
+        "b": 0.28615,
+        "c": 0.01875,
+        "d": -0.00013,
+        "x_max": 114.66
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 1.05784,
+        "b": 0.25365,
+        "c": -0.00083,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 5.61705,
+        "b": 0.91636,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "ACRU",
+      "latin": "Acer rubrum",
+      "common": "red maple",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": 0.93244,
+        "b": 0.02113,
+        "c": 0.05658,
+        "d": -0.00055,
+        "x_max": 105.2
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.20703,
+        "b": 0.32103,
+        "c": -0.00152,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "cub",
+        "a": 2.64166,
+        "b": 1.27076,
+        "c": -0.01758,
+        "d": 0.00012,
+        "x_max": null
+      }
+    },
+    {
+      "code": "ACSA1",
+      "latin": "Acer saccharinum",
+      "common": "silver maple",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": 1.655,
+        "b": 0.22698,
+        "c": 0.05987,
+        "d": -0.0008,
+        "x_max": 58.49
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": 0.73372,
+        "b": 0.3504,
+        "c": -0.00296,
+        "d": 1e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "loglogw1",
+        "a": 1.1583,
+        "b": 1.77675,
+        "c": 0.25666,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "ACSA2",
+      "latin": "Acer saccharum",
+      "common": "sugar maple",
+      "age_from_dbh": {
+        "form": "loglogw1",
+        "a": -0.54715,
+        "b": 3.22652,
+        "c": 0.0706,
+        "d": null,
+        "x_max": 105.5
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.79563,
+        "b": 0.28114,
+        "c": -0.0013,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 2.17085,
+        "b": 0.85396,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "AEHI",
+      "latin": "Aesculus hippocastanum",
+      "common": "horsechestnut",
+      "age_from_dbh": {
+        "form": "quad",
+        "a": -1.3217,
+        "b": 1.38284,
+        "c": -0.00555,
+        "d": null,
+        "x_max": 90.02
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": 0.16411,
+        "b": 0.36854,
+        "c": -0.00599,
+        "d": 4e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "quad",
+        "a": 3.34694,
+        "b": 0.45797,
+        "c": 0.00782,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "FRPE",
+      "latin": "Fraxinus pennsylvanica",
+      "common": "green ash",
+      "age_from_dbh": {
+        "form": "quad",
+        "a": 0.15398,
+        "b": 0.50207,
+        "c": 0.01235,
+        "d": null,
+        "x_max": 123.45
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": -0.55792,
+        "b": 0.48266,
+        "c": -0.00527,
+        "d": 2e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "cub",
+        "a": 2.41764,
+        "b": 1.4626,
+        "c": -0.02052,
+        "d": 0.00016,
+        "x_max": null
+      }
+    },
+    {
+      "code": "GIBI",
+      "latin": "Ginkgo biloba",
+      "common": "ginkgo",
+      "age_from_dbh": {
+        "form": "quad",
+        "a": 2.00627,
+        "b": 0.94391,
+        "c": 8e-05,
+        "d": null,
+        "x_max": 82.59
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.56506,
+        "b": 0.23562,
+        "c": -0.00074,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "quad",
+        "a": 1.91918,
+        "b": 1.0947,
+        "c": -0.00307,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "GLTR",
+      "latin": "Gleditsia triacanthos",
+      "common": "honeylocust",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -2.08484,
+        "b": 0.69231,
+        "c": null,
+        "d": null,
+        "x_max": 71.86
+      },
+      "crown_diameter_from_dbh": {
+        "form": "loglogw1",
+        "a": -0.48922,
+        "b": 2.32541,
+        "c": 0.01534,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "loglogw1",
+        "a": 1.68387,
+        "b": 1.59967,
+        "c": 0.06782,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "LIST",
+      "latin": "Liquidambar styraciflua",
+      "common": "sweetgum",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -2.20877,
+        "b": 1.32556,
+        "c": null,
+        "d": null,
+        "x_max": 80.14
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.20226,
+        "b": 0.2869,
+        "c": -0.0009,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "quad",
+        "a": 3.42364,
+        "b": 0.88982,
+        "c": -0.00252,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "MA2",
+      "latin": "Malus spp.",
+      "common": "apple",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -0.77187,
+        "b": 1.14474,
+        "c": null,
+        "d": null,
+        "x_max": 46.08
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.44624,
+        "b": 0.33986,
+        "c": -0.00342,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 2.84705,
+        "b": 0.74535,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "PIST",
+      "latin": "Pinus strobus",
+      "common": "eastern white pine",
+      "age_from_dbh": {
+        "form": "quad",
+        "a": 0.51428,
+        "b": 0.55776,
+        "c": 0.0201,
+        "d": null,
+        "x_max": 96.1
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.26428,
+        "b": 0.28611,
+        "c": -0.00132,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "cub",
+        "a": 1.87523,
+        "b": 1.11975,
+        "c": -0.01146,
+        "d": 6e-05,
+        "x_max": null
+      }
+    },
+    {
+      "code": "PLAC",
+      "latin": "Platanus x acerifolia",
+      "common": "London planetree",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": 0.58171,
+        "b": 0.30204,
+        "c": 0.03224,
+        "d": -0.00037,
+        "x_max": 61.76
+      },
+      "crown_diameter_from_dbh": {
+        "form": "loglogw1",
+        "a": -0.75195,
+        "b": 2.41418,
+        "c": 0.01977,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "quad",
+        "a": 2.40322,
+        "b": 1.2942,
+        "c": -0.00705,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "PRSE2",
+      "latin": "Prunus serrulata",
+      "common": "Kwanzan cherry",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -1.6058,
+        "b": 0.62144,
+        "c": null,
+        "d": null,
+        "x_max": 92.51
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": 1.57321,
+        "b": 0.29639,
+        "c": -0.00543,
+        "d": 4e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 3.606,
+        "b": 1.53283,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "PYCA",
+      "latin": "Pyrus calleryana",
+      "common": "Callery pear",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -1.06138,
+        "b": 0.61303,
+        "c": null,
+        "d": null,
+        "x_max": 54.93
+      },
+      "crown_diameter_from_dbh": {
+        "form": "lin",
+        "a": 0.41182,
+        "b": 0.28531,
+        "c": null,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 4.13514,
+        "b": 1.2698,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "QUPA",
+      "latin": "Quercus palustris",
+      "common": "pin oak",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": 1.76652,
+        "b": 0.68508,
+        "c": null,
+        "d": null,
+        "x_max": 127.63
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": 0.58861,
+        "b": 0.37575,
+        "c": -0.00351,
+        "d": 2e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 2.85629,
+        "b": 1.29969,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "QUPH",
+      "latin": "Quercus phellos",
+      "common": "willow oak",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": -0.46592,
+        "b": 0.39042,
+        "c": 0.01441,
+        "d": -0.0001,
+        "x_max": 121.05
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 0.87983,
+        "b": 0.27243,
+        "c": -0.00077,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 4.16427,
+        "b": 1.14593,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "QURU",
+      "latin": "Quercus rubra",
+      "common": "northern red oak",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": 0.01607,
+        "b": 1.01679,
+        "c": null,
+        "d": null,
+        "x_max": 139.63
+      },
+      "crown_diameter_from_dbh": {
+        "form": "quad",
+        "a": 1.13733,
+        "b": 0.27575,
+        "c": -0.00076,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 2.89687,
+        "b": 0.91156,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "TICO",
+      "latin": "Tilia cordata",
+      "common": "littleleaf linden",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": -0.31291,
+        "b": 0.44918,
+        "c": 0.0172,
+        "d": -0.00011,
+        "x_max": 131.1
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": -1.14976,
+        "b": 0.44387,
+        "c": -0.00442,
+        "d": 2e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "cub",
+        "a": 2.70741,
+        "b": 1.43292,
+        "c": -0.01191,
+        "d": 6e-05,
+        "x_max": null
+      }
+    },
+    {
+      "code": "TITO",
+      "latin": "Tilia tomentosa",
+      "common": "silver linden",
+      "age_from_dbh": {
+        "form": "expow1",
+        "a": 1.29182,
+        "b": 0.06238,
+        "c": 0.46843,
+        "d": null,
+        "x_max": 45.3
+      },
+      "crown_diameter_from_dbh": {
+        "form": "loglogw2",
+        "a": -1.14455,
+        "b": 2.59113,
+        "c": 0.00931,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "loglogw1",
+        "a": 1.36034,
+        "b": 1.49373,
+        "c": 0.29856,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "ULAM",
+      "latin": "Ulmus americana",
+      "common": "American elm",
+      "age_from_dbh": {
+        "form": "lin",
+        "a": -1.24865,
+        "b": 0.70723,
+        "c": null,
+        "d": null,
+        "x_max": 132.97
+      },
+      "crown_diameter_from_dbh": {
+        "form": "cub",
+        "a": 2.38566,
+        "b": 0.12102,
+        "c": 0.0024,
+        "d": -2e-05,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 5.28982,
+        "b": 1.31631,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    },
+    {
+      "code": "ZESE",
+      "latin": "Zelkova serrata",
+      "common": "Japanese zelkova",
+      "age_from_dbh": {
+        "form": "cub",
+        "a": -1.109,
+        "b": 1.1192,
+        "c": -0.0227,
+        "d": 0.00025,
+        "x_max": 81.63
+      },
+      "crown_diameter_from_dbh": {
+        "form": "loglogw1",
+        "a": -0.6785,
+        "b": 2.39897,
+        "c": 0.00585,
+        "d": null,
+        "x_max": null
+      },
+      "dbh_from_age": {
+        "form": "lin",
+        "a": 2.17317,
+        "b": 1.32424,
+        "c": null,
+        "d": null,
+        "x_max": null
+      }
+    }
+  ],
+  "fallback": "GLTR",
+  "counts": {
+    "rows": 12715,
+    "trees": 12093,
+    "dropped_dbh": 1,
+    "sites": 621,
+    "sites_dead": 388,
+    "sites_stump": 233,
+    "blocks": 483,
+    "moved_to_nearest_block": 267,
+    "worst_move_ft": 134.9
+  },
+  "projection_check_m": 0.001,
+  "bounds": [
+    -73.971126,
+    40.788062,
+    -73.929518,
+    40.825042
+  ],
+  "sources": {
+    "census": "2015 Street Tree Census, NYC Parks, NYC Open Data uvpi-gqnh, upper Manhattan subset",
+    "blocks": "2010 Census Blocks, NYC Department of City Planning, upper Manhattan subset",
+    "equations": "Urban Tree Database, McPherson, van Doorn and Peper 2016, doi:10.2737/RDS-2016-0005, Table S6, Northeast (Queens, 2005)"
+  }
+}
