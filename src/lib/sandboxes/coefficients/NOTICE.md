@@ -126,11 +126,11 @@ So "speed" is a real-time rate limiter, and how far a city has advanced depends
 on how long it sat on screen and how fast the machine is. Calling `simTick()` in
 a loop simulates almost nothing.
 
-That is right for a game and wrong for three things this sandbox needs: the
-divergence chart runs thousands of steps headlessly in a worker, the cover
+That is right for a game and wrong for two things this sandbox needs: the cover
 screenshot must be reproducible at a fixed tick count, and a submitted city has
-to replay to the state its author is arguing about. All three need one call to
-mean one step, with no clock in it.
+to replay to the state its author is arguing about. Both need one call to mean
+one step, with no clock in it. (A divergence chart that ran many seeded copies
+in a worker also relied on this; it was removed on 2026-10-14.)
 
 `simTickImmediate()` is **added alongside** `simTick()`. Nothing existing was
 changed, and the original timing behavior is untouched.

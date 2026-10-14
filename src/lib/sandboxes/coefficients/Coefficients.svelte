@@ -5,9 +5,12 @@
   // selected internal layer composited over it as a translucent heat wash,
   // tile-for-tile aligned - every block map shares the city's 120x100
   // geometry, so crime washed over the actual blocks shows which buildings
-  // sit in the red. A hero panel top-right shows the layer the phase most
-  // recently wrote; the fifteen rasters run in a rail below, each redrawn as
-  // its phase fires.
+  // sit in the red. The fifteen rasters run in a rail above, each redrawn as
+  // its phase fires. A key sits top left of the map, and hovering a tile
+  // reads out what is on it and the layers' values there.
+  //
+  // There used to be a larger preview of the current layer in the corner
+  // too. It showed nothing the wash and the rail did not, so it went.
   //
   // The contract, as bathtub sets it out:
   //   props in : params, assets, mode ('edit' | 'view'), dataBase
@@ -25,11 +28,10 @@
   // pipeline: its data is source code. The tile atlas is a VENDORED ASSET,
   // committed at static/coefficients/, loaded by URL rather than imported so
   // that a submitted tiles.png replaces it with no code change at all.
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { browser } from '$app/environment';
-  import { BLOCK_MAPS, PHASES, createCity, run, readMetrics } from './engine.js';
-  import { drawCity, drawBlockMap, drawWash, drawDivergence, loadAtlas } from './renderer.js';
-  import DivergenceWorker from './divergence.worker.js?worker';
+  import { BLOCK_MAPS, PHASES, createCity, run, readMetrics, inspectTile } from './engine.js';
+  import { drawCity, drawBlockMap, drawWash, drawTiles, loadAtlas } from './renderer.js';
 
   let { params, assets = {}, mode = 'edit', dataBase, onmetrics, onready, ontransport } = $props();
 
@@ -38,34 +40,40 @@
   let stageEl = $state(null);
   let displayCanvas = $state(null);
   let viewCanvas = $state(null); // the old small canvas, view mode only
-  let heroCanvas = $state(null);
   let divCanvas = $state(null);
   let error = $state(null);
   let atlas = $state(null);
   let phase = $state(0);
   let litPhases = $state(new Set());
   let cyclesPerSecond = $state(0);
-  let tally = $state(null);
-  let divergenceState = $state('idle');
-  let divergenceSpread = $state(null);
   let panelCanvases = $state({});
   let paused = $state(false);
-  let overlayMode = $state('wash'); // 'wash' | 'off' | 'solo'
-  let followKey = $state('landValueMap'); // the layer the wash+hero track
-  let heroPhase = $state(12);
-  let railTab = $state('layers'); // 'layers' | 'divergence'
+  let followKey = $state('landValueMap'); // the layer 'follow the cycle' shows
+  let lastStep = $state(null); // the step that just ran, while paused
+  let railTip = $state(null); // { label, note, left } while a thumbnail is hovered
+  let railEl = $state(null);
+  let autoFollowed = false; // pausing switched the layer to 'follow' itself
+  let keyOpen = $state(true);
+  let keyCanvases = $state({});
+  let hover = $state(null); // { info, left, top } while the pointer is over a tile
   let zoom = $state(1);
 
-  let map, sim, frame, worker, started = false, announcedReady = false;
+  let map, sim, frame, started = false, announcedReady = false;
   let speedMult = 1;
   // Display bookkeeping. Deliberately NOT $state: written every animation
   // frame, read only when the throttle fires.
   let cycleCount = 0;
   let lastRateAt = 0;
   let lastDisplayAt = 0;
+  // The census is complete only just after phase 9 runs. The loop notes when it
+  // passes that point and reports the metrics a few times a second from there.
+  let censusFresh = false;
+  let lastMetricsAt = 0;
+  let hoverTile = null; // the tile under the pointer, { x, y }, not $state
+  let lastHoverAt = 0;
 
-  // In view mode the sandbox is a gallery card: a small canvas, no rail, no
-  // divergence runs, and it stops after a fixed number of steps. Thirty live
+  // In view mode the sandbox is a gallery card: a small canvas, no rail, and
+  // it stops after a fixed number of steps. Thirty live
   // city simulations on one gallery page would melt a laptop.
   const VIEW_TICKS = 600;
   const DEFAULT_ATLAS = '/coefficients/tiles.png';
@@ -78,28 +86,49 @@
   const BUF_H = 600;
   let cityBuf = null;
   let washBuf = null; // 120x100, one pixel per tile, nearest-neighbor up
-  let soloBuf = null;
 
   // Zoom/pan, CSS pixels. tx/ty is the content's top-left in the stage.
   let tx = 0, ty = 0;
   let userZoom = 1;
   let dragging = false, dragX = 0, dragY = 0, moved = false;
 
-  const activeKey = $derived(
-    params.layer && params.layer !== 'none' ? params.layer : followKey
+  // 'none' draws the city alone. 'follow' shows whichever map was updated
+  // last, which is only readable while stepping. Anything else pins a map.
+  const layerMode = $derived(
+    !params.layer || params.layer === 'none' ? 'none' : params.layer === 'follow' ? 'follow' : 'pinned'
   );
+  const activeKey = $derived(layerMode === 'pinned' ? params.layer : followKey);
   const activeMeta = $derived(BLOCK_MAPS.find((b) => b.key === activeKey) ?? BLOCK_MAPS[0]);
+
+  // The key. Each entry is drawn from the atlas: a zone from its first
+  // (top-left) tile and its size, an empty lot and then a built one.
+  const KEY_TILES = [
+    { label: 'residential', size: 3, tiles: [240, 279] },
+    { label: 'commercial', size: 3, tiles: [423, 450] },
+    { label: 'industrial', size: 3, tiles: [612, 639] },
+    { label: 'police station', size: 3, tiles: [770] },
+    { label: 'fire station', size: 3, tiles: [761] },
+    { label: 'coal power plant', size: 4, tiles: [745] },
+    { label: 'road', size: 1, tiles: [66] },
+    { label: 'power line', size: 1, tiles: [210] },
+    { label: 'trees', size: 1, tiles: [40] }
+  ];
+
+  // The wash's scale for the key, as a CSS gradient matching drawWash.
+  const washScale = $derived(
+    activeMeta.min < 0
+      ? 'linear-gradient(to right, rgba(35,70,160,0.45), rgba(35,70,160,0) 50%, rgba(180,45,30,0) 50%, rgba(180,45,30,0.45))'
+      : 'linear-gradient(to right, rgba(180,45,30,0), rgba(180,45,30,0.45))'
+  );
 
   function metricsOut() {
     const m = readMetrics(sim);
     onmetrics?.({
       population: m.population.toLocaleString(),
-      'the residential, commercial and industrial demand valves':
+      'demand for housing, shops, industry':
         m.rci.map((v) => (v > 0 ? '+' : '') + v).join('  '),
-      'mean land value': m.landValue,
-      'mean crime': m.crime,
-      'the spread across repeated runs at the final step':
-        divergenceSpread === null ? (view ? 'not run in view mode' : '…') : divergenceSpread,
+      'average land value': m.landValue,
+      'average crime': m.crime,
       'steps run': m.cityTime * 16
     });
   }
@@ -109,16 +138,6 @@
   // heatmaps a frame is wasted work.
   let firedPhases = new Set();
   let pendingLit = new Set();
-
-  // The sweep reveal: when the hero's layer is rewritten slowly enough to
-  // watch (stepping, or the cycle under ~2 a second), the new raster wipes
-  // in left to right over a snapshot of the old one. The blur/decay itself is
-  // synchronous inside one tick and cannot be observed live; the wipe is the
-  // honest way to show "this layer was just recomputed, whole".
-  let heroPrev = null;
-  let heroNext = null;
-  let sweepStart = 0;
-  const SWEEP_MS = 300;
 
   function fitView() {
     if (!stageEl || !displayCanvas) return;
@@ -152,52 +171,30 @@
     ctx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
     ctx.setTransform(dpr, 0, 0, dpr, tx * dpr, ty * dpr);
     ctx.imageSmoothingEnabled = false;
-    if (overlayMode === 'solo') {
-      if (soloBuf) ctx.drawImage(soloBuf, 0, 0, w, h);
-    } else {
-      ctx.drawImage(cityBuf, 0, 0, w, h);
-      if (washVisible() && washBuf) ctx.drawImage(washBuf, 0, 0, w, h);
+    ctx.drawImage(cityBuf, 0, 0, w, h);
+    if (washVisible() && washBuf) {
+      // With a map showing, the city goes gray and pale so the map is the only
+      // color on screen. The game's own palette (salmon ground, saturated
+      // green parks) otherwise swamps a red wash. Blend modes rather than
+      // ctx.filter, which Safari did not support until recently.
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(0, 0, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(washBuf, 0, 0, w, h);
     }
   }
 
-  function paintHero(withSweep) {
-    if (!heroCanvas) return;
-    const ctx = heroCanvas.getContext('2d');
-    if (withSweep && heroPrev) {
-      // snapshot old, draw new into heroNext, animate in the loop
-      heroPrev.getContext('2d').drawImage(heroCanvas, 0, 0);
-      drawBlockMap(heroNext.getContext('2d'), sim.blockMaps[activeMeta.key], activeMeta);
-      sweepStart = performance.now();
-    } else {
-      drawBlockMap(ctx, sim.blockMaps[activeMeta.key], activeMeta);
-    }
-  }
-
-  function sweepFrame(now) {
-    if (!sweepStart || !heroCanvas) return false;
-    const t = Math.min(1, (now - sweepStart) / SWEEP_MS);
-    const ctx = heroCanvas.getContext('2d');
-    const w = heroCanvas.width;
-    ctx.drawImage(heroPrev, 0, 0);
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, Math.round(w * t), heroCanvas.height);
-    ctx.clip();
-    ctx.drawImage(heroNext, 0, 0);
-    ctx.restore();
-    if (t >= 1) sweepStart = 0;
-    return true;
-  }
-
-  // Whether the wash draws at all. Pinned, always. Following the rotation,
-  // only at a speed a person can read - at 12 cycles a second a wash cycling
+  // Whether the wash draws at all. Never for 'none'. Pinned, always. Following
+  // the rotation, only at a speed a person can read - at 12 cycles a second a wash cycling
   // through fifteen layers is red noise, and several layers (crime, unspoilt
   // land) have a nonzero baseline over all empty terrain, so the noise covers
   // the whole map. Slowing the simulation down is what turns the x-ray on,
   // which is the right way round.
   const washVisible = () =>
-    overlayMode === 'wash' &&
-    ((params.layer && params.layer !== 'none') || paused || cyclesPerSecond <= 2);
+    layerMode === 'pinned' || (layerMode === 'follow' && (paused || cyclesPerSecond <= 2));
 
   function paint(all = false) {
     if (view) {
@@ -207,13 +204,8 @@
     if (atlas && cityBuf) drawCity(cityBuf.getContext('2d'), map, atlas, 6);
     if (washVisible() && washBuf) {
       drawWash(washBuf.getContext('2d'), sim.blockMaps[activeMeta.key], activeMeta);
-    } else if (overlayMode === 'solo' && soloBuf) {
-      drawBlockMap(soloBuf.getContext('2d'), sim.blockMaps[activeMeta.key], activeMeta);
     }
     blitDisplay();
-    if (all || firedPhases.has(activeMeta.phase)) {
-      paintHero(paused || cyclesPerSecond <= 2);
-    }
     for (const meta of BLOCK_MAPS) {
       const c = panelCanvases[meta.key];
       if (c && (all || firedPhases.has(meta.phase))) {
@@ -235,6 +227,40 @@
     return 'landValueMap';
   }
 
+  // The step that just ran, and whether it did anything this cycle: the
+  // expensive scans run only every Nth cycle (see PHASES in engine.js).
+  function noteLastStep() {
+    if (!sim) return;
+    const p = PHASES[(sim._phaseCycle + 15) % 16];
+    lastStep = { ...p, ran: !p.every || sim._simCycle % p.every === 0 };
+  }
+
+  // Pausing is how you step through the cycle, and stepping only makes sense
+  // with the maps showing, so a pause with no map chosen switches to 'follow
+  // the cycle'. A map the reader pinned is left alone. Playing again puts
+  // 'none' back, if the switch was ours and nobody has changed it since.
+  function autoFollow() {
+    if (params.layer && params.layer !== 'none') return;
+    if (sim) followKey = latestWritten();
+    params.layer = 'follow';
+    autoFollowed = true;
+  }
+
+  function unFollow() {
+    if (autoFollowed && params.layer === 'follow') params.layer = 'none';
+    autoFollowed = false;
+  }
+
+  // The thumbnail tooltip. Drawn by hand rather than with title=, because the
+  // write flash changes each thumbnail's class several times a second and the
+  // browser's own tooltip never survived long enough to appear.
+  function showRailTip(e, meta) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const rail = railEl.getBoundingClientRect();
+    const left = Math.min(Math.max(0, r.left - rail.left), rail.width - 240);
+    railTip = { label: meta.label, note: meta.note, left };
+  }
+
   function stepOnce() {
     if (!sim) return;
     sim.simTickImmediate();
@@ -245,10 +271,11 @@
     phase = ph;
     litPhases = new Set(pendingLit);
     pendingLit.clear();
-    if (params.layer === 'none' || !params.layer) followKey = latestWritten();
-    heroPhase = activeMeta.phase;
+    if (layerMode === 'follow') followKey = latestWritten();
+    noteLastStep();
     paint();
     if (ph === 10) metricsOut();
+    refreshHover();
   }
 
   function loop() {
@@ -259,11 +286,10 @@
       if (ph === 0) cycleCount += 1;
       firedPhases.add(ph);
       pendingLit.add(ph);
+      if (ph === 10) censusFresh = true;
     }
     const now = performance.now();
-    const sweeping = sweepFrame(now);
-    if (steps > 0) paint();
-    else if (!sweeping && firedPhases.size) paint();
+    if (steps > 0 || firedPhases.size) paint();
 
     // THE SIMULATION RUNS FAR FASTER THAN ANYONE CAN READ. At full speed the
     // strip reports WHICH PHASES RAN since the last repaint rather than where
@@ -275,8 +301,7 @@
       phase = sim._phaseCycle;
       litPhases = new Set(pendingLit);
       pendingLit.clear();
-      if (params.layer === 'none' || !params.layer) followKey = latestWritten();
-      heroPhase = activeMeta.phase;
+      if (layerMode === 'follow') followKey = latestWritten();
     }
     if (now - lastRateAt > 500) {
       cyclesPerSecond = paused ? 0 : Math.round((cycleCount * 1000) / (now - lastRateAt));
@@ -284,8 +309,19 @@
       lastRateAt = now;
     }
     // The census is cleared at phase 0 and refilled by the scan over phases
-    // 1-8, so reporting at phase 0 would announce a population of zero.
-    if (steps > 0 && phase === 10) metricsOut();
+    // 1-8, so reporting at phase 0 would announce a population of zero. The
+    // numbers are read at the step the census completed, not at whatever
+    // phase the frame happens to end on: the old test (is the displayed phase
+    // 10?) almost never came true at speed, and the metrics sat still.
+    if (censusFresh && now - lastMetricsAt > 250) {
+      censusFresh = false;
+      lastMetricsAt = now;
+      metricsOut();
+    }
+    if (hoverTile && now - lastHoverAt > 250) {
+      lastHoverAt = now;
+      refreshHover();
+    }
 
     if (view && sim._cityTime * 16 >= VIEW_TICKS) {
       if (!announcedReady) { announcedReady = true; onready?.(true); }
@@ -318,7 +354,12 @@
     displayCanvas.setPointerCapture(e.pointerId);
   }
   function onPointerMove(e) {
-    if (!dragging) return;
+    if (!dragging) {
+      updateHover(e);
+      return;
+    }
+    hover = null;
+    hoverTile = null;
     const dx = e.clientX - dragX;
     const dy = e.clientY - dragY;
     if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
@@ -333,6 +374,41 @@
     dragging = false;
     displayCanvas.releasePointerCapture?.(e.pointerId);
   }
+  function onPointerLeave() {
+    hover = null;
+    hoverTile = null;
+  }
+
+  // The tile under the pointer. The city fills contentSize() at the pan
+  // offset, one map tile to every (width / map.width) pixels.
+  function updateHover(e) {
+    if (!map || !sim) return;
+    const rect = displayCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const { w, h } = contentSize();
+    const x = Math.floor(((mx - tx) / w) * map.width);
+    const y = Math.floor(((my - ty) / h) * map.height);
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) {
+      onPointerLeave();
+      return;
+    }
+    hoverTile = { x, y, mx, my, cw: rect.width, ch: rect.height };
+    refreshHover();
+  }
+
+  // Re-read the hovered tile, so the readout keeps up with a running city.
+  function refreshHover() {
+    if (!hoverTile || !sim) return;
+    const { x, y, mx, my, cw, ch } = hoverTile;
+    const info = inspectTile(map, sim, x, y);
+    if (!info) return;
+    // Beside the pointer, flipped to the other side near the stage's edges.
+    const left = mx > cw - 200 ? mx - 186 : mx + 14;
+    const top = my > ch - 170 ? my - 160 : my + 14;
+    hover = { info, left, top };
+  }
+
   function resetView() {
     userZoom = 1;
     zoom = 1;
@@ -346,35 +422,6 @@
     paint(true);
   }
 
-  function startDivergence() {
-    if (view) return;
-    divergenceState = 'running';
-    onready?.(false);
-    worker?.terminate();
-    worker = new DivergenceWorker();
-    const seeds = Array.from({ length: params.run_count ?? 5 }, (_, i) => (params.seed ?? 1) + i);
-    worker.onmessage = (e) => {
-      if (e.data.type !== 'done') return;
-      const runs = e.data.runs;
-      if (divCanvas) drawDivergence(divCanvas.getContext('2d'), runs, 'population', 'population, by step');
-      const finals = runs.map((r) => r.at(-1)?.population ?? 0);
-      divergenceSpread = `${Math.min(...finals)} – ${Math.max(...finals)}`;
-      divergenceState = 'done';
-      metricsOut();
-      onready?.(true);
-    };
-    worker.onerror = (e) => {
-      divergenceState = 'failed';
-      divergenceSpread = 'runs failed';
-      onready?.(true);
-      console.error('divergence worker failed', e);
-    };
-    worker.postMessage({
-      seeds, params: $state.snapshot(params), assets: $state.snapshot(assets),
-      ticks: params.ticks ?? 1000
-    });
-  }
-
   async function boot() {
     try {
       started = true;
@@ -386,20 +433,13 @@
         washBuf = document.createElement('canvas');
         washBuf.width = 120;
         washBuf.height = 100;
-        soloBuf = document.createElement('canvas');
-        soloBuf.width = 240;
-        soloBuf.height = 200;
-        heroPrev = document.createElement('canvas');
-        heroNext = document.createElement('canvas');
-        heroPrev.width = heroNext.width = 240;
-        heroPrev.height = heroNext.height = 200;
         fitView();
         ontransport?.({
           label: 'the clock',
           playing: true,
-          play: () => { paused = false; },
-          pause: () => { paused = true; cyclesPerSecond = 0; },
-          step: () => { paused = true; stepOnce(); },
+          play: () => { paused = false; unFollow(); },
+          pause: () => { paused = true; cyclesPerSecond = 0; noteLastStep(); autoFollow(); },
+          step: () => { paused = true; autoFollow(); stepOnce(); },
           setSpeed: (m) => { speedMult = m; },
           readout: () =>
             sim
@@ -410,7 +450,6 @@
         });
       }
       rebuild();
-      if (!view) startDivergence();
     } catch (err) {
       error = String(err?.message ?? err);
       onready?.(true); // never hang the cover pipeline on a load failure
@@ -427,7 +466,6 @@
     });
     map = built.map;
     sim = built.sim;
-    tally = built.tally;
     // Get past the first cycle so the panel is not reporting an empty census.
     run(sim, 32);
     phase = sim._phaseCycle;
@@ -441,19 +479,38 @@
     if (browser && (view ? viewCanvas : displayCanvas) && !started) boot();
   });
 
-  // A changed seed means a different run and the city has to be rebuilt from
-  // the beginning. Every other constant is read at call time by the engine, so
-  // it takes effect on the running city without a restart.
+  // A changed seed or starting city means a different run, and the city is
+  // rebuilt from the beginning. Every other constant is read at call time by
+  // the engine, so it takes effect on the running city without a restart.
+  //
+  // The rebuild is UNTRACKED. It reads half the component's state (the speed,
+  // the pinned layer, every param through the snapshot), and an effect that
+  // calls it untracked-free subscribes to all of it: after the first change of
+  // seed, the city was rebuilt every time the cycles-per-second readout
+  // ticked, twice a second, and never got off the ground.
   $effect(() => {
     void params.seed;
-    if (started && sim) rebuild();
+    void params.urban_form;
+    untrack(() => {
+      if (started && sim) rebuild();
+    });
   });
 
-  // Pinning a different layer must repaint the wash and hero even while paused.
+  // Pinning a different layer must repaint the wash even while paused.
   $effect(() => {
     void params.layer;
-    void overlayMode;
-    if (started && sim && !view) paint(true);
+    if (started && sim && !view) untrack(() => paint(true));
+  });
+
+  // The key's tile pictures, drawn from the same atlas as the city.
+  $effect(() => {
+    if (!atlas || !keyOpen) return;
+    for (const item of KEY_TILES) {
+      for (const [i, first] of item.tiles.entries()) {
+        const c = keyCanvases[item.label + i];
+        if (c) drawTiles(c.getContext('2d'), atlas, first, item.size);
+      }
+    }
   });
 
   $effect(() => {
@@ -468,7 +525,6 @@
 
   onDestroy(() => {
     cancelAnimationFrame(frame);
-    worker?.terminate();
   });
 </script>
 
@@ -477,49 +533,31 @@
     <canvas bind:this={viewCanvas} width={480} height={400} class="city-view"></canvas>
   {:else}
     {#if params.show_rail !== false}
-      <div class="rail">
-        <div class="rail-head">
-          <button type="button" class:on={railTab === 'layers'} onclick={() => (railTab = 'layers')}>
-            every layer the simulation keeps
-          </button>
-          <button
-            type="button"
-            class:on={railTab === 'divergence'}
-            onclick={() => (railTab = 'divergence')}
-          >
-            same rules, different seed
-            {#if divergenceState === 'running'}<span class="tag">running…</span>
-            {:else if divergenceState === 'failed'}<span class="tag">failed</span>{/if}
-          </button>
-        </div>
-
-        <div class="layers" hidden={railTab !== 'layers'}>
+      <div class="rail" bind:this={railEl}>
+        <div class="layers" class:pinned={layerMode === 'pinned'}>
           {#each BLOCK_MAPS as meta (meta.key)}
             <button
               type="button"
               class="layer"
               class:scratch={meta.scratch}
-              class:active={activeKey === meta.key}
+              class:active={layerMode !== 'none' && activeKey === meta.key}
               class:writing={litPhases.has(meta.phase)}
               onclick={() => pinLayer(meta.key)}
-              title="{meta.note} — phase {meta.phase}, {meta.min}–{meta.max}. Click to wash it over the city."
+              onpointerenter={(e) => showRailTip(e, meta)}
+              onpointerleave={() => (railTip = null)}
+              aria-label={meta.label}
             >
               <canvas bind:this={panelCanvases[meta.key]} width={104} height={88}></canvas>
-              <span class="layer-label"><b>{meta.label}</b> <i>ph {meta.phase}</i></span>
+              <span class="layer-label"><b>{meta.label}</b></span>
             </button>
           {/each}
         </div>
-
-        <div class="divergence" hidden={railTab !== 'divergence'}>
-          <canvas bind:this={divCanvas} width={520} height={110}></canvas>
-          {#if tally}
-            <p class="tally">
-              Starting city: {tally.zones} zones, {tally.services} stations,
-              {tally.plants} power plants, {tally.roads} road and {tally.wires} wire
-              tiles. Identical on every run; only the seed differs.
-            </p>
-          {/if}
-        </div>
+        {#if railTip}
+          <div class="rail-tip" style:left="{railTip.left}px">
+            <b>{railTip.label}</b>
+            {railTip.note}
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -532,28 +570,53 @@
         onpointerdown={onPointerDown}
         onpointermove={onPointerMove}
         onpointerup={onPointerUp}
+        onpointerleave={onPointerLeave}
         ondblclick={resetView}
       ></canvas>
 
-      <div class="hero">
-        <canvas bind:this={heroCanvas} width={240} height={200}></canvas>
-        <p class="hero-caption">
-          <b>{activeMeta.label}</b>
-          <span>
-            phase {activeMeta.phase} writes it ·
-            {params.layer && params.layer !== 'none' ? 'pinned' : 'following the rotation'}
-          </span>
-        </p>
+      <div class="legend" class:closed={!keyOpen}>
+        <button type="button" class="legend-head" onclick={() => (keyOpen = !keyOpen)} aria-expanded={keyOpen}>
+          key <span>{keyOpen ? '−' : '+'}</span>
+        </button>
+        {#if keyOpen}
+          <ul class="legend-tiles">
+            {#each KEY_TILES as item (item.label)}
+              <li>
+                <span class="legend-icons">
+                  {#each item.tiles as _, i}
+                    <canvas bind:this={keyCanvases[item.label + i]} width={24} height={24}></canvas>
+                  {/each}
+                </span>
+                {item.label}
+              </li>
+            {/each}
+          </ul>
+          {#if washVisible()}
+            <div class="legend-layer">
+              <b>{activeMeta.label}</b>
+              <i style:background={washScale}></i>
+              <span><span>{activeMeta.min}</span><span>{activeMeta.max}</span></span>
+            </div>
+          {:else if layerMode === 'follow'}
+            <div class="legend-layer">Pause or slow the clock to see the maps as they update.</div>
+          {/if}
+        {/if}
       </div>
 
-      <div class="stage-chips">
-        <div class="chip-group">
-          {#each [['wash', 'overlay'], ['off', 'city'], ['solo', 'layer']] as [v, label] (v)}
-            <button type="button" class:on={overlayMode === v} onclick={() => (overlayMode = v)}>
-              {label}
-            </button>
-          {/each}
+      {#if hover}
+        <div class="tip" style:left="{hover.left}px" style:top="{hover.top}px">
+          <b>{hover.info.kind}</b>
+          <table>
+            <tbody>
+              {#each hover.info.rows as [label, value] (label)}
+                <tr><td>{label}</td><td>{value}</td></tr>
+              {/each}
+            </tbody>
+          </table>
         </div>
+      {/if}
+
+      <div class="stage-chips">
         {#if zoom > 1.01}
           <button type="button" class="chip" onclick={resetView}>reset view · {zoom.toFixed(1)}×</button>
         {:else}
@@ -570,23 +633,22 @@
       <div class="phase-row">
         {#each PHASES as p (p.n)}
           <i
-            class:lit={paused ? p.n === phase : litPhases.has(p.n)}
+            class:lit={paused ? p.n === lastStep?.n : litPhases.has(p.n)}
             class:key={p.n === 12 || p.n === 13 || p.n === 14}
-            title="{p.n}. {p.name} — writes {p.writes}"
+            title="Step {p.n + 1}: {p.name}. {p.about}"
           ></i>
         {/each}
       </div>
       <p class="phase-now">
-        {#if paused}
-          <b>Paused at phase {phase} — {PHASES[phase]?.name}.</b>
-          Step to watch the sixteen phases write their layers one at a time.
+        {#if paused && lastStep}
+          <b>Step {lastStep.n + 1} of 16: {lastStep.name}.</b>
+          {#if !lastStep.ran}<em>Skipped this cycle; it runs every {lastStep.every}th.</em>{/if}
+          {lastStep.about}
         {:else if cyclesPerSecond > 2}
-          <b>{cyclesPerSecond} complete cycles a second</b> — every box lights
-          because the whole cycle runs many times between one frame and the
-          next, far faster than you can read it. Slow it down or step.
+          <b>{cyclesPerSecond} cycles a second,</b> sixteen steps each. Pause and
+          step forward to see what each step does.
         {:else}
-          <b>Running slowly.</b> The playhead is real at this speed; watch the
-          three that matter — land value, crime, density — fire in order.
+          <b>Running slowly.</b> Pause and step forward to see what each step does.
         {/if}
       </p>
     </div>
@@ -606,22 +668,37 @@
              display: block; cursor: grab; touch-action: none; }
   .display.grabbing { cursor: grabbing; }
 
-  /* Bottom left, not top right. The 09-08 reframe floats the assumptions and
-     representation panels over the top right of the map and the description
-     over the top left; the hero and the chips move to the two corners nothing
-     else claims. The metrics strip is centered and capped at 70%, so the
-     bottom corners stay clear. */
-  .hero {
-    position: absolute; left: 0.5rem; bottom: 0.5rem; width: 200px;
-    border: 1px solid #000; background: #fff;
+  /* Top left of the map, folding to its heading. The chips sit top center and
+     the floating panels are outside the map, so the corner is free. */
+  .legend {
+    position: absolute; left: 0.5rem; top: 0.5rem; width: 150px;
+    border: 1px solid #000; background: rgba(255,255,255,0.95);
+    font-size: 0.6rem; line-height: 1.3;
   }
-  .hero canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
-  .hero-caption {
-    margin: 0; padding: 0.25rem 0.4rem; font-size: 0.6rem; line-height: 1.4;
-    border-top: 1px solid #eee; display: flex; flex-direction: column;
+  .legend.closed { width: auto; }
+  .legend-head {
+    display: flex; justify-content: space-between; width: 100%; gap: 0.8rem;
+    font: inherit; font-weight: 700; padding: 0.25rem 0.4rem;
+    background: transparent; border: 0; cursor: pointer; text-align: left;
   }
-  .hero-caption b { font-size: 0.66rem; }
-  .hero-caption span { color: #999; }
+  .legend-tiles { list-style: none; margin: 0; padding: 0 0.4rem 0.3rem; }
+  .legend-tiles li { display: flex; align-items: center; gap: 0.35rem; padding: 1px 0; }
+  .legend-icons { display: flex; gap: 2px; flex: 0 0 50px; }
+  .legend-icons canvas { width: 24px; height: 24px; image-rendering: pixelated; }
+  .legend-layer { border-top: 1px solid #eee; padding: 0.3rem 0.4rem 0.35rem; }
+  .legend-layer i { display: block; height: 8px; margin: 0.2rem 0 0.1rem; border: 1px solid #ddd; }
+  .legend-layer > span { display: flex; justify-content: space-between; color: #888; }
+
+  /* The hover readout. pointer-events off, so it never steals the drag. */
+  .tip {
+    position: absolute; pointer-events: none; z-index: 2; min-width: 150px;
+    background: #fff; border: 1px solid #000; padding: 0.3rem 0.45rem;
+    font-size: 0.6rem; line-height: 1.35;
+  }
+  .tip b { display: block; margin-bottom: 0.15rem; }
+  .tip table { border-collapse: collapse; width: 100%; }
+  .tip td { padding: 0; }
+  .tip td:last-child { text-align: right; padding-left: 0.8rem; font-variant-numeric: tabular-nums; }
 
   .stage-chips {
     position: absolute; left: 50%; transform: translateX(-50%); top: 0.5rem;
@@ -665,16 +742,13 @@
      panel. It was under the map until the 09-08 reframe; with the map now
      filling the stage there is room for it above, where the fifteen
      thumbnails are large enough to follow as they are written. */
-  .rail { border-bottom: 1px solid #000; background: #fbfbf9; flex: none; }
-  .rail-head { display: flex; border-bottom: 1px solid #e4e4e0; }
-  .rail-head button {
-    font: inherit; font-size: 0.62rem; text-transform: lowercase;
-    letter-spacing: 0.06em; padding: 0.3rem 0.6rem;
-    background: transparent; border: 0; border-right: 1px solid #e4e4e0;
-    cursor: pointer; color: #999;
+  .rail { border-bottom: 1px solid #000; background: #fbfbf9; flex: none; position: relative; z-index: 3; }
+  .rail-tip {
+    position: absolute; top: calc(100% + 4px); width: 240px; pointer-events: none;
+    background: #fff; border: 1px solid #000; padding: 0.3rem 0.45rem;
+    font-size: 0.6rem; line-height: 1.4; color: #555;
   }
-  .rail-head button.on { color: #000; font-weight: 700; }
-  .tag { color: #a00; font-weight: 700; margin-left: 0.3rem; }
+  .rail-tip b { display: block; color: #000; }
 
   .layers {
     display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 1px;
@@ -688,6 +762,9 @@
   .layer canvas { width: 100%; height: auto; border: 1px solid #ddd; background: #fff; }
   .layer.scratch { opacity: 0.5; }
   .layer.active canvas { border-color: #000; box-shadow: 0 0 0 1px #000; }
+  /* With a map pinned, the others fade, so the strip says which one is on. */
+  .layers.pinned .layer:not(.active) { opacity: 0.3; }
+  .layers.pinned .layer:not(.active):hover { opacity: 0.7; }
   /* The write flash: the border of the layer a firing phase just rewrote.
      Throttled with litPhases, same honesty as the phase strip. */
   .layer.writing canvas { border-color: #a03424; box-shadow: 0 0 0 1px #a03424; }
@@ -698,10 +775,6 @@
   .layer-label b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .layer-label i { color: #aaa; font-style: normal; flex: none; }
 
-  .divergence { padding: 0.4rem 0.6rem 0.5rem; }
-  .divergence canvas { width: 100%; max-width: 560px; height: 110px;
-                       background: #fff; border: 1px solid #e4e4e0; display: block; }
-  .tally { margin: 0.35rem 0 0; font-size: 0.58rem; color: #999; line-height: 1.5; }
 
   @media (max-width: 1400px) {
     .layers { grid-template-columns: repeat(8, minmax(0, 1fr)); }
@@ -709,6 +782,5 @@
 
   @media (max-width: 900px) {
     .layers { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .hero { width: 160px; }
   }
 </style>

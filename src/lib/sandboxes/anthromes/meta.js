@@ -42,5 +42,7 @@ export default {
   provenanceNote:
     "The inputs are HYDE 3.2 rather than 3.5, because the downloaded 3.5 archive is missing the 2000-2023 input grids. The 3.5 classified series is included for comparison, to 2025.",
   tutorial: null,
+  // Hides the frame's "under construction" note for this sandbox.
+  underConstruction: false,
   live: false
 };

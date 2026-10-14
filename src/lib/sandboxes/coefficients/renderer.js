@@ -55,6 +55,27 @@ export function drawCity(ctx, map, atlas, scale) {
   }
 }
 
+/**
+ * Draw an n x n block of atlas tiles into a whole canvas, for the key.
+ *
+ * Zones are stored in the atlas the way the map lays them down: top-left tile
+ * first, row by row. So a zone is drawn from its first tile and its size.
+ */
+export function drawTiles(ctx, atlas, first, n) {
+  const { tileSize, perRow } = ATLAS;
+  const s = ctx.canvas.width / n;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  for (let i = 0; i < n * n; i++) {
+    const v = first + i;
+    ctx.drawImage(
+      atlas,
+      (v % perRow) * tileSize, Math.floor(v / perRow) * tileSize, tileSize, tileSize,
+      (i % n) * s, Math.floor(i / n) * s, s, s
+    );
+  }
+}
+
 // A single ramp for every layer, so that two layers side by side are comparable
 // and the eye is not asked to learn fifteen color schemes. Low is pale, high is
 // dark; the one diverging case (rate of growth, which is signed) is handled by
@@ -145,72 +166,4 @@ export function peak(blockMap) {
     }
   }
   return Number.isFinite(m) ? m : 0;
-}
-
-/**
- * The divergence chart: mean and range of one metric across seeded runs.
- *
- * The argument it makes is that the rules are deterministic and the outcomes
- * are not, which is the thing students most often have backwards about
- * emergence. Every run below used identical rules and an identical starting
- * city, and differed only in the seed.
- */
-export function drawDivergence(ctx, runs, key, label) {
-  const cw = ctx.canvas.width;
-  const ch = ctx.canvas.height;
-  ctx.clearRect(0, 0, cw, ch);
-  if (!runs?.length) return;
-
-  const pad = { l: 34, r: 6, t: 8, b: 18 };
-  const n = runs[0].length;
-  let lo = Infinity;
-  let hi = -Infinity;
-  for (const r of runs) for (const p of r) {
-    if (p[key] < lo) lo = p[key];
-    if (p[key] > hi) hi = p[key];
-  }
-  if (!Number.isFinite(lo)) return;
-  if (hi === lo) { hi = lo + 1; }
-
-  const X = (i) => pad.l + (cw - pad.l - pad.r) * (i / Math.max(1, n - 1));
-  const Y = (v) => ch - pad.b - (ch - pad.t - pad.b) * ((v - lo) / (hi - lo));
-
-  // The band between the lowest and highest run at each sample.
-  ctx.fillStyle = 'rgba(0,0,0,0.10)';
-  ctx.beginPath();
-  for (let i = 0; i < n; i++) {
-    const v = Math.max(...runs.map((r) => r[i]?.[key] ?? 0));
-    i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v));
-  }
-  for (let i = n - 1; i >= 0; i--) {
-    const v = Math.min(...runs.map((r) => r[i]?.[key] ?? 0));
-    ctx.lineTo(X(i), Y(v));
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  // Each individual run, faint.
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-  for (const r of runs) {
-    ctx.beginPath();
-    r.forEach((p, i) => (i === 0 ? ctx.moveTo(X(i), Y(p[key])) : ctx.lineTo(X(i), Y(p[key]))));
-    ctx.stroke();
-  }
-
-  // The mean, solid.
-  ctx.lineWidth = 1.75;
-  ctx.strokeStyle = '#000';
-  ctx.beginPath();
-  for (let i = 0; i < n; i++) {
-    const v = runs.reduce((a, r) => a + (r[i]?.[key] ?? 0), 0) / runs.length;
-    i === 0 ? ctx.moveTo(X(i), Y(v)) : ctx.lineTo(X(i), Y(v));
-  }
-  ctx.stroke();
-
-  ctx.fillStyle = '#888';
-  ctx.font = '9px ui-monospace, monospace';
-  ctx.fillText(String(Math.round(hi)), 2, pad.t + 7);
-  ctx.fillText(String(Math.round(lo)), 2, ch - pad.b);
-  ctx.fillText(label, pad.l, ch - 5);
 }

@@ -120,10 +120,10 @@ export function resetFunctions() {
 // object with random() and floor(). So seeding the whole simulation is one
 // default parameter, not a hunt through 24 files.
 //
-// This is not optional. Three things need it: the divergence chart is only
-// meaningful if runs differ by seed and nothing else, the cover screenshot has
-// to be reproducible, and a submitted city has to replay to the state the
-// student is arguing about.
+// This is not optional. Two things need it: the cover screenshot has to be
+// reproducible, and a submitted city has to replay to the state the student
+// is arguing about. It is also what lets the seed slider mean anything: two
+// cities that differ only by their seed.
 
 /** mulberry32. Small, fast, and good enough for a city that is not a casino. */
 export function mulberry32(seed) {

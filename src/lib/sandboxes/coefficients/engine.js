@@ -1,12 +1,17 @@
 // The sandbox's view of the engine.
 //
-// Everything the component and the divergence worker need, and nothing about
-// the DOM - so the same file runs on the page and inside a Web Worker.
+// Everything the component needs, and nothing about the DOM, so the same file
+// also runs headless (the cover pipeline, and any test that builds a city).
 //
 // The engine's own user interface is not used at all. This imports the headless
 // simulation core only, which is also why jQuery never enters the bundle.
 import { Simulation } from './vendor/src/simulation.js';
-import { buildStartingCity, makeMap, PLAN } from './startingCity.js';
+import { Residential } from './vendor/src/residential.js';
+import { Commercial } from './vendor/src/commercial.js';
+import { Industrial } from './vendor/src/industrial.js';
+import { TileUtils } from './vendor/src/tileUtils.js';
+import * as TileValues from './vendor/src/tileValues.ts';
+import { buildStartingCity, makeMap, PLAN, PLANS } from './startingCity.js';
 import { seed, applyParams, applyCoefficients, resetCoefficients, C } from './tunables.js';
 
 /**
@@ -23,53 +28,97 @@ import { seed, applyParams, applyCoefficients, resetCoefficients, C } from './tu
  */
 export const BLOCK_MAPS = [
   { key: 'landValueMap', label: 'land value', min: 0, max: 250, phase: 12,
-    note: 'Distance from the city center, plus unspoilt land, minus pollution, minus 20 where crime is over 190.' },
+    note: 'A base value, minus distance from the city center, plus undeveloped land nearby, minus pollution, minus 20 where crime is over 190.' },
   { key: 'crimeRateMap', label: 'crime', min: 0, max: 250, phase: 13,
-    note: 'Base 128, minus land value, plus population density, minus police. Reads the map above; the map above reads it back.' },
+    note: '128, minus land value, plus population density, minus police coverage. Crime also lowers land value, so each map feeds the other.' },
   { key: 'pollutionDensityMap', label: 'pollution', min: 0, max: 255, phase: 12,
-    note: 'A per-tile constant by land use, smoothed twice. Housing and shops emit nothing at all.' },
+    note: 'A fixed amount for each kind of tile, blurred twice. Housing and shops produce none.' },
   { key: 'populationDensityMap', label: 'population density', min: 0, max: 510, phase: 14,
-    note: 'Zone populations, smoothed three times, then doubled.' },
+    note: 'Zone populations, blurred three times, then doubled.' },
   { key: 'trafficDensityMap', label: 'traffic', min: 0, max: 240, phase: 10,
-    note: 'Left behind by random walks looking for somewhere to go. Not a count of journeys.' },
+    note: 'Left behind by the random walks zones make along the roads. Not a count of trips.' },
   { key: 'rateOfGrowthMap', label: 'rate of growth', min: -200, max: 200, phase: 10,
-    note: 'Where zones grew or decayed recently. Decays back towards zero on its own.' },
-  { key: 'terrainDensityMap', label: 'unspoilt land', min: 0, max: 240, phase: 12,
-    note: 'How undeveloped a neighborhood is. On the blank starting map this is nearly uniform.' },
-  { key: 'cityCentreDistScoreMap', label: 'distance from center', min: -64, max: 64, phase: 14,
-    note: 'The city center is recomputed as the mean of populated zones, AFTER the land value that depends on it has been written.' },
-  { key: 'policeStationMap', label: 'police cover', min: 0, max: 1000, phase: 13,
-    note: 'Station positions, blurred three times. How far a station reaches is a number of blur passes.' },
-  { key: 'policeStationEffectMap', label: 'police cover (working copy)', min: 0, max: 1000, phase: 13,
-    note: 'The other half of the blur. The two maps are smoothed into each other alternately.' },
-  { key: 'fireStationMap', label: 'fire cover', min: 0, max: 1000, phase: 15, note: 'As police cover.' },
-  { key: 'fireStationEffectMap', label: 'fire cover (working copy)', min: 0, max: 1000, phase: 15, note: 'As above.' },
+    note: 'Where zones grew or declined recently. Fades back to zero on its own.' },
+  { key: 'terrainDensityMap', label: 'undeveloped land', min: 0, max: 240, phase: 12,
+    note: 'How much undeveloped land, such as trees, is nearby.' },
+  { key: 'cityCentreDistScoreMap', label: 'distance from the center', min: -64, max: 64, phase: 14,
+    note: 'Distance from the city center. The center is moved to the average position of the population in step 15, after land value has already used it in step 13.' },
+  { key: 'policeStationMap', label: 'police coverage', min: 0, max: 1000, phase: 13,
+    note: 'Police stations, blurred three times. How far a station reaches depends on the number of blurs.' },
+  { key: 'policeStationEffectMap', label: 'police coverage (working copy)', min: 0, max: 1000, phase: 13,
+    note: 'A second copy used while blurring; the engine blurs back and forth between the two.' },
+  { key: 'fireStationMap', label: 'fire coverage', min: 0, max: 1000, phase: 15,
+    note: 'Fire stations, blurred three times.' },
+  { key: 'fireStationEffectMap', label: 'fire coverage (working copy)', min: 0, max: 1000, phase: 15,
+    note: 'A second copy used while blurring.' },
   { key: 'tempMap1', label: 'scratch 1', min: 0, max: 255, phase: 12, scratch: true,
-    note: 'Working space. Nothing reads it between phases.' },
+    note: 'Working space used during a step. Nothing else reads it.' },
   { key: 'tempMap2', label: 'scratch 2', min: 0, max: 255, phase: 12, scratch: true,
-    note: 'Working space.' },
+    note: 'Working space used during a step. Nothing else reads it.' },
   { key: 'tempMap3', label: 'scratch 3', min: 0, max: 240, phase: 12, scratch: true,
-    note: 'Working space.' }
+    note: 'Working space used during a step. Nothing else reads it.' }
 ];
 
-/** What each of the sixteen phases does. Used by the diagram and the panel. */
+/**
+ * What each of the sixteen steps does, in plain words, for the step readout.
+ *
+ * "Every Nth cycle" is real: the engine was built to run its expensive scans
+ * less often at higher speeds, and this sandbox runs it at its fastest
+ * setting (speed 3 in simulation.js). So land value, crime and density are
+ * recomputed only every seventeenth to nineteenth cycle, and in between the
+ * zones grow against maps that are up to nineteen cycles old. `every` is that
+ * divisor, from the speed tables in simulation.js; the step runs when the
+ * engine's cycle count divides by it.
+ */
+const SCAN =
+  'The map is scanned in eight strips, one a step, left to right; this one is STRIP. ' +
+  'Each zone in the strip is counted into the census, and may grow or decline. The chance depends on ' +
+  'demand for its kind of zone, the land value and pollution where it sits, whether it has power, and ' +
+  'whether a random walk along the roads reaches the kind of zone it needs: housing needs shops, shops ' +
+  'need industry, industry needs housing. This is the only step where the city itself changes.';
+
 export const PHASES = [
-  { n: 0, name: 'tick over', writes: 'city time, the RCI valves, and it CLEARS the census' },
-  { n: 1, name: 'scan 1/8', writes: 'zones, and the census as it goes' },
-  { n: 2, name: 'scan 2/8', writes: 'zones' },
-  { n: 3, name: 'scan 3/8', writes: 'zones' },
-  { n: 4, name: 'scan 4/8', writes: 'zones' },
-  { n: 5, name: 'scan 5/8', writes: 'zones' },
-  { n: 6, name: 'scan 6/8', writes: 'zones' },
-  { n: 7, name: 'scan 7/8', writes: 'zones' },
-  { n: 8, name: 'scan 8/8', writes: 'zones' },
-  { n: 9, name: 'census', writes: 'the population figures, and tax every 48 turns' },
-  { n: 10, name: 'decay', writes: 'traffic and growth maps decay towards zero' },
-  { n: 11, name: 'power', writes: 'which tiles have electricity' },
-  { n: 12, name: 'pollution, terrain, land value', writes: 'pollution, unspoilt land, LAND VALUE' },
-  { n: 13, name: 'crime', writes: 'police cover, then CRIME' },
-  { n: 14, name: 'density', writes: 'population density, then moves the city center' },
-  { n: 15, name: 'fire', writes: 'fire cover, and rolls for disasters' }
+  { n: 0, name: 'start of a cycle',
+    about: 'The clock moves forward one turn. Every second turn, demand for housing, shops and industry is ' +
+      'recalculated from the last census, the birth rate and outside demand. Then the census is cleared, so ' +
+      'the scan in the next eight steps can count the city from zero.' },
+  { n: 1, name: 'zone scan, strip 1 of 8',
+    about: SCAN.replace('STRIP', 'columns 0 to 14') },
+  { n: 2, name: 'zone scan, strip 2 of 8',
+    about: SCAN.replace('STRIP', 'columns 15 to 29') },
+  { n: 3, name: 'zone scan, strip 3 of 8',
+    about: SCAN.replace('STRIP', 'columns 30 to 44') },
+  { n: 4, name: 'zone scan, strip 4 of 8',
+    about: SCAN.replace('STRIP', 'columns 45 to 59') },
+  { n: 5, name: 'zone scan, strip 5 of 8',
+    about: SCAN.replace('STRIP', 'columns 60 to 74') },
+  { n: 6, name: 'zone scan, strip 6 of 8',
+    about: SCAN.replace('STRIP', 'columns 75 to 89') },
+  { n: 7, name: 'zone scan, strip 7 of 8',
+    about: SCAN.replace('STRIP', 'columns 90 to 104') },
+  { n: 8, name: 'zone scan, strip 8 of 8',
+    about: SCAN.replace('STRIP', 'columns 105 to 119') },
+  { n: 9, name: 'census',
+    about: 'The counts made during the scan become the city\'s population figures. Every 48 turns, taxes are collected.' },
+  { n: 10, name: 'fading',
+    about: 'Traffic fades everywhere, and every fifth cycle the record of recent growth fades too, so both ' +
+      'maps show what happened lately rather than everything that ever happened.' },
+  { n: 11, every: 5, name: 'power',
+    about: 'Power is traced out from each plant through wires and touching zones until it reaches everything ' +
+      'connected, or until the plants\' capacity runs out. A zone it does not reach cannot grow. Every 5th cycle.' },
+  { n: 12, every: 17, name: 'pollution and land value',
+    about: 'Pollution is added up from what is on each tile, then blurred. Land value is computed for every ' +
+      'block: a base value, minus distance from the city center, plus undeveloped land nearby, minus pollution, ' +
+      'minus a penalty where crime is high. Every 17th cycle.' },
+  { n: 13, every: 18, name: 'police and crime',
+    about: 'Police coverage is made by blurring the map of police stations. Crime is computed for every block: ' +
+      'base, minus land value, plus population density, minus police coverage. Every 18th cycle.' },
+  { n: 14, every: 19, name: 'density and the city center',
+    about: 'Population is spread into a density map by blurring. The city center is moved to the average ' +
+      'position of the population; land value, in step 13, is measured from it. Every 19th cycle.' },
+  { n: 15, every: 20, name: 'fire coverage',
+    about: 'Fire coverage is made by blurring the map of fire stations, as police coverage is. The game would ' +
+      'also roll for disasters here; they are switched off in this sandbox. Every 20th cycle.' }
 ];
 
 /**
@@ -88,9 +137,10 @@ export function createCity({ seed: s = 1, params = {}, assets = {} } = {}) {
   if (assets.coefficients) applyCoefficients(assets.coefficients);
 
   seed(s);
-  const map = makeMap();
+  const plan = PLANS[params.urban_form ?? 'blocks'] ?? PLANS.blocks;
+  const map = makeMap(plan);
   const sim = new Simulation(map, 0, 3);
-  const tally = buildStartingCity(map, sim);
+  const tally = buildStartingCity(map, sim, plan);
   return { map, sim, tally };
 }
 
@@ -125,25 +175,93 @@ export function readMetrics(sim) {
   };
 }
 
-/**
- * One headless run, for the divergence chart.
- *
- * Records one metric per sample so the chart can show mean and range against
- * tick number. Runs in a worker; nothing here touches the DOM.
- */
-export function headlessRun({ seed: s, params, assets, ticks, samples = 40 }) {
-  const { sim } = createCity({ seed: s, params, assets });
-  const every = Math.max(1, Math.floor(ticks / samples));
-  const series = [];
-  let done = 0;
-  while (done < ticks) {
-    const step = Math.min(every, ticks - done);
-    run(sim, step);
-    done += step;
-    const m = readMetrics(sim);
-    series.push({ t: done, population: m.population, crime: m.crime, landValue: m.landValue });
+// --- what is on a tile, for the hover readout --------------------------------
+
+const T = TileValues;
+
+/** Name a tile by its value. Zones are named from their center tile. */
+function tileKind(v) {
+  if (v === T.DIRT) return 'bare ground';
+  if (v >= T.WATER_LOW && v <= T.WATER_HIGH) return 'water';
+  if (v >= T.TREEBASE && v <= T.WOODS5) return 'trees';
+  if (v >= T.RUBBLE && v <= T.LASTRUBBLE) return 'rubble';
+  if (v >= T.FLOOD && v <= T.LASTFLOOD) return 'flood';
+  if (v >= T.FIREBASE && v <= T.LASTFIRE) return 'fire';
+  if (v >= T.ROADBASE && v <= T.LASTROAD) {
+    const r = TileUtils.normalizeRoad(v);
+    return r === T.HROADPOWER || r === T.VROADPOWER ? 'road, with a power line across' : 'road';
   }
-  return series;
+  if (v >= T.POWERBASE && v <= T.LASTPOWER) return 'power line';
+  if (v >= T.RAILBASE && v <= T.LASTRAIL) return 'rail';
+  if (v >= T.HOSPITALBASE && v < T.CHURCHBASE) return 'hospital';
+  if (v >= T.CHURCHBASE && v < T.COMBASE) return 'church';
+  if (v >= T.RESBASE && v < T.HOSPITALBASE) return 'residential';
+  if (v >= T.COMBASE && v < T.INDBASE) return 'commercial';
+  if ((v >= T.INDBASE && v < T.PORTBASE) || (v >= T.INDBASE2 && v < T.TINYEXP)) return 'industrial';
+  if (v >= T.COALBASE && v <= T.LASTPOWERPLANT) return 'coal power plant';
+  if (v >= T.FIRESTBASE && v < T.POLICESTBASE) return 'fire station';
+  if (v >= T.POLICESTBASE && v < T.STADIUMBASE) return 'police station';
+  if (v >= T.FOUNTAIN && v < T.INDBASE2) return 'fountain';
+  return 'other';
 }
 
-export { PLAN, C };
+/** The center tile of the zone covering (x, y), if there is one. */
+function zoneCenter(map, x, y) {
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const cx = x + dx;
+      const cy = y + dy;
+      if (cx < 0 || cy < 0 || cx >= map.width || cy >= map.height) continue;
+      const tile = map.getTile(cx, cy);
+      if (!tile.isZone()) continue;
+      // A 3x3 zone covers its center +-1; a 4x4 plant covers -1..+2.
+      const big = tileKind(tile.getValue()) === 'coal power plant';
+      const lo = -1;
+      const hi = big ? 2 : 1;
+      if (x - cx >= lo && x - cx <= hi && y - cy >= lo && y - cy <= hi) return { x: cx, y: cy, tile };
+    }
+  }
+  return null;
+}
+
+/** The layers the hover readout reports, in the order it reports them. */
+const READOUT = [
+  ['land value', 'landValueMap'],
+  ['crime', 'crimeRateMap'],
+  ['pollution', 'pollutionDensityMap'],
+  ['population density', 'populationDensityMap'],
+  ['traffic', 'trafficDensityMap'],
+  ['police coverage', 'policeStationMap'],
+  ['fire coverage', 'fireStationMap']
+];
+
+/**
+ * What is on one tile, and the simulation's numbers for where it sits.
+ *
+ * The numbers come from the block maps, which are coarser than the tiles, so
+ * neighbouring tiles often read the same: that is the resolution the
+ * simulation itself works at.
+ */
+export function inspectTile(map, sim, x, y) {
+  if (x < 0 || y < 0 || x >= map.width || y >= map.height) return null;
+  const v = map.getTileValue(x, y);
+  let kind = tileKind(v);
+  const rows = [];
+  const zone = zoneCenter(map, x, y);
+  if (zone) {
+    const cv = zone.tile.getValue();
+    kind = tileKind(cv);
+    if (kind === 'residential') {
+      rows.push(['residents', Residential.getZonePopulation(map, zone.x, zone.y, cv)]);
+    } else if (kind === 'commercial') {
+      rows.push(['level', `${Commercial.getZonePopulation(map, zone.x, zone.y, cv)} of 5`]);
+    } else if (kind === 'industrial') {
+      rows.push(['level', `${Industrial.getZonePopulation(map, zone.x, zone.y, cv)} of 5`]);
+    }
+    rows.push(['power', zone.tile.isPowered() ? 'yes' : 'no']);
+  }
+  for (const [label, key] of READOUT) rows.push([label, sim.blockMaps[key].worldGet(x, y)]);
+  return { x, y, kind, rows };
+}
+
+export { PLAN, PLANS, C };

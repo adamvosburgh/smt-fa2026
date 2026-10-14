@@ -2,14 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://simmodeltwin.net/schemas/sandbox/coefficients.json",
   "title": "A City Simulator, Opened Up parameters",
-  "$comment": "Every default below was read from the vendored micropolisJS source at commit f13a1624 and matches it exactly. A default that disagrees with the engine is the worst possible bug in this sandbox, because the sandbox exists to show what the engine's defaults are. Slider granularity is x-step, never multipleOf - see the note in bathtub's schema for why. Property order is the panel's reading order: which layer to watch first (the simulation transport sits above it), then the two rules the sandbox leads with, then the other rules, then the run.",
+  "$comment": "Every default below was read from the vendored micropolisJS source at commit f13a1624 and matches it exactly. A default that disagrees with the engine is the worst possible bug in this sandbox, because the sandbox exists to show what the engine's defaults are. Slider granularity is x-step, never multipleOf - see the note in bathtub's schema for why. Property order is the panel's reading order: in representation, which layer to watch (the simulation transport sits above it); in assumptions, the starting city, then the two rules the sandbox leads with, then the other rules, then the seed.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "crime_base",
     "land_value_distance_divisor",
-    "seed",
-    "ticks"
+    "seed"
   ],
   "properties": {
     "layer": {
@@ -19,6 +18,7 @@
       "x-panel": "representation",
       "enum": [
         "none",
+        "follow",
         "landValueMap",
         "crimeRateMap",
         "pollutionDensityMap",
@@ -32,26 +32,44 @@
       ],
       "x-enum-labels": [
         "none",
+        "follow the cycle (for stepping)",
         "land value",
         "crime",
         "pollution",
-        "density",
+        "population density",
         "traffic",
-        "growth",
-        "unspoilt",
-        "center",
-        "police",
-        "fire"
+        "rate of growth",
+        "undeveloped land",
+        "distance from the center",
+        "police coverage",
+        "fire coverage"
       ],
       "default": "none",
-      "description": "Which internal layer to draw over the city, tile for tile. \"None\" follows the rotation, so the overlay shows whichever layer the cycle most recently wrote. All fifteen are drawn small in the rail regardless; click one there to pin it."
+      "description": "One of the maps the simulation keeps, drawn over the city. \"Follow the cycle\" shows whichever map was updated last, and is meant for stepping through the cycle with the clock paused.",
+      "x-control": "select"
     },
     "show_rail": {
       "type": "boolean",
-      "title": "Show the layer rail",
+      "title": "Show all fifteen maps above the city",
       "x-group": "how it's drawn",
       "x-panel": "representation",
       "default": true
+    },
+    "urban_form": {
+      "type": "string",
+      "title": "Starting city",
+      "x-group": "the starting city",
+      "x-panel": "assumptions",
+      "enum": [
+        "blocks",
+        "grid"
+      ],
+      "x-enum-labels": [
+        "blocks",
+        "grid"
+      ],
+      "default": "blocks",
+      "description": "Blocks is a downtown of full blocks with parks, thinning toward the edge, with shops along a main street and industry to the east. Grid is uniform bands of housing, shops and industry. Both are the same on every run. The parks and trees in blocks raise land value, so the two plans give different numbers under the same rules."
     },
     "crime_base": {
       "type": "integer",
@@ -63,7 +81,7 @@
       "x-step": 1,
       "default": 128,
       "x-emphasis": true,
-      "description": "The 128 in crime = 128 - land value + population density - police: how much crime a place has before anything about the place is taken into account. No data was fitted to produce it. Moving it changes the whole crime map at once, and population falls with it, because the engine links crime and land value in both directions."
+      "description": "The 128 in crime = 128 - land value + population density - police: the crime a place starts with before anything about it is counted. No data was used to set it."
     },
     "crime_land_value_weight": {
       "type": "number",
@@ -74,7 +92,7 @@
       "maximum": 2,
       "x-step": 0.1,
       "default": 1,
-      "description": "How strongly low land value is taken to produce crime. The engine's value is 1, so one point of land value cancels one point of crime. At 0 the model stops connecting land value to crime."
+      "description": "How much one point of land value lowers crime. The engine uses 1. At 0, land value has no effect on crime."
     },
     "crime_police_weight": {
       "type": "number",
@@ -85,7 +103,7 @@
       "maximum": 4,
       "x-step": 0.1,
       "default": 1,
-      "description": "How strongly police presence reduces crime. The engine's value is 1. Police cover is on a 0 to 1000 scale and crime on 0 to 250, so a station at full strength removes crime entirely."
+      "description": "How much police coverage lowers crime. The engine uses 1. Coverage runs from 0 to 1,000 and crime from 0 to 250, so one station at full strength removes crime entirely."
     },
     "land_value_centre_base": {
       "type": "integer",
@@ -96,7 +114,7 @@
       "maximum": 100,
       "x-step": 1,
       "default": 34,
-      "description": "The value of land at the city center, before distance is subtracted. The engine's 34 is shifted left twice (multiplied by four) in the code, so the real ceiling is 136. Raising this raises the whole land value surface without changing its shape."
+      "description": "Land value at the city center, before distance is subtracted. The engine uses 34, which the code multiplies by 4, so the highest possible value is 136."
     },
     "land_value_distance_divisor": {
       "type": "number",
@@ -108,7 +126,7 @@
       "x-step": 0.5,
       "default": 2,
       "x-emphasis": true,
-      "description": "The 2 in land value = 34 - distance from the city center / 2: how fast value falls with distance from the middle. Raising the divisor flattens the gradient, so the city gets richer and less centralized, but it still has one center."
+      "description": "The 2 in land value = 34 - distance from the city center / 2. A higher number makes land value fall more slowly with distance."
     },
     "max_traffic_distance": {
       "type": "integer",
@@ -119,7 +137,7 @@
       "maximum": 120,
       "x-step": 5,
       "default": 30,
-      "description": "A zone counts as having access to jobs if a random walk along the roads finds a destination within this many steps. There is no route planning, no journey time and no congestion feeding back. On a compact grid like the starting city most destinations are close, so this control does less here than it would on a sprawling map."
+      "description": "A zone counts as connected if a random walk along the roads reaches the kind of zone it needs within this many tiles: housing needs shops, shops need industry, industry needs housing. There are no routes or journey times."
     },
     "smooth_passes": {
       "type": "integer",
@@ -130,7 +148,7 @@
       "maximum": 8,
       "x-step": 1,
       "default": 3,
-      "description": "The map of station positions is blurred this many times and the result is called coverage. At 0, cover collapses to the stations themselves and crime rises everywhere else."
+      "description": "How many times the map of police stations is blurred to make police coverage. At 0, only the stations themselves are covered."
     },
     "birth_rate": {
       "type": "number",
@@ -141,7 +159,7 @@
       "maximum": 0.1,
       "x-step": 0.005,
       "default": 0.02,
-      "description": "Population growth per turn, as a flat share of the residential population. There are no ages, no households and no migration."
+      "description": "Growth of the residential population each turn, as a share of it. There are no ages, households or migration."
     },
     "ext_market_index": {
       "type": "integer",
@@ -159,40 +177,18 @@
         "0.98"
       ],
       "default": 1,
-      "description": "Demand for what the city's industry produces, from everywhere that is not the city. In the game it is one of three numbers set by the difficulty level."
+      "description": "Demand for the city's industry from outside the city. In the game it is set by the difficulty level."
     },
     "seed": {
       "type": "integer",
       "title": "Seed",
-      "x-group": "the run",
-      "x-panel": "assumptions",
-      "minimum": 0,
-      "maximum": 99999,
-      "x-step": 1,
-      "default": 1,
-      "description": "The starting number for every random choice the simulation makes. The rules and the starting city are the same for every seed, so this is the only thing that differs between the runs on the divergence chart."
-    },
-    "run_count": {
-      "type": "integer",
-      "title": "Runs to compare",
-      "x-group": "the run",
+      "x-group": "chance",
       "x-panel": "assumptions",
       "minimum": 1,
-      "maximum": 12,
+      "maximum": 99,
       "x-step": 1,
-      "default": 5,
-      "description": "How many seeds the divergence chart runs in the background. The spread between them at the end is how much the rules leave to chance."
-    },
-    "ticks": {
-      "type": "integer",
-      "title": "Steps per run",
-      "x-group": "the run",
-      "x-panel": "assumptions",
-      "minimum": 100,
-      "maximum": 5000,
-      "x-step": 100,
-      "default": 1000,
-      "description": "How many steps each comparison run takes. One step is one phase of the sixteen-phase cycle, so a full turn of the city's clock is sixteen steps."
+      "default": 1,
+      "description": "The starting number for the simulation's random choices. The same rules and the same starting city with a different seed give a different city."
     }
   }
 }

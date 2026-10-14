@@ -4,19 +4,19 @@
 // roads, no power. Nothing develops on it and every number stays zero, because
 // in the real game a player builds the first city by hand.
 //
-// The divergence chart needs the opposite of a player: ONE city, identical
-// every run, so that repeated runs differ by their seed and by nothing else.
-// So the first city is laid out here, deterministically, by the same tools the
-// game's own mouse uses.
+// The sandbox needs the opposite of a player: ONE city, identical every run,
+// so that two runs differ by their seed and by nothing else. So the first city
+// is laid out here, deterministically, by the same tools the game's own mouse
+// uses. There are two plans, the blocks city (the default) and a grid.
 //
 // What this asserts is worth noticing, and it is in the model card. A real
-// city's plan is the accumulated result of a great many decisions. This one is
-// a grid, placed by a loop, because the sandbox needs a control condition. Any
-// argument a student makes about how this city grows is an argument about how
-// THIS plan grows, and a different plan is a different experiment.
+// city's plan is the accumulated result of a great many decisions. These are
+// placed by loops. Any argument a student makes about how this city grows is
+// an argument about how THIS plan grows, and a different plan is a different
+// experiment.
 // NOT vendor/src/gameTools.js. That module builds all sixteen tools including
 // QueryTool, which imports jQuery, which would drag a DOM library into a
-// headless worker for the sake of a tool this file never uses. The eight tools
+// headless build for the sake of a tool this file never uses. The eight tools
 // below are constructed with exactly the arguments gameTools.js gives them -
 // same costs, same tile values, same sizes - so the city built here is the city
 // the game's own toolbar would build.
@@ -25,6 +25,7 @@ import { RoadTool } from './vendor/src/roadTool.js';
 import { WireTool } from './vendor/src/wireTool.js';
 import { GameMap } from './vendor/src/gameMap.js';
 import * as TileValues from './vendor/src/tileValues.ts';
+import { BURNBIT, BULLBIT } from './vendor/src/tileFlags.ts';
 
 function makeTools(map) {
   return {
@@ -106,7 +107,7 @@ function buildPlan() {
     bandTops.push(y);
     wires.push({ x1: TRUNK_X, y1: y, x2: LAST_X + 2, y2: y });
     roads.push({ x1: TRUNK_X, y1: y + 4, x2: LAST_X + 2, y2: y + 4 });
-    zones.push({ tool: use, row: y + 2, cols });
+    for (const x of cols) zones.push({ tool: use, x, y: y + 2 });
     y += BAND_HEIGHT;
   }
 
@@ -166,6 +167,239 @@ function buildPlan() {
 }
 
 export const PLAN = buildPlan();
+
+// --- the blocks city ------------------------------------------------------
+//
+// The grid above is a control condition, and it looks like one: nine stripes
+// with nothing to tell one part of the city from another. This is the city a
+// player of the original game would build instead, and it is laid out by the
+// same reasoning a player uses.
+//
+// THE BLOCK is the one every guide to the game recommends. A ring of road ten
+// tiles on a side encloses a 9x9 interior, which holds eight zones around a
+// middle square:
+//
+//     r r r r r r r r r r r
+//     r Z Z Z Z Z Z Z Z Z r      Z  the eight ring lots, every one touching
+//     r Z Z Z Z Z Z Z Z Z r         the road, which is the access rule
+//     r Z Z Z Z Z Z Z Z Z r
+//     r Z Z Z . . . Z Z Z r      .  the middle: a park, or nothing. It has no
+//     r Z Z Z . . . Z Z Z r         road, so it is no use for a zone
+//     r Z Z Z . . . Z Z Z r
+//     r Z Z Z Z Z Z Z Z Z r
+//     r Z Z Z Z Z Z Z Z Z r
+//     r Z Z Z Z Z Z Z Z Z r
+//     r r r r r r r r r r r
+//
+// Zones that touch conduct power to each other, so a block needs one wire to
+// join it to the next, and routePower lays it.
+//
+// DENSITY falls with distance from downtown: full blocks with parks in the
+// middle at the center, blocks with lots missing further out, wooded or empty,
+// and a ragged edge where the city stops. Industry is the exception. It sits
+// in its own district at the east edge, downwind as a player would put it,
+// and it is built out fully, because a factory does not thin out with distance
+// from the shops.
+//
+// USE is decided lot by lot rather than block by block, so blocks on the edge
+// of a district come out mixed. Downtown is commercial; a commercial main
+// street runs east along the central avenue to the industry; a few corner
+// stores sit out in the residential blocks. Everything else is housing.
+//
+// That arrangement is not taste either. The engine's only test of access is a
+// random walk of at most thirty road tiles: housing must find shops, shops
+// must find industry, industry must find housing. A district plan that puts
+// these too far apart produces zones that never grow, so the main street and
+// the corner stores are there to keep every leg of that loop short.
+//
+// The variation from block to block comes from a fixed hash of the block's
+// position, not from a seed. It looks irregular, and it is the same city
+// every time, so that two runs still differ only by their seed.
+
+const BLOCK = 10;
+const BLOCK_X0 = 5;
+const BLOCK_Y0 = 10;
+const BLOCKS_ACROSS = 11;
+const BLOCKS_DOWN = 8;
+const DOWNTOWN = { x: 60, y: 50 };
+const INDUSTRY_X = 95;     // the industrial column starts here; nothing else is built east of it
+const MAIN_STREET_Y = 50;  // the central avenue, a road line
+const CORNER_STORES = 0.25; // share of residential corner lots that are a shop instead
+// Industrial blocks beyond the main column, beside the power plants.
+const INDUSTRIAL_EXTRA = [[10, 1], [10, 5], [10, 6]];
+
+// Lot centers, as offsets from a block's top-left road corner. Clockwise from
+// the top left, so that any run of consecutive lots is a chain of zones that
+// touch - which is what lets a part-built block still conduct power.
+const RING = [[2, 2], [5, 2], [8, 2], [8, 5], [8, 8], [5, 8], [2, 8], [2, 5]];
+const MIDDLE = [5, 5];
+
+/** A fixed hash of integers to [0, 1). Deterministic; not a random generator. */
+function hash(a, b, k) {
+  let h = Math.imul(a, 374761393) ^ Math.imul(b, 668265263) ^ Math.imul(k, 1274126177);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/** Distance from downtown, stretched a little north-south so the city is wider than tall. */
+function fromDowntown(x, y) {
+  return Math.hypot(x - DOWNTOWN.x, (y - DOWNTOWN.y) * 1.25);
+}
+
+/** How many of a block's eight lots are built, and what goes in its middle. */
+function blockDensity(bx, by, cx, cy) {
+  const r = fromDowntown(cx, cy);
+  const h = hash(bx, by, 1);
+  if (isIndustrial(bx, by)) return { lots: 6 + Math.floor(h * 3), middle: 'none' };
+  if (cx >= INDUSTRY_X) return { lots: 0, middle: 'none' };
+  if (r < 16) return { lots: 8, middle: 'park' };
+  if (r < 28) return { lots: 7 + Math.floor(h * 2), middle: h < 0.6 ? 'park' : 'none' };
+  if (r < 40) return { lots: 4 + Math.floor(h * 3), middle: h < 0.3 ? 'park' : 'none' };
+  if (r < 52) return { lots: 1 + Math.floor(h * 3), middle: 'none' };
+  return { lots: 0, middle: 'none' };
+}
+
+/** The industrial district: the column at INDUSTRY_X, and a few blocks beside the power plants. */
+function isIndustrial(bx, by) {
+  return BLOCK_X0 + bx * BLOCK === INDUSTRY_X
+    || INDUSTRIAL_EXTRA.some(([x, y]) => x === bx && y === by);
+}
+
+/** The land use of one lot, from where it is. */
+function lotUse(bx, by, x, y, k) {
+  if (isIndustrial(bx, by)) return 'industrial';
+  if (fromDowntown(x, y) < 14) return 'commercial';
+  if (Math.abs(y - MAIN_STREET_Y) === 2 && x > DOWNTOWN.x && x < INDUSTRY_X) return 'commercial';
+  // A corner lot is the place for a shop.
+  if (k % 2 === 0 && hash(bx, by, 10 + k) < CORNER_STORES) return 'commercial';
+  return 'residential';
+}
+
+// Stations take a ring lot, never a middle: the middle has no road, and the
+// engine halves the reach of a station that cannot reach a road. As on the
+// grid, three police stations so that policing is visibly uneven, and one
+// fire station.
+const BLOCK_SERVICES = [
+  { tool: 'police', bx: 5, by: 3, lot: 4 },
+  { tool: 'police', bx: 2, by: 2, lot: 3 },
+  { tool: 'police', bx: 7, by: 5, lot: 1 },
+  { tool: 'fire', bx: 4, by: 5, lot: 2 }
+];
+
+// Plants go four to a block in the industrial district, in blocks of their
+// own with no zones. TWELVE, though there are only about 3,600 conductive
+// tiles and a plant supplies 700: the engine's power scan counts a tile again
+// every time it backtracks to a junction, and a solid block of zones is
+// nothing but junctions. With eight, the scan ran out partway through the
+// industrial district and left it dark, with no warning.
+const UTILITY_BLOCKS = [[10, 2], [10, 3], [10, 4]];
+
+const PARK_TREES = [TileValues.WOODS2, TileValues.WOODS3, TileValues.WOODS4, TileValues.WOODS5];
+
+function buildBlocksPlan() {
+  const roadTiles = new Set();
+  const zones = [];
+  const services = [];
+  const trees = [];
+  const power = [];
+  const ring = (ox, oy) => {
+    for (let i = 0; i <= BLOCK; i++) {
+      roadTiles.add(`${ox + i},${oy}`);
+      roadTiles.add(`${ox + i},${oy + BLOCK}`);
+      roadTiles.add(`${ox},${oy + i}`);
+      roadTiles.add(`${ox + BLOCK},${oy + i}`);
+    }
+  };
+  // A 3x3 square of park trees, centered on a lot.
+  const grove = (x, y, bx, by, k, fountain = false) => {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const tile = fountain && dx === 0 && dy === 0
+          ? TileValues.FOUNTAIN
+          : PARK_TREES[Math.floor(hash(x + dx, y + dy, k) * 4)];
+        trees.push({ x: x + dx, y: y + dy, tile });
+      }
+    }
+  };
+
+  const utility = new Set(UTILITY_BLOCKS.map(([bx, by]) => `${bx},${by}`));
+
+  for (let by = 0; by < BLOCKS_DOWN; by++) {
+    for (let bx = 0; bx < BLOCKS_ACROSS; bx++) {
+      const ox = BLOCK_X0 + bx * BLOCK;
+      const oy = BLOCK_Y0 + by * BLOCK;
+
+      if (utility.has(`${bx},${by}`)) {
+        ring(ox, oy);
+        // A 4x4 plant at (x, y) covers x-1..x+2, so these four fill the
+        // interior with a one-tile cross between them.
+        for (const [dx, dy] of [[2, 2], [7, 2], [2, 7], [7, 7]]) {
+          power.push({ x: ox + dx, y: oy + dy });
+        }
+        continue;
+      }
+
+      const { lots, middle } = blockDensity(bx, by, ox + 5, oy + 5);
+      const station = BLOCK_SERVICES.find((s) => s.bx === bx && s.by === by);
+      if (lots === 0 && !station) continue;
+      ring(ox, oy);
+
+      // Built lots are a consecutive run of the ring, starting somewhere
+      // different in each block.
+      const start = Math.floor(hash(bx, by, 2) * RING.length);
+      const built = new Set();
+      for (let i = 0; i < lots; i++) built.add((start + i) % RING.length);
+      if (station) built.add(station.lot);
+
+      for (let k = 0; k < RING.length; k++) {
+        const x = ox + RING[k][0];
+        const y = oy + RING[k][1];
+        if (station && station.lot === k) {
+          services.push({ tool: station.tool, x, y });
+        } else if (built.has(k)) {
+          zones.push({ tool: lotUse(bx, by, x, y, k), x, y });
+        } else if (hash(bx, by, 20 + k) < 0.5) {
+          grove(x, y, bx, by, 30 + k);   // a wooded lot; the rest stay bare
+        }
+      }
+
+      if (middle === 'park') {
+        const [mx, my] = MIDDLE;
+        grove(ox + mx, oy + my, bx, by, 40, fromDowntown(ox + 5, oy + 5) < 10);
+      }
+    }
+  }
+
+  const roads = [...roadTiles].map((key) => {
+    const [x, y] = key.split(',').map(Number);
+    return { x1: x, y1: y, x2: x, y2: y };
+  });
+
+  return {
+    width: 120,
+    height: 100,
+    funds: 5000000,
+    power,
+    roads,
+    wires: [],
+    zones,
+    services,
+    trees,
+    routePower: true,
+    // The street grid's outer edge. Routed wires stay inside it if they can.
+    bounds: {
+      x1: BLOCK_X0, y1: BLOCK_Y0,
+      x2: BLOCK_X0 + BLOCKS_ACROSS * BLOCK, y2: BLOCK_Y0 + BLOCKS_DOWN * BLOCK
+    }
+  };
+}
+
+/** Every starting city, by the value of the urban_form control. */
+export const PLANS = {
+  grid: PLAN,
+  blocks: buildBlocksPlan()
+};
 
 /** Apply a building tool at one tile. Returns whether it was actually built. */
 function place(tool, budget, blockMaps, x, y) {
@@ -243,6 +477,7 @@ export function buildStartingCity(map, simulation, plan = PLAN) {
     const at = placeNear(tools.coal, budget, blockMaps, p.x, p.y);
     if (!at) continue;
     tally.plants += 1;
+    if (p.spurTo === undefined) continue;   // routePower joins it instead
     const from = p.spurTo < at.x ? at.x - 2 : at.x + 3;
     tally.wires += line(tools.wire, budget, blockMaps,
                         { x1: from, y1: at.y, x2: p.spurTo, y2: at.y });
@@ -257,17 +492,138 @@ export function buildStartingCity(map, simulation, plan = PLAN) {
   }
 
   // 4. Zones, skipping the slots the services took.
-  for (const band of plan.zones) {
-    const tool = tools[band.tool];
-    for (const x of band.cols) {
-      if (taken.has(x + ',' + band.row)) continue;
-      tally.zonesWanted += 1;
-      if (place(tool, budget, blockMaps, x, band.row)) tally.zones += 1;
+  for (const z of plan.zones) {
+    if (taken.has(z.x + ',' + z.y)) continue;
+    tally.zonesWanted += 1;
+    if (place(tools[z.tool], budget, blockMaps, z.x, z.y)) tally.zones += 1;
+  }
+
+  // 5. Trees, written straight onto the map. NOT the park tool: it picks its
+  //    tile with the engine's own random generator, and building the city must
+  //    not draw from the stream the run is seeded with.
+  if (plan.trees) {
+    tally.trees = 0;
+    for (const t of plan.trees) {
+      if (map.getTileValue(t.x, t.y) !== TileValues.DIRT) continue;
+      map.setTile(t.x, t.y, t.tile, BURNBIT | BULLBIT);
+      tally.trees += 1;
     }
   }
 
+  // 6. Wires that nobody planned. A layout that is not drawn around its power
+  //    lines gets them routed afterwards, by the shortest path the engine will
+  //    accept.
+  if (plan.routePower) tally.wires += routePower(map, tools.wire, budget, blockMaps, plan.bounds);
+
   tally.fundsLeft = budget.totalFunds;
   return tally;
+}
+
+/**
+ * Join every conductive island to a power plant with the least wire.
+ *
+ * Repeats until nothing is left over: find everything a plant reaches, search
+ * outward from it across open ground for the nearest conductive tile it does
+ * not reach, and lay wire back along that path. Power in this engine flows
+ * through any adjacent conductive tiles, so a block of zones that touch each
+ * other needs only one wire to join it to the next - usually a single tile
+ * across a road.
+ *
+ * A wire can be laid on bare ground, and across a STRAIGHT road at right
+ * angles; never along a road, through an intersection, or through trees.
+ */
+function routePower(map, wireTool, budget, blockMaps, bounds) {
+  const W = map.width;
+  const H = map.height;
+  const STEPS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  const conductive = (x, y) => map.getTile(x, y).isConductive();
+  const within = (x, y) => !bounds
+    || (x >= bounds.x1 && x <= bounds.x2 && y >= bounds.y1 && y <= bounds.y2);
+  const layable = (x, y, dx, { throughTrees, outside }) => {
+    if (!outside && !within(x, y)) return false;
+    const v = map.getTileValue(x, y);
+    return v === TileValues.DIRT
+      || (v === TileValues.ROADS && dx === 0)     // horizontal road, crossed north-south
+      || (v === TileValues.ROADS2 && dx !== 0)    // vertical road, crossed east-west
+      || (throughTrees && v >= TileValues.WOODS2 && v <= TileValues.WOODS5);
+  };
+
+  // Everything a plant reaches.
+  const network = () => {
+    const net = new Uint8Array(W * H);
+    const stack = [];
+    for (let i = 0; i < W * H; i++) {
+      if (map.getTileValue(i % W, Math.floor(i / W)) === TileValues.POWERPLANT) {
+        net[i] = 1;
+        stack.push(i);
+      }
+    }
+    while (stack.length) {
+      const i = stack.pop();
+      const x = i % W;
+      const y = (i - x) / W;
+      for (const [dx, dy] of STEPS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const j = ny * W + nx;
+        if (!net[j] && conductive(nx, ny)) { net[j] = 1; stack.push(j); }
+      }
+    }
+    return net;
+  };
+
+  // Breadth first from the whole network at once, so the first island found
+  // is the nearest one and the path to it is the shortest. Returns the path's
+  // tiles, island end first, or null.
+  const nearestIsland = (net, how) => {
+    const prev = new Int32Array(W * H).fill(-1);
+    const seen = net.slice();
+    let queue = [];
+    for (let i = 0; i < W * H; i++) if (net[i]) queue.push(i);
+    while (queue.length) {
+      const next = [];
+      for (const i of queue) {
+        const x = i % W;
+        const y = (i - x) / W;
+        for (const [dx, dy] of STEPS) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const j = ny * W + nx;
+          if (seen[j]) continue;
+          if (conductive(nx, ny)) {
+            const path = [];
+            for (let k = i; k !== -1 && !net[k]; k = prev[k]) path.push(k);
+            return path;
+          }
+          if (!layable(nx, ny, dx, how)) continue;
+          seen[j] = 1;
+          prev[j] = i;
+          next.push(j);
+        }
+      }
+      queue = next;
+    }
+    return null;
+  };
+
+  let laid = 0;
+  for (let guard = 0; guard < 1000; guard++) {
+    const net = network();
+    // Inside the city if there is a way, round its edge if not, and through
+    // trees (the wire tool clears a tree it is laid on) only for a lot they
+    // wall in entirely.
+    const path = nearestIsland(net, { throughTrees: false, outside: false })
+      ?? nearestIsland(net, { throughTrees: false, outside: true })
+      ?? nearestIsland(net, { throughTrees: true, outside: true });
+    if (!path) break;
+    for (const i of path) {
+      wireTool.doTool(i % W, Math.floor(i / W), blockMaps);
+      if (wireTool.modifyIfEnoughFunding(budget)) laid += 1;
+    }
+  }
+  return laid;
 }
 
 

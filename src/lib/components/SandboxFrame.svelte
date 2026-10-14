@@ -416,10 +416,13 @@
         {onready}
         {ontransport}
       />
-      <!-- Every sandbox is still being built, and says so. Inside the viewport
-           so it sits on the map's own top edge whatever the map is inset by,
-           and hidden along with the panels for a cover screenshot. -->
-      <p class="under-construction">under construction</p>
+      <!-- A sandbox still being built says so, unless its meta sets
+           underConstruction: false. Inside the viewport so it sits on the
+           map's own top edge whatever the map is inset by, and hidden along
+           with the panels for a cover screenshot. -->
+      {#if meta.underConstruction !== false}
+        <p class="under-construction">under construction</p>
+      {/if}
     </div>
 
     {#if full}

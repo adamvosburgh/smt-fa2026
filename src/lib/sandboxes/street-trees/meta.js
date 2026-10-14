@@ -42,5 +42,7 @@ export default {
   cannotSee:
     "Rain as it actually falls. Every tree catches the same share of the same yearly total, so there are no storms, no difference between a light rain and a heavy one, and no difference between species. The model does not know about drainage, slopes, soil or sewers, so it cannot say where the caught water would have gone. Deaths and plantings are random, and plantings only use the sites the census recorded as dead trees or stumps. Nothing about who plants, waters or removes trees is in the model.",
   tutorial: null,
+  // Hides the frame's "under construction" note for this sandbox.
+  underConstruction: false,
   live: false
 };

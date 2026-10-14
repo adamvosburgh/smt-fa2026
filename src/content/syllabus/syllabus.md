@@ -146,6 +146,7 @@ What is design practice? In class: live demo of taking a sketch to a build doc, 
 <!-- Class plan
 Key word: ARGUMENTS - how these things can be a part of practices of the built environment 
 Fully about simulation in design practice
+for next year, start with rittel and weber wicked problems.
 WXY Labs
 KPF 42nd street
 look for others
@@ -158,6 +159,8 @@ Corner, James. "The Agency of Mapping." 2014.
 *This is a classic reading in inter-disciplinary design courses. However, it is a bit long and meandering. Feel free to skim for bits of insight on why mapping is relevant to design practices.*
 
 Silver, Joshua. "Observing the Future: Ecologies of Architectural Simulation." *e-flux Architecture*, Simulation, 2026. [https://www.e-flux.com/architecture/simulation/6783059/](https://www.e-flux.com/architecture/simulation/6783059/observing-the-future-ecologies-of-architectural-simulation)
+
+optional: Rittel, Horst W. J., and Melvin M. Webber. 1973. “Dilemmas in a General Theory of Planning.” Policy Sciences 4(2): 155–169.
 
 #### Tutorial 3 due – Simulating Trees
 The same two datasets as last week, with rules applied.
@@ -208,6 +211,12 @@ The same three documents for your own Assignment 3 sketch, plus the sandbox the 
 
 From Forrester's *Urban Dynamics* through SimCity to the present: the city simulated as a system of coefficients. The rules of a game are arguments about how a city works, and playing is one way of reading those arguments. 
 
+<!-- Class Plan
+- start with an overview of the final assignment, for those that missed the email. 
+- reading discussion + lecture. Baker (forrester, sim city, the sandbox), Gerber (sim city, micropolis sandbox), Vettese + Pendergrass (half earth, resource management, gaia games, plethora project), Chang (back to gaia games, environmentalism and representation)
+- use chang's book to go back into anthromes
+-->
+
 #### Readings due (in course folder or linked)
 [Baker, Kevin T. "Model Metropolis." *Logic Magazine*, 2019.](https://logicmag.io/play/model-metropolis/)
 
@@ -246,6 +255,8 @@ Final lecture. Feedback loops between representations of the world. Look back on
 
 <!-- Class plan
 david gelernter mirror worlds
+rittel and weber wicked problems?
+pipkin, all the rock models in skyrim?
 -->
 
 #### Readings due

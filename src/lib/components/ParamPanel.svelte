@@ -266,6 +266,15 @@
             >
           {/each}
         </div>
+      {:else if prop.enum && prop['x-control'] === 'select'}
+        <!-- A dropdown, for an enum with too many stops to sit in a row of
+             buttons and no order that would make it a slider (the city
+             simulator's eleven layers). -->
+        <select id="p-{key}" class="select" disabled={off} bind:value={params[key]}>
+          {#each prop.enum as opt}
+            <option value={opt}>{labelFor(prop, opt)}</option>
+          {/each}
+        </select>
       {:else if prop.enum}
         <div class="segmented" id="p-{key}">
           {#each prop.enum as opt}
@@ -393,6 +402,10 @@
   }
   .segmented button:last-child { border-right: 0; }
   .segmented button.on { background: #000; color: #fff; }
+  .select {
+    width: 100%; padding: 0.3rem 0.4rem; font: inherit; font-size: 0.7rem;
+    background: #fff; border: 1px solid #ccc; border-radius: 0; color: #000; cursor: pointer;
+  }
   .toggle {
     display: inline-flex; align-items: center; gap: 0.5rem; align-self: flex-start;
     padding: 0.3rem 0.6rem; font: inherit; font-size: 0.7rem;
