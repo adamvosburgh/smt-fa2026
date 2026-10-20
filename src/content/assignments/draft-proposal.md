@@ -15,6 +15,9 @@ form: [title, group, work]
 # The whiteboard tile: every page of the PDF at once, up to three across,
 # each at its size on paper (see src/lib/board/tiles.js).
 board_tile: spread
+# Build the board now rather than on the due morning: the workshop meetings
+# start before 10/22. Each new submission adds its tile as it lands.
+board_early: true
 ---
 
 ### Due: 10/22

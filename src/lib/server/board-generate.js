@@ -1,10 +1,10 @@
 // Assignment boards, built from the submissions.
 //
-// Run by the ticker at 9:00 New York on the morning an assignment is due, by
-// /api/submit when a late submission lands on an assignment that already has a
-// board, and by hand from the owner's button. Idempotent: a student who
-// already has a tile gets nothing new, and tiles already on the board are never
-// moved or changed.
+// Run by the ticker at 9:00 New York on the morning an assignment is due (or at
+// once, under `board_early`), by /api/submit when a submission lands on an
+// assignment that already has a board, and by hand from the owner's button.
+// Idempotent: a student who already has a tile gets nothing new, and nothing
+// already on the board is ever moved or changed.
 import { randomInt } from 'node:crypto';
 import { stat, open } from 'node:fs/promises';
 import path from 'node:path';
@@ -154,11 +154,20 @@ async function build(slug) {
     if (c >= 0 && c < format.columns) bottoms[c] = Math.max(bottoms[c], t.y + t.h);
   }
 
+  // What people have put on the board since it went up: notes, text, images.
+  // A new tile steps down past any of these it would land on, so a board that
+  // grows while it is in use never covers what is already there.
+  const others = Object.values(board.elements).filter((e) => e.type !== 'tile' && e.by !== SITE.student);
+  const pad = GAP / 2;
+  const hit = (x, y, w, h) =>
+    others.find((e) => x < e.x + e.w + pad && e.x - pad < x + w && y < e.y + e.h + pad && e.y - pad < y + h);
+
   const ops = [];
   let z = Object.values(board.elements).reduce((m, e) => Math.max(m, e.z ?? 0), 0);
   for (const { s, cover, ratio, pages, extra, w, h } of made) {
     const c = bottoms.indexOf(Math.min(...bottoms));
-    const y = bottoms[c] + GAP;
+    let y = bottoms[c] + GAP;
+    for (let e = hit(c * pitch, y, w, h); e; e = hit(c * pitch, y, w, h)) y = e.y + e.h + GAP;
     bottoms[c] = y + h;
     ops.push({
       op: 'add',

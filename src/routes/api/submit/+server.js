@@ -113,8 +113,8 @@ export async function POST({ request }) {
   const dir = await write({ student: who.student, sandbox, manifest, files, cover });
   const git = await commit(dir, `submission: ${who.student} / ${sandbox}`);
 
-  // A late submission to an assignment whose board is already up gets its tile
-  // now. Not awaited, for the same reason as the stages below.
+  // A submission to an assignment whose board is already up (a late one, or
+  // any one under `board_early`) gets its tile now. Not awaited, for the same reason as the stages below.
   if (manifest.kind === 'assignment' && (await boardExists(sandbox))) {
     buildAssignmentBoard(sandbox).catch((err) => console.error(`boards: late tile for ${sandbox}: ${err?.message ?? err}`));
   }
