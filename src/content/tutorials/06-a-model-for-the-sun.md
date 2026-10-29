@@ -2,7 +2,7 @@
 title: "Preparing a model for the sunlight sandbox"
 date: "2026-09-07"
 author: Adam Vosburgh
-sequence: 5
+sequence: 6
 cat: tutorial
 published: false
 publish: "2026-11-05"

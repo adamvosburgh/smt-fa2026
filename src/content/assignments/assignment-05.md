@@ -1,51 +1,51 @@
 ---
-title: "A Space in Sunlight"
-date: "2026-09-07"
+title: "Extra Credit: An Optional Tutorial"
+date: "2026-10-28"
 author: Adam Vosburgh
 sequence: 5
 cat: assignment
-published: false
-publish: "2026-11-05"
+published: true
+publish: "2026-10-28"
 submit: true
-accepts: [model]
-sandbox_ref: sunlight
+accepts: [image, pdf, html]
+due: "12/21"
+# A record of completion: a file (image, PDF, HTML), or a link to a live site
+# or video with a screenshot for the cover. What goes in the description
+# depends on the tutorial; each one's section below says.
+form: [title, gallery_text, description, work, link, screenshot, extras]
+questions:
+  - key: reflection
+    label: "A short reflection: what did you make, and what did you take from it?"
 ---
 
-<!-- DRAFT: not ready to publish -->
+### Due: 12/21
 
 ### What
 
-Model a space you know, and the buildings around it, to the convention in [Tutorial 5](/tutorials/05-a-model-for-the-sun/). Hand in the `.glb`. The gallery runs it in the [sunlight sandbox](/sandboxes/sunlight/), so what you hand in is a working simulation of your space rather than a picture of one.
+Assignment 5 is an extra credit assignment: complete one of the optional additional tutorials listed below, then do the short exercise that goes with it and upload the result.
 
-Write two sentences of gallery text about what the simulation showed you that you did not already know.
+Each tutorial has its own guidelines below. Whichever one you pick, you also write a two-sentence gallery text and a short reflection.
 
-### Requirements
+### Tutorial 5: Making Spatial Data from Plain Text
 
-- A space you have spent enough time in to have an opinion about its light. A room, an apartment, a floor of an office, a classroom, a shop (it does not have to be somewhere you live, and it does not have to be in New York...).
-- The space modeled as surfaces, named the way the tutorial describes: one `room_` patch per room, `glazing_` to match, walls with the openings cut out, a `ceiling`.
-- Enough context to cast the shadows that actually fall on it. Everything you can see out of the windows, at minimum, plus a ground plane. Massing only - a box per building is fine, and a setback is two stacked boxes.
-- If your space is one floor of a taller building, the rest of that building above and below it, tagged `context_above` and `context`.
-- Meters, one `.glb`, under 50MB.
-- Load it into the sandbox yourself before you hand it in, using the `load a .glb from your machine` input, and check the report the sandbox prints. `untagged` should be zero and the room count should be the number of rooms you drew. If it is not, the sandbox has read your model differently from how you meant it.
-- In the description: where the space is and what it is, where your context geometry came from (measured, traced off a map, guessed from photographs, all three), which parts of the model are surveyed and which are yours, and one thing the simulation gets wrong that you know from having been there.
+After completing [Tutorial 5](/tutorials/05-spatial-data-from-plain-text/), create a new dataset with Part 1 only. Meaning you will just be creating a new map of Manhattan with neighborhood boundaries, no embeddings.
 
-### Either way, submit:
+To do this, you will primarily just need to edit the prompt that classifies the data. In the tutorial, the prompt classifies each listing as either unit-forward (0) or neighborhood-forward (1), and maps the result. You could ask for another binary classification like that and then simply change the legend and titles in the next cells to fit, or you could try a totally different prompt, and update the code for the map.
 
-- the `.glb`, plus latitude, longitude, time zone and north offset in the four fields on the upload form
+When deciding, keep in mind what our data is: the text of about 1,500 Manhattan apartment listings. There is a homogeneous quality to it that I encourage you to embrace (e.g. I wouldn't recommend a prompt that asks where the luxury apartments are, because all brokers call the apartments they list luxury!)
+
+#### Requirements
+
+- Part 1 of the tutorial, with your own classification prompt in place of the one in the tutorial.
+- A designed composition on a single page, with the map, a title, a legend, and the prompt you used.
+
+#### Submit
+
+- the map, as a PNG or a single-page PDF
 - a two-sentence gallery text
-- in the description: the items above
-
-If the model does not come together, upload what you have with a PDF of screenshots showing how far you got and what the sandbox reported. That counts as a complete submission.
+- in the description: the prompt you used
+- a short reflection, on the form
 
 ### Submission
 
-`Submit your work` below. It appears under [Student Work](/gallery/#assignment-05), running live. Graded on completion.
-
-Note what the sandbox cannot see before you read too much into it: there is no sky light, no reflected light and no glass in this model, so it tells you about the direct beam and nothing else. A north room that reads as black here can be a pleasant room. The interesting question is usually not "is it dark" but "how much of this is the building's own shape and how much is the buildings next door" - which is the switch that turns the neighbors off.
-
-### Starting points
-
-- [Tutorial 5](/tutorials/05-a-model-for-the-sun/) has the naming convention, the Rhino export settings, and a Blender equivalent.
-- The [example model](/data/sunlight/example-f08.3dm), as a Rhino file, with the layers and object names in it.
-- [NYC 3-D Building Model](https://www.nyc.gov/site/planning/data-maps/open-data/dwn-nyc-3d-model-download.page), if your space is in New York and you would rather cut your context out of the survey than draw it.
-- The [data sources](/resources/data-sources/) page.
+`Submit your work` below. It appears under [Student Work](/gallery/#assignment-05). Graded on completion.

@@ -42,10 +42,10 @@ This course sees the critical use of AI tools as a method of expanding the *tech
 | 10/15 | 6    | Games, and Simulation as Play             |                      |                              |
 | 10/22 | 7    | Proposal Workshop                         |                      | Draft Proposal               |
 | 10/29 | 8    | "Spatial Intelligence" and "World Models" |                      |                              |
-| 11/5  | 9    | Living in the Model                       | Tutorial 5, 6 or 7   | (Assignment 5, extra credit); Progress meeting, all groups |
+| 11/5  | 9    | Living in the Model                       |                      | Progress meeting, all groups |
 | 11/12 | 10   | Show and Tell Day 1                       |                      | Day 1 groups present; Progress meeting, Day 2 groups |
 | 11/19 | 11   | Show and Tell Day 2                       |                      | Day 2 groups present         |
-| 12/21 |      | Website Due                               |                      | Final Project Page           |
+| 12/21 |      | Website Due                               | (Optional tutorial, extra credit) | Final Project Page; (Assignment 5, extra credit) |
 
 ## Weekly Schedule, Readings, and Assignments
 
@@ -266,12 +266,6 @@ Wiener, Anna. "How Perfectly Can Reality Be Simulated?" *The New Yorker*, April 
 
 Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course folder](https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=pmst9bsd&dl=0)
 
-#### Tutorial 5, 6 or 7 due
-[TBD. Three short tutorials, of which you pick one. Likely candidates: preparing a Rhino model for the sunlight sandbox, reading data from a sensor into a space, and making spatial data out of plain text.]
-
-#### Assignment 5 due - extra credit, optional
-[TBD. Pick one of Tutorials 5, 6 or 7; submit the result]
-
 #### Final project progress meeting – all groups
 Asynchronous from class, any time in the week of 11/5. Questions about process, data, etc. Schedule an office hour with me (feel free to make them back-to-back, so one hour total).
 
@@ -294,9 +288,12 @@ The expectation is that the mechanics and data are completely figured out, and l
 #### [Final project](/assignments/final-project/) pages due on the course website, 9am
 This is a hard deadline. Grades are due 12/23, and projects will be graded according to what is live on the website at that time.
 
+#### Optional tutorial and [Assignment 5](/assignments/assignment-05/) due - extra credit
+Complete one of the optional tutorials, and upload a record of completion with gallery text and a short reflection. Available now: [Tutorial 5: Making Spatial Data from Plain Text](/tutorials/05-spatial-data-from-plain-text/).
+
 ## Class Requirements and Grading
 
-There are a total of 21 possible points. Attendance for each session (11 points), in-class participation (1 point), assignments 1 through 5 (5 points, 1 each), and the final project (4 points).
+There are a total of 21 possible points. Attendance for each session (11 points), in-class participation (1 point), assignments 1 through 4 and the draft proposal (5 points, 1 each), and the final project (4 points).
 19 points and above is a HP, 15 points and above is a P, 12 points and above is a LP, and anything below that is a F.
 
 **Attendance (11 points)**
@@ -305,14 +302,14 @@ Attendance at all class sessions is required. Per GSAPP attendance policy, three
 **In-class participation (1 point)**
 You are expected to give engaged and generous participation in class discussions and in critique workshops with your peers.
 
-**Assignments (5 points, 1 point each)**
+**Assignments 1–4 and the Draft Proposal (5 points, 1 point each)**
 Assignments are graded on completion and are intended to be limited in scope; experimental; and geared towards learning and creative engagement rather than demonstrating advanced skills. They must answer the prompts laid out in each assignment and use the methods taught in the relevant tutorials. All assignments are submitted to this website; polish of presentation is explicitly not a criterion.
 
 **Final Project + Presentation (4 points)**
 Two points for the show and tell presentation, two points for the final submission on the course website.
 
 **Extra Credit (1 point)**
-Extra credit will be given for the completion of Assignment 6, and additional extra credit can be assigned by the instructor in the event that a student has a LP or F.
+Extra credit will be given for the completion of [Assignment 5](/assignments/assignment-05/), one of the optional tutorials, and additional extra credit can be assigned by the instructor in the event that a student has a LP or F.
 
 ## Learning Objectives
 
