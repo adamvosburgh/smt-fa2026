@@ -260,11 +260,12 @@ pipkin, all the rock models in skyrim?
 -->
 
 #### Readings due
-Steyerl, Hito. *Medium Hot: Images in the Age of Heat*. Verso, 2025. [Selections]
+Steyerl, Hito. *Medium Hot: Images in the Age of Heat*. Verso, 2025. [Introduction, Burnt Out Images]
+*If you're short on time, just the introduction is fine*
 
-Wiener, Anna. "How Perfectly Can Reality Be Simulated?" *The New Yorker*, April 22, 2024.
+Wiener, Anna. ["How Perfectly Can Reality Be Simulated?"](https://www.newyorker.com/magazine/2024/04/22/can-the-world-be-simulated) *The New Yorker*, April 22, 2024. The PDF is also available in the course drive.
 
-Optional: Farocki, Harun. *Parallel I–IV*. 2012–2014. [Course folder](https://www.dropbox.com/scl/fo/sv2ksgjzxm8fo1w9zfpk3/AFmixec_BffRtnspNdkA8Hw?rlkey=t6tco0o03od9aqhlyxbh4e552&st=pmst9bsd&dl=0)
+Optional: Farocki, Harun. [*Parallel I–IV*](https://www.youtube.com/watch?v=k3tpEFuTvzc). 2012–2014.
 
 #### Final project progress meeting – all groups
 Asynchronous from class, any time in the week of 11/5. Questions about process, data, etc. Schedule an office hour with me (feel free to make them back-to-back, so one hour total).
