@@ -27,9 +27,17 @@ export async function load({ params, fetch }) {
       if (res.ok) promptText = await res.text();
     } catch {}
   }
+  let writeupText = null;
+  if (isAssignment && sub.writeup) {
+    try {
+      const res = await fetch(`${sub.assetBase}${sub.writeup}`);
+      if (res.ok) writeupText = await res.text();
+    } catch {}
+  }
   return {
     sub,
     promptText,
+    writeupText,
     promptPath,
     meta: isAssignment ? null : bySlug[params.sandbox],
     assignment: isAssignment ? doc('assignments', params.sandbox) : null,

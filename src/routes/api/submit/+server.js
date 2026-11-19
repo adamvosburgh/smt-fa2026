@@ -18,6 +18,7 @@ import { write, commit } from '$lib/server/repo.js';
 import { config } from '$lib/server/config.js';
 import { exists as boardExists } from '$lib/server/boards.js';
 import { buildAssignmentBoard } from '$lib/server/board-generate.js';
+import { unpackWriteup } from '$lib/server/writeup.js';
 
 export async function POST({ request }) {
   if (!sameOrigin(request, config.origin)) {
@@ -72,8 +73,23 @@ export async function POST({ request }) {
 
   const files = [];
   let cover = null;
+  delete manifest.writeup;
   for (const [key, value] of form.entries()) {
     if (typeof value === 'string') continue;
+    if (key === 'writeup' && manifest.kind === 'assignment') {
+      // The final project's write-up: a .md, or a .zip unpacked here into the
+      // same assets/ folder (see $lib/server/writeup.js).
+      const unpacked = unpackWriteup(value.name, Buffer.from(await value.arrayBuffer()), config.maxSubmissionBytes);
+      if (unpacked.error) {
+        return json(
+          { ok: false, stage: 1, errors: [{ code: 'assignment/bad-writeup', message: unpacked.error, see: `/assignments/${sandbox}/#submit` }] },
+          { status: 422 }
+        );
+      }
+      files.push(...unpacked.files);
+      manifest.writeup = unpacked.writeup;
+      continue;
+    }
     if (key === 'cover') {
       // Client-drawn JPEG for assignment uploads. Small by construction (the
       // browser resizes to 2000px wide); anything bigger is dropped, not stored.

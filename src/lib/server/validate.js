@@ -33,6 +33,9 @@ export const FAILURE_MAP = {
   'assignment/no-prompt': '#submission',
   'assignment/bad-prompt': '#submission',
   'assignment/no-screenshot': '#submit',
+  'assignment/no-thumbnail': '#submit',
+  'assignment/no-writeup': '#submit',
+  'assignment/bad-writeup': '#submit',
   // A model upload is the one assignment kind whose pointer goes to a SANDBOX
   // dev note rather than to the assignment page, because what went wrong is in
   // the file, not in the hand-in. The assignment's `sandbox_ref` frontmatter
@@ -43,9 +46,12 @@ export const FAILURE_MAP = {
 // What an assignment page may accept, keyed by the `accepts` frontmatter list.
 // Checked by extension, not by the browser-reported MIME type, which lies.
 const ACCEPTS = {
-  image: ['.png', '.jpg', '.jpeg', '.webp'],
+  image: ['.png', '.jpg', '.jpeg', '.webp', '.gif'],
   pdf: ['.pdf'],
   html: ['.html'],
+  // The final project's cover item can be a video file. Over the cap, the
+  // student hosts it on YouTube or Vimeo and submits the link instead.
+  video: ['.mp4', '.webm'],
   // A 3D model, handed in to be RUN in a sandbox rather than shown. Binary glTF
   // only: one file with the geometry and the materials inside it, so there is
   // nothing to lose between the student's machine and the gallery.
@@ -124,9 +130,9 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
   if (formBoxes.includes('gallery_text') && !manifest.gallery_text?.trim()) {
     add('manifest/missing-gallery-text', 'The two-sentence gallery text is required.');
   }
-  if (formBoxes.includes('group')) {
+  if (formBoxes.includes('group') || formBoxes.includes('authors')) {
     manifest.group = String(manifest.group ?? '').trim();
-    if (!manifest.group) add('assignment/missing-group', 'Please list the people in your group.');
+    if (!manifest.group) add('assignment/missing-group', formBoxes.includes('authors') ? 'Please add the author name(s).' : 'Please list the people in your group.');
   } else delete manifest.group;
 
   // Short-answer questions from the assignment's `questions:` frontmatter. Each
@@ -197,6 +203,23 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
     add('assignment/no-file', 'Submit either an index.html or a link to your hosted site.');
   }
 
+  // The final project's form: a thumbnail (sent as the browser-drawn cover), a
+  // cover item (a file or a link), and a markdown write-up. The write-up's
+  // sections are guided by the template, not checked here; only that there is
+  // one and it has something in it.
+  if (formBoxes.includes('thumbnail') && !hasCover) {
+    add('assignment/no-thumbnail', 'A thumbnail image is required. It is what Student Work shows.');
+  }
+  if (formBoxes.includes('cover') && !manifest.link && !files.length) {
+    add('assignment/no-file', 'Add a cover item: an image, a video, an index.html, or a link.');
+  }
+  if (formBoxes.includes('writeup')) {
+    const w = manifest.writeup && files.find((f) => f.path === manifest.writeup);
+    if (!w) add('assignment/no-writeup', 'Your write-up (a .md file, or a .zip with the .md and its images) is required.');
+    else if (!/\.md$/i.test(w.path)) add('assignment/bad-writeup', 'The write-up has to be a .md file.');
+    else if (!w.buffer.toString('utf8').trim()) add('assignment/bad-writeup', 'The write-up is empty.');
+  } else delete manifest.writeup;
+
   if (!files.length) {
     add('assignment/no-file', `Nothing was attached. This assignment takes ${kinds.join(' or ')} files.`);
   }
@@ -244,18 +267,26 @@ function validateAssignment({ manifest, files, sandbox, maxBytes, hasCover, erro
   }
 
   let total = 0;
+  const seen = new Set();
   for (const f of files) {
     total += f.bytes;
     const p = f.path.replace(/\\/g, '/');
     if (p.includes('..') || p.startsWith('/') || !p.startsWith('assets/')) {
       add('assets/path-escape', `"${f.path}" is not a legal asset path. Assets go under assets/.`);
     }
+    // Every upload lands flat in assets/, so two files with one name would
+    // overwrite each other - the cover item and an image in the write-up zip,
+    // say.
+    if (seen.has(p)) add('assignment/bad-type', `Two of your files are called "${p.replace(/^assets\//, '')}". Rename one and submit again.`);
+    seen.add(p);
   }
   if (total > maxBytes) {
     add(
       'assets/too-large',
       `Submission is ${(total / 1048576).toFixed(1)}MB. The cap is ${(maxBytes / 1048576).toFixed(0)}MB. ` +
-        'Export a smaller image, or a PDF with the images downsampled.'
+        (formBoxes.includes('cover')
+          ? 'If your video is the large part, host it on YouTube or Vimeo and submit the link instead.'
+          : 'Export a smaller image, or a PDF with the images downsampled.')
     );
   }
 }

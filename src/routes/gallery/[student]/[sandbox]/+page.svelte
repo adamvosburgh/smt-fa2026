@@ -4,6 +4,7 @@
   // frozen screenshot; it runs the real thing at the student's parameters.
   import { load as loadSandbox, defaults } from '$lib/sandboxes/index.js';
   import SandboxFrame from '$lib/components/SandboxFrame.svelte';
+  import ProjectPage from '$lib/components/ProjectPage.svelte';
   import { studentMarkdown } from '$lib/student-markdown.js';
   import { FRAME_CSP } from '$lib/frame-policy.js';
   import { MODE } from '$lib/data.js';
@@ -64,6 +65,9 @@
   const modelMeta = $derived(isModel ? data.modelSandbox : null);
 </script>
 
+{#if isAssignment && data.sub.writeup}
+  <ProjectPage sub={data.sub} writeupText={data.writeupText} assignmentTitle={data.assignment?.title} />
+{:else}
 <header class="sub-header">
   <h1>{data.sub.title}</h1>
   {#if isAssignment}
@@ -175,6 +179,7 @@
     <summary>Parameters as submitted</summary>
     <pre>{JSON.stringify(data.sub.params, null, 2)}</pre>
   </details>
+{/if}
 {/if}
 
 <style>

@@ -27,7 +27,7 @@
     "primary": {
       "type": "string",
       "pattern": "^assets/[A-Za-z0-9._-]+$",
-      "description": "Assignment submissions only: the asset the gallery renders (an image, a PDF, or one self-contained HTML file)."
+      "description": "Assignment submissions only: the asset the gallery renders (an image, a PDF, a video, or one self-contained HTML file)."
     },
     "link": {
       "type": "string",
@@ -39,6 +39,11 @@
       "type": "string",
       "pattern": "^assets/[A-Za-z0-9._-]+$",
       "description": "Assignment submissions only, where the assignment's `form:` has a `prompt` box: the asset that holds the student's prompt (prompt.md). The gallery page renders it."
+    },
+    "writeup": {
+      "type": "string",
+      "pattern": "^assets/[A-Za-z0-9._-]+\\.md$",
+      "description": "Assignment submissions only, where the assignment's `form:` has a `writeup` box (the final project): the markdown write-up, uploaded as a .md or unpacked from a .zip with its images beside it. The gallery page renders it under the cover item."
     },
     "student": {
       "type": "string",

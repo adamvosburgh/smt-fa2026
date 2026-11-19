@@ -1,0 +1,31 @@
+{
+  "sandbox": "final-project",
+  "kind": "assignment",
+  "student": "example",
+  "title": "Example Project",
+  "group": "Adam Vosburgh",
+  "gallery_text": "An example of what a final project page looks like: a cover item at the top, then the write-up. The cover here is an interactive; yours can be an image, a video, an index.html, or a link.",
+  "params": {},
+  "primary": "assets/index.html",
+  "writeup": "assets/index.md",
+  "app_version": "0.1.0",
+  "assets": [
+    {
+      "path": "assets/index.html",
+      "type": "text/html",
+      "bytes": 636253
+    },
+    {
+      "path": "assets/index.md",
+      "type": "text/markdown",
+      "bytes": 2250
+    },
+    {
+      "path": "assets/image-1.png",
+      "type": "image/png",
+      "bytes": 259791
+    }
+  ],
+  "cover_file": "cover.jpg",
+  "submitted": "2026-11-19T12:00:00.000Z"
+}

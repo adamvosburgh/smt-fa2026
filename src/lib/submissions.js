@@ -70,8 +70,7 @@ function parse({ student, sandbox, manifest: raw, review }) {
 //
 // `published: false` in a manifest holds a submission back.
 // SMT_SHOW_UNPUBLISHED=1 shows those, the same switch that shows unpublished
-// pages and sandboxes. There are no example submissions in the repo - the
-// gallery is empty until a student submits, and that is the intended state.
+// pages and sandboxes. Only src/submissions/example/ is in the repo.
 export async function submissions(fetch) {
   let rows;
   if (MODE === 'archive') {

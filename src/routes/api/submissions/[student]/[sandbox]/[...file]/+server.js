@@ -14,6 +14,9 @@ const TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
   '.pdf': 'application/pdf',
   '.html': 'text/html; charset=utf-8',
   '.glb': 'model/gltf-binary',
@@ -68,6 +71,27 @@ export async function GET({ params, request }) {
   // rest of the policy blocks the network, so a page that only works online
   // fails here the same way it will in the gallery (see $lib/frame-policy.js).
   if (type.startsWith('text/html')) headers['content-security-policy'] = `sandbox allow-scripts; ${FRAME_CSP}`;
+  headers['accept-ranges'] = 'bytes';
+
+  // A final project's cover video: the browser asks for byte ranges to seek
+  // (Safari will not play a video at all without them). One range only.
+  const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('range') ?? '');
+  if (range && (range[1] || range[2])) {
+    const start = range[1] ? Number(range[1]) : Math.max(0, s.size - Number(range[2]));
+    const end =range[1] && range[2] ? Math.min(Number(range[2]), s.size - 1) : s.size - 1;
+    if (start > end || start >= s.size) {
+      return new Response(null, { status: 416, headers: { ...headers, 'content-range': `bytes */${s.size}` } });
+    }
+    return new Response(Readable.toWeb(createReadStream(target, { start, end })), {
+      status: 206,
+      headers: {
+        ...headers,
+        'content-type': type,
+        'content-length': String(end - start + 1),
+        'content-range': `bytes ${start}-${end}/${s.size}`
+      }
+    });
+  }
 
   return new Response(Readable.toWeb(createReadStream(target)), {
     headers: { ...headers, 'content-type': type, 'content-length': String(s.size) }

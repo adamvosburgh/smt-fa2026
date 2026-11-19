@@ -38,9 +38,11 @@
   // validateAssignment in src/lib/server/validate.js.
   const FORM_DEFAULT = ['title', 'gallery_text', 'description', 'work', 'extras'];
   const form = [...(Array.isArray(doc.form) && doc.form.length ? doc.form : FORM_DEFAULT)];
-  for (const f of ['title', 'work']) if (!form.includes(f)) form.push(f);
+  // The final project's `cover` box takes the place of `work`.
+  for (const f of ['title', 'work']) if (!form.includes(f) && !(f === 'work' && form.includes('cover'))) form.push(f);
   const askGalleryText = form.includes('gallery_text');
-  const askGroup = form.includes('group');
+  // `authors` (final project) is the group box under another label
+  const askGroup = form.includes('group') || form.includes('authors');
 
   // Short-answer questions from the assignment's `questions:` frontmatter, a
   // list of { key, label }, with `options` for a dropdown. They come after the boxes. The answers go in the
@@ -48,7 +50,7 @@
   const questions = Array.isArray(doc.questions) ? doc.questions.filter((q) => q?.key && q?.label) : [];
   let answers = $state(Object.fromEntries(questions.map((q) => [q.key, ''])));
   const answered = $derived(questions.every((q) => answers[q.key]?.trim()));
-  const EXT = { image: '.png,.jpg,.jpeg,.webp', pdf: '.pdf', html: '.html', model: '.glb' };
+  const EXT = { image: '.png,.jpg,.jpeg,.webp,.gif', pdf: '.pdf', html: '.html', model: '.glb', video: '.mp4,.webm' };
   const accept = accepts.map((k) => EXT[k]).filter(Boolean).join(',');
 
   const isModel = accepts.includes('model');
@@ -73,10 +75,23 @@
   let link = $state('');
   let prompt = $state(null);
   let extras = $state([]);
+  let thumbnail = $state(null);
+  let writeup = $state(null);
   let result = $state(null);
   let busy = $state(false);
 
-  const isImage = (f) => /\.(png|jpe?g|webp)$/i.test(f?.name ?? '');
+  const isImage = (f) => /\.(png|jpe?g|webp|gif)$/i.test(f?.name ?? '');
+
+  // The final project's form (`thumbnail`, `cover`, `writeup` boxes): a
+  // thumbnail image for Student Work, a cover item that is either a file
+  // (image, video, index.html) or a link (a hosted site, or YouTube/Vimeo for a
+  // video over the cap), and the markdown write-up, a .md or a .zip with its
+  // images. The thumbnail is drawn into the cover JPEG, the same as a
+  // screenshot; with a link it is also the primary, as a screenshot is.
+  const askThumbnail = form.includes('thumbnail');
+  const askCover = form.includes('cover');
+  const askWriteup = form.includes('writeup');
+  let coverMode = $state('file');
 
   const askScreenshot = form.includes('screenshot');
   const askLink = form.includes('link');
@@ -86,7 +101,7 @@
   // Without it, the link box is just optional, as it was.
   const askMode = form.includes('mode');
   let mode = $state('file');
-  const linkMode = $derived(askMode ? mode === 'link' : askLink);
+  const linkMode = $derived(askCover ? coverMode === 'link' : askMode ? mode === 'link' : askLink);
   const linkGiven = $derived(linkMode && link.trim() !== '');
   // A GitHub repository address (github.com/name/repo) is the code, not the
   // site; the site is name.github.io/repo. Keep in step with validate.js.
@@ -117,10 +132,14 @@
         : linkGiven || (primary && !selfCover))
   );
   const ready = $derived(
-    (askMode && linkMode ? linkGiven && screenshot : primary || (linkGiven && screenshot)) &&
-      (!linkGiven || linkOk) &&
-      (!needScreenshot || screenshot) &&
-      (!askPrompt || prompt)
+    askCover
+      ? (linkMode ? linkGiven && linkOk : !!primary) &&
+          (!askThumbnail || !!thumbnail) &&
+          (!askWriteup || !!writeup)
+      : (askMode && linkMode ? linkGiven && screenshot : primary || (linkGiven && screenshot)) &&
+          (!linkGiven || linkOk) &&
+          (!needScreenshot || screenshot) &&
+          (!askPrompt || prompt)
   );
 
   // The upload cap, checked here as soon as a file is chosen so nobody finds out
@@ -131,8 +150,10 @@
   const LIMIT = '50MB';
   const mb = (bytes) => `${(bytes / 1048576).toFixed(1)}MB`;
   const total = $derived(
-    (linkMode && askMode ? 0 : (primary?.size ?? 0)) + (linkGiven && (!primary || askMode) ? (screenshot?.size ?? 0) : 0) +
-      (prompt?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0)
+    askCover
+      ? (linkMode ? (thumbnail?.size ?? 0) : (primary?.size ?? 0)) + (writeup?.size ?? 0)
+      : (linkMode && askMode ? 0 : (primary?.size ?? 0)) + (linkGiven && (!primary || askMode) ? (screenshot?.size ?? 0) : 0) +
+          (prompt?.size ?? 0) + extras.reduce((n, f) => n + f.size, 0)
   );
   const tooBig = $derived(total > MAX_BYTES);
 
@@ -141,7 +162,9 @@
     result = null;
     const fd = new FormData();
     // With a link and no file, the screenshot is the work the gallery shows.
-    const work = askMode && linkMode ? screenshot : (primary ?? (linkGiven ? screenshot : null));
+    const work = askCover
+      ? (linkMode ? thumbnail : primary)
+      : askMode && linkMode ? screenshot : (primary ?? (linkGiven ? screenshot : null));
     fd.set(
       'manifest',
       JSON.stringify({
@@ -170,12 +193,15 @@
     fd.append('asset', work, work.name);
     if (prompt) fd.append('asset', prompt, prompt.name);
     for (const f of extras) fd.append('asset', f, f.name);
+    if (askWriteup && writeup) fd.append('writeup', writeup, writeup.name);
     // A 2000px-wide JPEG of the uploaded image, or of the screenshot when the
-    // work isn't an image, for the Student Work card and the board.
-    const from = isImage(work) ? work : screenshot;
+    // work isn't an image, for the Student Work card and the board. The final
+    // project's comes from the thumbnail, whatever the cover item is.
+    const shotFile = askThumbnail ? thumbnail : screenshot;
+    const from = askThumbnail ? thumbnail : isImage(work) ? work : screenshot;
     const cover = from ? await drawCopy(from, { width: 2000 }) : null;
-    if (from && !cover && from === screenshot) {
-      result = { ok: false, error: 'The screenshot could not be read. Save it as a PNG or JPG and choose it again.' };
+    if (from && !cover && from === shotFile) {
+      result = { ok: false, error: `The ${askThumbnail ? 'thumbnail' : 'screenshot'} could not be read. Save it as a PNG or JPG and choose it again.` };
       busy = false;
       return;
     }
@@ -224,9 +250,9 @@
         <textarea bind:value={galleryText} rows="3" maxlength="600"
           placeholder="Two sentences. Text that might accompany a work of art."></textarea>
       </label>
-    {:else if f === 'group'}
+    {:else if f === 'group' || f === 'authors'}
       <label>
-        Group members
+        {f === 'authors' ? 'Author name(s)' : 'Group members'}
         <input bind:value={group} maxlength="400" placeholder="Everyone in your group, including you" />
       </label>
     {:else if f === 'description'}
@@ -317,6 +343,54 @@
       <p class="hint">The address of the live site, not of the repository. Open it in a private
         window first to check that it loads.{#if !askMode} A link replaces the file; the screenshot
         is then required.{/if}</p>
+    {:else if f === 'thumbnail'}
+      <label>
+        Thumbnail image
+        <input type="file" accept=".png,.jpg,.jpeg,.webp,.gif" onchange={(e) => (thumbnail = e.currentTarget.files[0] ?? null)} />
+      </label>
+      <p class="hint">The image Student Work and the board show for your project.</p>
+    {:else if f === 'cover'}
+      <fieldset class="mode">
+        <legend>Cover item</legend>
+        <label class="radio"><input type="radio" name="cover-mode" value="file" bind:group={coverMode} />
+          A file: an image, a video, or one <code>index.html</code></label>
+        <label class="radio"><input type="radio" name="cover-mode" value="link" bind:group={coverMode} />
+          A link: a site you hosted, or a YouTube or Vimeo video</label>
+      </fieldset>
+      {#if linkMode}
+        <label>
+          Link
+          <input type="url" bind:value={link} placeholder="https://yourname.github.io/project/" />
+        </label>
+        {#if linkGiven && repoLink}
+          <p class="err size">That is the address of the code on GitHub. Paste the address of the live
+            site instead. For GitHub Pages it looks like https://yourname.github.io/project/.</p>
+        {:else if linkGiven && !linkOk}
+          <p class="err size">The link has to be a full address starting with https://.</p>
+        {/if}
+      {:else}
+        <label>
+          File (image, mp4/webm video, or index.html)
+          <input type="file" {accept} onchange={(e) => (primary = e.currentTarget.files[0] ?? null)} />
+        </label>
+        {#if primary && primary.size > MAX_BYTES}
+          <p class="err size">This file is {mb(primary.size)}. The limit is {LIMIT}.</p>
+        {/if}
+      {/if}
+      <p class="hint">Shown at the top of your page, full width, and can be opened full screen. An
+        HTML file must be one self-contained file. If your video is larger than 50MB, please host it
+        on YouTube or Vimeo, paste that link, and let me know once you have submitted.</p>
+    {:else if f === 'writeup'}
+      <label>
+        Write-up (<code>.md</code>, or a <code>.zip</code> with the <code>.md</code> and its images)
+        <input type="file" accept=".md,.markdown,.zip" onchange={(e) => (writeup = e.currentTarget.files[0] ?? null)} />
+      </label>
+      <p class="hint">Start from the template on this page. Images go in the zip next to the
+        <code>.md</code>.</p>
+      {#if tooBig}
+        <p class="err size">These files come to {mb(total)}. The limit is {LIMIT} for everything
+          together.</p>
+      {/if}
     {:else if f === 'prompt'}
       <label>
         Your prompt (<code>prompt.md</code>)

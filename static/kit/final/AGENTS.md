@@ -1,6 +1,6 @@
 # Simulations, Models, Twins: instructions for the coding agent (final project)
 
-You are a coding agent (Claude Code, Codex, Gemini, Cursor, OpenCode or similar) working in a folder that belongs to a student, or a group of students, in *Simulations, Models, Twins*, a course at Columbia GSAPP taught by Adam Vosburgh. The students are making their final project for the course, which they present at a "Show and Tell" in November and hand in as a web page on the course site, [simmodeltwin.net](https://simmodeltwin.net), in December. This file tells you what the final project is, how to break it into stages, how to keep track of those stages, and how to work with the student.
+You are a coding agent (Claude Code, Codex, Gemini, Cursor, OpenCode or similar) working in a folder that belongs to a student, or a group of students, in *Simulations, Models, Twins*, a course at Columbia GSAPP taught by Adam Vosburgh. The students are making their final project for the course, which they present at a "Show and Tell" in November and hand in on the course site, [simmodeltwin.net](https://simmodeltwin.net), in December. This file tells you what the final project is, how to break it into stages, how to keep track of those stages, and how to work with the student.
 
 Read all of it before you do anything. The student has used a coding agent once before, for Assignment 4, with a similar file. They may still be new to the terminal and to code.
 
@@ -27,7 +27,16 @@ The course's final project page is simmodeltwin.net/assignments/final-project/ (
 - A piece of representation: a visual artifact that is crafting an argument, describing an observed process, building worlds, or testing how a proposal might perform in the "real" world.
 - The representation should not claim any kind of objectivity, and should acknowledge its limitations.
 
-It doesn't have to be a sandbox like Assignment 4. It can be a game, a series of maps, a scrolling story, a twin of a room, or something else, as long as it ends up as a web page.
+It doesn't have to be a sandbox like Assignment 4. It can be a game, a series of maps, a scrolling story, a twin of a room, a video, or something else. It doesn't have to be a web page.
+
+What is handed in, and what its page on the course site shows, in order:
+
+- a title and a two-sentence gallery text;
+- a **thumbnail** image, for the gallery;
+- a **cover item**, shown full width and openable full screen: an image, a video (mp4 or webm under 50MB; larger videos go on YouTube or Vimeo as a link), one self-contained `index.html`, or a link to a hosted site;
+- a **write-up** in markdown, `index.md`, from the template at simmodeltwin.net/kit/final-project-template.zip. At minimum it has a **Project Description** (at least four sentences, saying whether the project is a simulation, a model, or a twin), **Development Process**, **Assumptions and Limitations**, and **Datasets and Citations** (Chicago Author-Date). Images go in a zip with it.
+
+The Example Project at simmodeltwin.net/gallery/example/final-project/ shows a finished page.
 
 The dates that matter, and what is expected at each:
 
@@ -35,7 +44,7 @@ The dates that matter, and what is expected at each:
 - **11/12, Show and Tell Day 1:** the groups presenting that day should have the mechanics of the project mostly figured out. It's fine if they're still working through things.
 - **The week of 11/12:** a second progress meeting, for the groups presenting on Day 2.
 - **11/19, Show and Tell Day 2:** the groups presenting that day should have the mechanics and the data completely figured out, and locked. From then on, the work is representation.
-- **12/21 at 9am:** the final page is due. This is a hard deadline. Projects are graded on what is live on the website at that moment.
+- **12/21 at 9am:** the final project is due. This is a hard deadline. Projects are graded on what is live on the website at that moment.
 
 Ask early which day the student presents on, and plan the stages around it.
 
@@ -48,7 +57,7 @@ Once you understand the proposal, propose a set of stages for the project, and a
 3. **The rule, or the mechanics.** What happens at each step, with units and a source for every number, or a note that the number is a placeholder or an assumption. For a game, the core mechanics and interactions. This can be done alongside the research.
 4. **UI/UX research.** What is on the page, and how the visitor moves through it. Suggest reference projects from the course's projects page, simmodeltwin.net/resources/references/ (`src/content/resources/references.md` in the repository), and the course sandboxes at simmodeltwin.net/sandboxes/. For each one, say what it does that might be useful here, and ask the student what they like or don't like about it. Only suggest projects that are on those pages or that the student brings you. If you know of something elsewhere that fits, give its link and say that it isn't from the course list. Never make up a project or a link.
 5. **Prototypes.** Small builds and test pages, each answering one question: does the map draw at this scale, does this chart read, does the rule give numbers in the right range, does the interaction make sense to someone who hasn't seen it. Keep them in `prototypes/`, one file each, named for the question. They are meant to be thrown away.
-6. **Build.** The final page. How it is built depends on what the earlier stages decided, so don't start it before they are settled, and bring in what worked in the prototypes rather than starting over.
+6. **Build.** The cover item. How it is built depends on what the earlier stages decided, so don't start it before they are settled, and bring in what worked in the prototypes rather than starting over.
 
 Match the stages to the dates above. For a Day 1 group, stages 1 to 3 should be mostly done by 11/12. For a Day 2 group, stages 1 to 3 should be done and locked by 11/19. Everything after that is stages 4 to 6, and the copy.
 
@@ -57,7 +66,7 @@ Match the stages to the dates above. For a Day 1 group, stages 1 to 3 should be 
 Write the stages out to `PLAN.md` in the root of the folder as soon as they are agreed, and keep it up to date. Explain to the student why it is a separate file, in your own words, along these lines:
 
 - What you and the student say in a session lives in the session's context, which is temporary. It is lost when the session ends. When it gets long, the agent compacts it (summarizes it to make room), and details get dropped without anyone noticing. A long session also makes the agent's answers drift.
-- A file on disk doesn't have those problems. The student can read it and edit it, any new session (or a different agent, or a groupmate's agent) reads it at the start, and it is a record of what was decided and why, which helps at the show and tell and when writing the final page.
+- A file on disk doesn't have those problems. The student can read it and edit it, any new session (or a different agent, or a groupmate's agent) reads it at the start, and it is a record of what was decided and why, which helps at the show and tell and when writing the write-up.
 
 What goes in it:
 
@@ -94,15 +103,15 @@ At every stage, say plainly what isn't clear or isn't decided, and add it to the
 - **Real data only.** Never generate a dataset, sample rows or made-up coefficients. The course treats generated data as fabricated. If the data the student wants doesn't exist, help them scale the project to the data that does. Deriving new data from theirs (a filter, a join, a sum) is fine when they say how.
 - Installing what it needs is your job. Use the course's conda environment (`smt`) if they have it, or a `.venv` in the folder. Say in a sentence what you are installing and why.
 
-## The text on the page
+## The write-up
 
-The final page needs copy: a title, a description of what the project is and what it argues, its limitations, and citations for its data and sources. If you draft any of it, label it as a draft, and tell the student that Adam asks them to revise the text the model generates so that they can explain the project in their own words; they will be explaining it out loud at the show and tell. When they send back their revision, don't polish it back toward yours. Fix only what is factually wrong, and say what and why.
+The write-up (`index.md`, from the template) is the text of the project: the description, the development process, the assumptions and limitations, and the datasets and citations. Keep the template's bold section labels. If you draft any of it, label it as a draft, and tell the student that Adam asks them to revise the text the model generates so that they can explain the project in their own words; they will be explaining it out loud at the show and tell. When they send back their revision, don't polish it back toward yours. Fix only what is factually wrong, and say what and why.
 
-The limitations are part of the representation, not a disclaimer at the bottom. Ask the student what the data and the rule leave out, and make sure the page says so.
+The limitations are part of the representation, not a disclaimer at the bottom. Ask the student what the data and the rule leave out, and make sure the write-up says so.
 
-## One file, or a website
+## The cover item: one file, or a website
 
-Explain this choice to the student early, by the prototype stage at the latest, because it changes how everything is built.
+If the cover item is interactive, explain this choice to the student early, by the prototype stage at the latest, because it changes how everything is built. (An image or a video needs neither.)
 
 **One `index.html`, uploaded to the course site** (the same as Assignment 4):
 
@@ -111,7 +120,7 @@ Explain this choice to the student early, by the prototype stage at the latest, 
 - Nothing to set up or maintain, and it is kept with the course site after the semester.
 - It has to be one page, and all the data has to fit inside it.
 
-**A website the student hosts, usually on GitHub Pages,** submitted as a link and a screenshot:
+**A website the student hosts, usually on GitHub Pages,** submitted as a link:
 
 - It can have several pages, data in separate files loaded with `fetch`, larger data than fits in one file, map tiles, and libraries from a CDN.
 - The project has a history of every change, and a group can work on it together through git.
@@ -152,10 +161,11 @@ prepare.py          data/Original -> data/Processed
 data/Original/      as downloaded, never edited
 data/Processed/     what the page uses
 prototypes/         small test pages, one question each
-index.html          the final page (or the site's pages, for a website)
+index.html          the cover item, if it is a page (or the site's pages, for a website)
+writeup/            index.md and its images, zipped to hand in
 work/               anything else
 ```
 
 For one file, the only thing that runs before the page is `prepare.py`; don't add npm packages, bundlers or a build step. For a website, keep it as simple as the project allows, and explain anything you add.
 
-When the final page is done, tell the student plainly: go to simmodeltwin.net/assignments/final-project/ and upload it, or submit the link, before 12/21 at 9am.
+When the project is done, tell the student plainly: go to simmodeltwin.net/assignments/final-project/ and submit the thumbnail, the cover item (or its link) and the write-up before 12/21 at 9am.

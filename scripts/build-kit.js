@@ -5,6 +5,7 @@
 //                  static/kit/. Tutorial 4 and Assignment 4 link the zip.
 //   kit-final/  -> static/kit/smt-final-kit.zip (unpacks to smt-final-kit/),
 //                  copies in static/kit/final/. The final project page links it.
+//   kit-final-template/ -> static/kit/final-project-template.zip (index.md + image-1.png)
 //
 // static/kit/ is committed, not gitignored like the other mirrored folders, so
 // the freeze and a fresh clone have it without a build. That is why the zip is
@@ -23,12 +24,14 @@ import { crc32 } from 'node:zlib';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dest = path.join(root, 'static/kit');
 
-const KITS = [
-  { src: 'kit', zip: 'smt-kit.zip', folder: 'smt-kit/', copies: '' },
-  { src: 'kit-final', zip: 'smt-final-kit.zip', folder: 'smt-final-kit/', copies: 'final/' }
-];
 const FILES = ['AGENTS.md', 'CLAUDE.md', '.gitignore'];
 const COPIES = ['AGENTS.md', 'CLAUDE.md'];
+const KITS = [
+  { src: 'kit', zip: 'smt-kit.zip', folder: 'smt-kit/', copies: '', files: FILES, copied: COPIES },
+  { src: 'kit-final', zip: 'smt-final-kit.zip', folder: 'smt-final-kit/', copies: 'final/', files: FILES, copied: COPIES },
+  // final project write-up template
+  { src: 'kit-final-template', zip: 'final-project-template.zip', folder: 'final-project-template/', copies: '', files: ['index.md', 'image-1.png'], copied: [] }
+];
 
 // 2026-09-01 00:00, in MS-DOS date/time form.
 const DOS_TIME = 0;
@@ -103,11 +106,11 @@ for (const kit of KITS) {
   const src = path.join(root, kit.src);
   await mkdir(path.join(dest, kit.copies), { recursive: true });
   const entries = [{ name: kit.folder, data: Buffer.alloc(0) }];
-  for (const file of FILES) {
+  for (const file of kit.files) {
     entries.push({ name: kit.folder + file, data: await readFile(path.join(src, file)) });
   }
   if (await put(kit.zip, zip(entries))) changed.push(kit.zip);
-  for (const file of COPIES) {
+  for (const file of kit.copied) {
     if (await put(kit.copies + file, await readFile(path.join(src, file)))) changed.push(kit.copies + file);
   }
 }

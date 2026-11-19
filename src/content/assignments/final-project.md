@@ -7,13 +7,11 @@ cat: assignment
 published: true
 publish: "2026-10-11"
 submit: true
-accepts: [html, pdf]
+accepts: [image, video, html]
 due: "12/21"
-# The same upload options as Assignment 4, without the prompt: `mode` asks
-# index.html or hosted site and decides which of work / link / screenshot show.
-form: [title, gallery_text, mode, work, link, screenshot, extras]
-# The whiteboard tile: the live interactive (click to run). With no prompt the
-# tile has no prompt box under it.
+# thumbnail + cover item (file or link) + markdown write-up
+form: [title, authors, gallery_text, thumbnail, cover, writeup]
+# board: runs html / hosted links, otherwise shows the thumbnail
 board_tile: interactive
 ---
 
@@ -56,11 +54,26 @@ Please note that this is a *hard* deadline. I have to have grades submitted by 1
 
 ### Submit
 
-The final project is a webpage, with the same upload options as [Assignment 4](/assignments/assignment-04/). The form first asks what you are submitting: one `index.html` (the default), or a website you hosted.
+The final project does not have to be a webpage. Submit it in whatever format works best for the project. Every submission has the same parts, and its page on the site shows them in this order:
 
-- one self-contained `index.html` (no network requests, under 50MB) and a screenshot of it for the gallery; or
-- the link to your hosted site and a screenshot of it for the gallery
-- a two-sentence gallery text
+- **Title**, **author name(s)**, and a two-sentence **gallery text**.
+- **Thumbnail**: an image, shown on [Student Work](/gallery/#final-project) and the whiteboard.
+- **Cover item**: the main piece, shown full width at the top of your page, and can be opened full screen. One of:
+  - an image (png, jpg, webp or gif);
+  - a video (mp4 or webm, under 50MB);
+  - one self-contained `index.html` (styles, scripts and data inline, no network requests, under 50MB);
+  - a link to a site you hosted, or to a YouTube or Vimeo video.
+
+  If your video is larger than 50MB, please host it on YouTube or Vimeo, paste that link, and let me know once you have submitted.
+- **Write-up**: a markdown file, shown under the cover item. At minimum it has:
+  - **Project Description**: at least four sentences, including whether the project is a simulation, a model, or a twin.
+  - **Development Process**: a brief description of how you made it.
+  - **Assumptions and Limitations**: what the project assumes, and what it can't see or say.
+  - **Datasets and Citations**: Chicago Author-Date.
+
+Download the [write-up template](/kit/final-project-template.zip) and start from its `index.md`. It has the sections above and a short guide to markdown formatting. If your write-up has images, put them in a folder with `index.md`, compress the folder to a .zip, and upload the zip. Without images, upload `index.md` on its own. The [Example Project](/gallery/example/final-project/) shows what the finished page looks like.
+
+The whole submission (cover item and write-up together) has to be under 50MB.
 
 If anyone is uncomfortable with their work being publicly available, let me know and we can figure out another method.
 

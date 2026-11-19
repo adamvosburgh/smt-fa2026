@@ -58,4 +58,6 @@ Thumbs.db
 # scripts/export-boards.js at the freeze, and is student work too.
 /src/submissions/*
 !/src/submissions/.gitkeep
+# exception for example posts
+!/src/submissions/example/
 /src/boards/
