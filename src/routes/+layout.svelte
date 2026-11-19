@@ -4,6 +4,7 @@
   import { site, nav } from '$lib/site.js';
   import Assistant from '$lib/components/Assistant.svelte';
   import MouseAgents from '$lib/components/MouseAgents.svelte';
+  import EvalTicker from '$lib/components/EvalTicker.svelte';
   let { children } = $props();
   const isActive = (href) =>
     href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
@@ -46,6 +47,7 @@
 
 <Assistant />
 <MouseAgents />
+<EvalTicker />
 
 <style>
   /* Shown only under SMT_SHOW_UNPUBLISHED=1: this page is not on the site yet. */
