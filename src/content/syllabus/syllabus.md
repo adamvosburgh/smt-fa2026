@@ -30,6 +30,16 @@ No prior programming experience is required, but a willingness to work in code, 
 
 This course sees the critical use of AI tools as a method of expanding the *technical* ambition of projects, and not as a substitute for having original ideas. From week four, the course teaches you to make software by writing a specification for it rather than by typing the code, otherwise referred to as "vibe-coding."
 
+<!--
+** General Notes for next year **
+- need more on-rails tutorial infrastructure in the beginning. AI tools are great for testing out ideas, but there needs to be a stronger contrast between a quick test e.g. assignment 3, and more rigorous version which the final should ideally be
+- need to fold in more critique of AI model output - the text everywhere, the language, etc. In genearl, I have to provide a more thoughtful framework for how people should use AI in the course.
+
+** Readings to fold in for next year ** 
+- rittel and weber wicked problems
+- introcution and maybe a selection from here. does such a great job laying out the political economy of prediction, and why it matters as a speculative act / for world building: https://www.matteringpress.org/books/predictions-volume-1/read/1-o-introduction
+-->
+
 ## Course Overview
 
 | Date  | Week | Topic                                     | Tutorial due         | Assignment due               |
